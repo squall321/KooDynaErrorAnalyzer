@@ -302,6 +302,45 @@ def _diagnose_performance_bottlenecks(
             ),
         ))
 
+    # Check Contact algorithm (excessive contact time)
+    contact = perf_map.get("Contact algorithm")
+    if contact:
+        # Contact > 40% → WARNING (contact-dominated)
+        # Contact > 50% → CRITICAL (severe contact bottleneck)
+        if contact.cpu_percent > 50.0:
+            findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="performance",
+                title=f"접촉 계산 시간 과다 ({contact.cpu_percent:.1f}%)",
+                description=(
+                    f"Contact algorithm이 전체 CPU의 {contact.cpu_percent:.1f}%를 소비합니다 "
+                    f"({contact.cpu_seconds:.2f}초). "
+                    f"접촉 계산이 시뮬레이션의 주요 병목이 되고 있습니다."
+                ),
+                recommendation=(
+                    f"1. 접촉 인터페이스 개수 감소 (불필요한 접촉 제거)\n"
+                    f"2. Contact type 변경 (AUTOMATIC → MORTAR, SOFT=2)\n"
+                    f"3. Bucket sort 빈도 조정 (*CONTACT의 BSORT 파라미터)\n"
+                    f"4. Contact thickness 재검토 (SHLTHK 설정)\n"
+                    f"5. Single surface contact를 여러 interface로 분리"
+                ),
+            ))
+        elif contact.cpu_percent > 40.0:
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="performance",
+                title=f"접촉 계산 시간 높음 ({contact.cpu_percent:.1f}%)",
+                description=(
+                    f"Contact algorithm이 전체 CPU의 {contact.cpu_percent:.1f}%를 소비합니다. "
+                    f"접촉 최적화를 고려할 수 있습니다."
+                ),
+                recommendation=(
+                    f"1. 접촉 인터페이스 정의 검토 (과도하게 넓은 범위)\n"
+                    f"2. Contact type 최적화 (*CONTACT_AUTOMATIC_... 옵션)\n"
+                    f"3. Bucket sort 설정 확인"
+                ),
+            ))
+
     return findings
 
 
