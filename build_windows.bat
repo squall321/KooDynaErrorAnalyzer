@@ -18,19 +18,16 @@ venv\Scripts\pip.exe install pyinstaller
 echo.
 
 echo [2/2] 빌드 중...
+echo.
 set PYTHONPATH=%~dp0src
-venv\Scripts\pyinstaller.exe --onefile --name koodyna --hidden-import=koodyna --hidden-import=koodyna.parsers --hidden-import=koodyna.parsers.d3hsp --hidden-import=koodyna.parsers.glstat --hidden-import=koodyna.parsers.status --hidden-import=koodyna.parsers.profile --hidden-import=koodyna.parsers.messag --hidden-import=koodyna.analysis --hidden-import=koodyna.analysis.energy --hidden-import=koodyna.analysis.timestep --hidden-import=koodyna.analysis.warnings --hidden-import=koodyna.analysis.contact --hidden-import=koodyna.analysis.performance --hidden-import=koodyna.analysis.diagnostics --hidden-import=koodyna.report --hidden-import=koodyna.report.terminal --hidden-import=koodyna.report.json_report --hidden-import=koodyna.report.html_report --hidden-import=koodyna.knowledge --hidden-import=koodyna.knowledge.warning_db --hidden-import=tkinter --hidden-import=tkinter.filedialog --hidden-import=tkinter.scrolledtext --hidden-import=webbrowser --paths=src src\koodyna\__main__.py >build.log 2>&1
+venv\Scripts\pyinstaller.exe --onefile --name koodyna --hidden-import=koodyna --hidden-import=koodyna.parsers --hidden-import=koodyna.parsers.d3hsp --hidden-import=koodyna.parsers.glstat --hidden-import=koodyna.parsers.status --hidden-import=koodyna.parsers.profile --hidden-import=koodyna.parsers.messag --hidden-import=koodyna.analysis --hidden-import=koodyna.analysis.energy --hidden-import=koodyna.analysis.timestep --hidden-import=koodyna.analysis.warnings --hidden-import=koodyna.analysis.contact --hidden-import=koodyna.analysis.performance --hidden-import=koodyna.analysis.diagnostics --hidden-import=koodyna.report --hidden-import=koodyna.report.terminal --hidden-import=koodyna.report.json_report --hidden-import=koodyna.report.html_report --hidden-import=koodyna.knowledge --hidden-import=koodyna.knowledge.warning_db --hidden-import=tkinter --hidden-import=tkinter.filedialog --hidden-import=tkinter.scrolledtext --hidden-import=webbrowser --paths=src src\koodyna\__main__.py
+set BUILD_EXIT=%ERRORLEVEL%
 
 echo.
-if errorlevel 1 (
+if %BUILD_EXIT% neq 0 (
     echo ============================================
-    echo  빌드 실패 (exit code %errorlevel%)
+    echo  빌드 실패 (exit code %BUILD_EXIT%)
     echo ============================================
-    echo.
-    echo --- build.log (마지막 30줄) ---
-    type build.log | more
-    echo.
-    echo 전체 로그: build.log
     pause
     exit /b 1
 )
@@ -49,8 +46,5 @@ if exist dist\koodyna.exe (
     echo ============================================
     echo  빌드 실패: dist\koodyna.exe 생성되지 않음
     echo ============================================
-    echo.
-    echo --- build.log ---
-    type build.log
 )
 pause
