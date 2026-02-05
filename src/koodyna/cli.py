@@ -7,6 +7,52 @@ from pathlib import Path
 from koodyna import __version__
 
 
+def _open_in_browser(html_path: Path, log):
+    """Open HTML report in browser — Windows Chrome-friendly.
+
+    Strategy (Windows):
+      1. Try Chrome directly via well-known install paths
+      2. Fall back to webbrowser.open() with file:// URI
+    Other OS: webbrowser.open() with file:// URI only.
+    """
+    import webbrowser
+
+    file_uri = html_path.resolve().as_uri()  # file:///C:/… or file:///home/…
+
+    if sys.platform == "win32":
+        import subprocess
+        # 일반적인 Chrome 설치 경로 후보
+        chrome_candidates = [
+            Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+            Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+            Path.home() / "AppData" / "Local" / "Google" / "Chrome" / "Application" / "chrome.exe",
+        ]
+        # LOCALAPPDATA env 기반 경로도 확인
+        import os
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        if local_app:
+            chrome_candidates.append(Path(local_app) / "Google" / "Chrome" / "Application" / "chrome.exe")
+
+        for chrome in chrome_candidates:
+            if chrome.exists():
+                try:
+                    subprocess.Popen([str(chrome), file_uri])
+                    log(f"Chrome으로 열었습니다: {file_uri}")
+                    return
+                except OSError:
+                    continue
+
+        # Chrome 없으면 기본 브라우저로 폴백
+        log("Chrome을 찾지 못하여 기본 브라우저로 열겠습니다.")
+
+    # 기본 브라우저 (macOS / Linux / Windows 폴백)
+    opened = webbrowser.open(file_uri)
+    if opened:
+        log(f"브라우저로 열었습니다: {file_uri}")
+    else:
+        log(f"브라우저 자동 열기 실패. 수동으로 열어주세요: {html_path}")
+
+
 def _run_gui_mode():
     """GUI mode: folder picker → progress window → browser open."""
     try:
@@ -20,7 +66,6 @@ def _run_gui_mode():
         )
         sys.exit(1)
 
-    import webbrowser
     import threading
 
     root = tk.Tk()
@@ -121,7 +166,7 @@ def _run_gui_mode():
 
             log("")
             log("브라우저에서 리포트를 여는 중...")
-            webbrowser.open(str(html_path))
+            _open_in_browser(html_path, log)
 
             log("")
             log("=" * 50)
