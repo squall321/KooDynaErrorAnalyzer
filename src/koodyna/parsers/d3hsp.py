@@ -530,6 +530,7 @@ class D3hspParser:
                             clock_percent=_safe_float(m_interf.group(5)),
                         ))
                         continue
+                    # Check main entries (1-2 space indent)
                     m = RE_TIMING_ENTRY.match(stripped)
                     if m:
                         data.performance.append(PerformanceTiming(
@@ -538,6 +539,17 @@ class D3hspParser:
                             cpu_percent=_safe_float(m.group(3)),
                             clock_seconds=_safe_float(m.group(4)),
                             clock_percent=_safe_float(m.group(5)),
+                        ))
+                        continue
+                    # Check sub-entries (2-6 space indent) - Force gather, Mass Scaling, etc.
+                    m_sub = RE_TIMING_SUB.match(stripped)
+                    if m_sub:
+                        data.performance.append(PerformanceTiming(
+                            component=m_sub.group(1).strip(),
+                            cpu_seconds=_safe_float(m_sub.group(2)),
+                            cpu_percent=_safe_float(m_sub.group(3)),
+                            clock_seconds=_safe_float(m_sub.group(4)),
+                            clock_percent=_safe_float(m_sub.group(5)),
                         ))
                     continue
 

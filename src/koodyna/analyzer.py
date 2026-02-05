@@ -268,6 +268,7 @@ class Analyzer:
             decomp_metrics=report.decomp_metrics,
             warnings=report.warnings,
             energy_snapshots=energy_analysis.snapshots,
+            performance=report.performance,
         )
         report.findings = all_findings
 

@@ -3,7 +3,7 @@
 from koodyna.models import (
     TerminationInfo, TerminationStatus, Finding, Severity,
     DecompMetrics, MassProperty, InterfaceSurfaceTimestep,
-    WarningEntry, EnergySnapshot,
+    WarningEntry, EnergySnapshot, PerformanceTiming,
 )
 
 
@@ -230,6 +230,81 @@ def _diagnose_warning_patterns(
     return findings
 
 
+def _diagnose_performance_bottlenecks(
+    performance: list[PerformanceTiming],
+) -> list[Finding]:
+    """Detect performance bottlenecks, especially MPP parallel efficiency issues.
+
+    Focus on:
+    - Excessive Force gather time (rigid body MPP communication overhead)
+    - High Mass Scaling time (excessive mass scaling events)
+    """
+    findings: list[Finding] = []
+    if not performance:
+        return findings
+
+    # Create a dict for easy lookup
+    perf_map = {p.component: p for p in performance}
+
+    # Check Force gather (MPP rigid body communication)
+    force_gather = perf_map.get("Force gather")
+    if force_gather:
+        # Force gather > 5% → WARNING (parallel overhead)
+        # Force gather > 10% → CRITICAL (severe parallel inefficiency)
+        if force_gather.cpu_percent > 10.0:
+            findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="performance",
+                title=f"Force gather 시간 과다 ({force_gather.cpu_percent:.1f}%)",
+                description=(
+                    f"Force gather가 전체 CPU의 {force_gather.cpu_percent:.1f}%를 소비합니다 "
+                    f"({force_gather.cpu_seconds:.2f}초). "
+                    f"이는 MPP 병렬 계산에서 rigid body 통신 오버헤드가 과도함을 나타냅니다. "
+                    f"병렬 효율이 크게 저하되고 있습니다."
+                ),
+                recommendation=(
+                    f"1. Rigid body 개수 감소 (불필요한 rigid body를 deformable로 변경)\n"
+                    f"2. MPP 프로세서 수 조정 (프로세서가 너무 많으면 통신 비용 증가)\n"
+                    f"3. RCFORC 출력 빈도 감소 (rigid body force 출력이 gather 유발)\n"
+                    f"4. Rigid body merge 검토 (작은 파트들을 병합)"
+                ),
+            ))
+        elif force_gather.cpu_percent > 5.0:
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="performance",
+                title=f"Force gather 시간 주의 ({force_gather.cpu_percent:.1f}%)",
+                description=(
+                    f"Force gather가 전체 CPU의 {force_gather.cpu_percent:.1f}%를 소비합니다. "
+                    f"MPP 병렬 계산에서 rigid body 통신 오버헤드가 있습니다."
+                ),
+                recommendation=(
+                    f"Rigid body 개수 또는 MPP 프로세서 수를 검토하세요. "
+                    f"프로세서 수를 줄이면 통신 비용이 감소할 수 있습니다."
+                ),
+            ))
+
+    # Check Mass Scaling (excessive mass scaling events)
+    mass_scaling = perf_map.get("Mass Scaling")
+    if mass_scaling and mass_scaling.cpu_percent > 5.0:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="performance",
+            title=f"Mass Scaling 시간 과다 ({mass_scaling.cpu_percent:.1f}%)",
+            description=(
+                f"Mass Scaling이 전체 CPU의 {mass_scaling.cpu_percent:.1f}%를 소비합니다. "
+                f"Mass scaling 이벤트가 빈번하게 발생하고 있습니다."
+            ),
+            recommendation=(
+                f"1. Mass scaling 설정 재검토 (*CONTROL_TIMESTEP, DT2MS)\n"
+                f"2. 메시 품질 개선 (과도하게 작은 요소 제거)\n"
+                f"3. 접촉 설정 확인 (과도한 penalty로 인한 dt 감소)"
+            ),
+        ))
+
+    return findings
+
+
 def run_diagnostics(
     termination: TerminationInfo,
     energy_findings: list[Finding],
@@ -244,6 +319,7 @@ def run_diagnostics(
     decomp_metrics: DecompMetrics | None = None,
     warnings: list[WarningEntry] | None = None,
     energy_snapshots: list[EnergySnapshot] | None = None,
+    performance: list[PerformanceTiming] | None = None,
 ) -> list[Finding]:
     """Aggregate and prioritize all findings from analysis modules."""
     all_findings: list[Finding] = []
@@ -325,6 +401,9 @@ def run_diagnostics(
     ))
     all_findings.extend(_diagnose_warning_patterns(
         warnings or [], termination,
+    ))
+    all_findings.extend(_diagnose_performance_bottlenecks(
+        performance or [],
     ))
 
     # Sort by severity: CRITICAL > WARNING > INFO

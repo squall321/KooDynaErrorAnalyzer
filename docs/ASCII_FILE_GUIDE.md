@@ -287,6 +287,10 @@ KooDynaErrorAnalyzer가 파싱하는 파일과 추가 분석 가능한 파일들
 - **Contact energy 과다** (>30%): 비정상 마찰/관통
 - **Contact energy spike** (50x 급증): penalty 문제/과도한 관통
 
+**d3hsp performance 기반 (신규 ✅)**:
+- **Force gather 과다** (>5%/10%): MPP rigid body 통신 오버헤드 → 병렬 효율 저하
+- **Mass Scaling 과다** (>5%): Mass scaling 이벤트 빈발 → 메시/접촉 문제
+
 **추가 구현 시 얻을 수 있는 것** (선택적):
 - **elout**: 응력 oscillation 감지 (hourglass mode 확인)
 - **rcforc/secforc**: 단면력 불연속 감지 (contact/erosion 천이 문제)
