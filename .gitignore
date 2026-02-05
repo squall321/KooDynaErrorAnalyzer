@@ -24,6 +24,9 @@ Tests/
 *.html
 !src/**/*.html
 
+# Test archives
+*.zip
+
 # OS
 .DS_Store
 Thumbs.db
