@@ -15,6 +15,11 @@ from koodyna.analysis.contact import analyze_contacts
 from koodyna.analysis.performance import analyze_performance, project_scaling
 from koodyna.analysis.diagnostics import run_diagnostics
 from koodyna.analysis.failure_analysis import analyze_failure_source
+from koodyna.analysis.numerical_instability import (
+    detect_shooting_nodes,
+    detect_high_frequency_oscillation,
+    detect_excessive_reaction_force,
+)
 
 
 class Analyzer:
@@ -205,6 +210,30 @@ class Analyzer:
             result_dir=self.result_dir,
         )
 
+        # --- Phase 5b: Numerical Instability Analysis ---
+        if self.verbose:
+            print(f"  Analyzing numerical instabilities...")
+
+        # Find nodout and bndout files
+        nodout_path = self.result_dir / "nodout" if (self.result_dir / "nodout").exists() else None
+        bndout_path = self.result_dir / "bndout" if (self.result_dir / "bndout").exists() else None
+
+        numerical_findings: list = []
+
+        if nodout_path:
+            if self.verbose:
+                print(f"    Checking for shooting nodes...")
+            numerical_findings.extend(detect_shooting_nodes(nodout_path))
+
+            if self.verbose:
+                print(f"    Checking for high-frequency oscillations...")
+            numerical_findings.extend(detect_high_frequency_oscillation(nodout_path))
+
+        if bndout_path:
+            if self.verbose:
+                print(f"    Checking for excessive reaction forces...")
+            numerical_findings.extend(detect_excessive_reaction_force(bndout_path))
+
         # --- Phase 6: Diagnostics ---
         if self.verbose:
             print(f"  Running diagnostics...")
@@ -214,7 +243,7 @@ class Analyzer:
             timestep_findings=timestep_analysis.findings,
             warning_findings=warning_findings,
             contact_findings=contact_findings,
-            performance_findings=perf_findings + failure_findings,
+            performance_findings=perf_findings + failure_findings + numerical_findings,
             contact_dt_limit=report.contact_dt_limit,
             min_dt=timestep_analysis.min_dt,
             interface_surface_timesteps=report.interface_surface_timesteps,

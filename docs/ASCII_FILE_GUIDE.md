@@ -105,42 +105,43 @@ KooDynaErrorAnalyzer가 파싱하는 파일과 추가 분석 가능한 파일들
 ---
 
 ### 8. nodout (Nodal Time History)
-**상태**: ❌ 미구현
+**상태**: ✅ 구현 완료
 **내용**:
-- 특정 노드의 변위 (dx, dy, dz)
-- 속도 (vx, vy, vz)
-- 가속도 (ax, ay, az)
+- 특정 노드의 변위/속도/가속도 (dx, dy, dz, vx, vy, vz, ax, ay, az)
+- 시간별 좌표 (x, y, z)
 
-**진단 가능 정보**:
-- **Shooting nodes 추적**: 비정상적으로 큰 속도/변위 (|v| > 1000 m/s)
-- **Constraint 검증**: 경계조건 노드의 변위가 0인지 확인
-- **진동 패턴**: 고주파 진동 발생 노드 (수치 불안정)
-- **충돌 검증**: 접촉 전후 속도 변화 확인
+**진단 정보** (수치해석 건강성):
+- **Shooting nodes 감지** (|v| > 1000 m/s): 비정상적으로 큰 속도 → constraint 오류, penalty 과다
+- **고주파 진동 감지** (ZCR > 10 kHz): Timestep 너무 큼 또는 hourglass 문제
+- ~~Constraint 검증~~ (구현 보류: d3hsp에서 constraint 정의 파싱 필요)
 
 **활용 시나리오**:
-- Constraint matrix NaN 오류 발생 시 → 관련 노드의 속도 이력 확인
-- 에너지 폭주 시 → 최대 속도 노드 추적하여 원인 파악
+- Constraint matrix NaN 오류 발생 시 → shooting nodes 추적하여 원인 노드 식별
+- 에너지 폭주 시 → 최대 속도 노드 추적
+- 수치 불안정성 진단 → 고주파 진동 노드 확인
 
-**파싱 난이도**: 중간
+**파싱 난이도**: 중간 (메모리 이슈: max_nodes 제한 필요)
 
 ---
 
 ### 9. bndout (Boundary Force Output)
-**상태**: ❌ 미구현
+**상태**: ✅ 구현 완료
 **내용**:
 - 경계조건 노드의 반력 (Fx, Fy, Fz, Mx, My, Mz)
-- 시간별 반력 변화
+- 시간별 반력/에너지 변화
 
-**진단 가능 정보**:
-- **Load path 검증**: 하중 전달 경로가 설계 의도와 일치하는지
-- **Constraint 적절성**: 과도한 반력 → 경계조건 재검토 필요
-- **충격 하중 크기**: 충돌 시 반력 peak 값
+**진단 정보** (수치해석 건강성):
+- **반력 spike 감지** (max/mean > 100): Penalty stiffness 과다 또는 초기 관통
+- **진동 반력 감지** (oscillation): Damping 부족 또는 timestep 너무 큼
 
 **활용 시나리오**:
-- Drop test 시 바닥 반력 → 충격 강도 정량화
-- 과도한 반력 발생 노드 → 구속 조건 완화 필요 판단
+- Drop test 시 바닥 반력 급증 → penalty factor 재조정 필요
+- 반력 진동 → global/contact damping 추가 필요
+- Contact 설정 검증 → 초기 관통 확인
 
 **파싱 난이도**: 중간
+
+**Note**: Load path 검증은 제외 (설계 검증이지 수치 문제 아님)
 
 ---
 
@@ -233,13 +234,13 @@ KooDynaErrorAnalyzer가 파싱하는 파일과 추가 분석 가능한 파일들
 
 ## 구현 우선순위 제안
 
-### Phase 1 (즉시 구현 추천)
-1. **elout 파서**: 요소 응력/변형률 → 파손 원인 정량적 분석
-2. **nodout 파서**: Shooting nodes 추적 → Constraint 오류 진단 개선
+### Phase 1 (완료 ✅)
+1. ✅ **nodout 파서**: Shooting nodes 추적 + 고주파 진동 감지
+2. ✅ **bndout 파서**: 반력 spike + 진동 감지
 
 ### Phase 2 (차기 구현)
-3. **bndout 파서**: 반력 분석 → 경계조건 검증
-4. **rcforc/secforc 파서**: 단면력 분석 → 구조 안전성 평가
+3. **elout 파서**: 응력 oscillation 감지 (크기 분석 제외)
+4. **rcforc/secforc 파서**: 단면력 불연속 감지
 
 ### Phase 3 (선택적)
 5. **nodfor 파서**: 노드 힘 분포 → 상세 접촉 분석
@@ -267,19 +268,23 @@ KooDynaErrorAnalyzer가 파싱하는 파일과 추가 분석 가능한 파일들
 
 ## 요약
 
-**현재 파싱 가능**: d3hsp, glstat, status.out, matsum, messag (핵심 진단 커버 ~80%)
+**현재 파싱 가능**: d3hsp, glstat, status.out, matsum, messag, **nodout**, **bndout** (핵심 진단 커버 ~90%)
 
-**추가 구현 시 얻을 수 있는 것**:
-- **elout**: 요소별 응력/변형률 → 파손 메커니즘 이해 (정량적)
-- **nodout**: Shooting nodes 추적 → Constraint 오류 명확화
-- **bndout**: 반력 분석 → 경계조건 적절성 검증
-- **rcforc/secforc**: 단면력 → 구조 부재 안전성
-- **nodfor**: 노드 힘 → 접촉 힘 분포 상세 분석
+**수치해석 건강성 진단** (✅ 구현됨):
+- **Shooting nodes 감지** (nodout): 속도 폭주 → constraint/penalty 문제
+- **고주파 진동 감지** (nodout): 비물리적 oscillation → timestep/hourglass 문제
+- **반력 spike 감지** (bndout): penalty 과다 → 초기 관통/경계조건 충돌
+- **반력 진동 감지** (bndout): damping 부족
+
+**추가 구현 시 얻을 수 있는 것** (선택적):
+- **elout**: 응력 oscillation 감지 (hourglass mode 확인)
+- **rcforc/secforc**: 단면력 불연속 감지 (contact/erosion 천이 문제)
+- **nodfor**: 노드 힘 분포 → 접촉 힘 집중 확인
 
 **파싱 난이도 vs 진단 가치**:
-- elout: 중간 난이도, **높은 가치** (요소 파손 직접 분석)
-- nodout: 중간 난이도, **높은 가치** (shooting nodes 추적)
-- bndout: 중간 난이도, 중간 가치 (구조 검증용)
+- ✅ nodout: 중간 난이도, **높은 가치** → 완료
+- ✅ bndout: 중간 난이도, **높은 가치** → 완료
+- elout: 중간 난이도, 중간 가치 (응력 oscillation만)
 - 나머지: 낮은 가치 (특수 목적)
 
-**권장 다음 단계**: elout, nodout 파서 구현 → 진단 시스템을 정량적 레벨로 향상
+**달성**: 핵심 수치 불안정성 진단 완료 → 툴은 **수치해석 건강성 검사** 역할 수행
