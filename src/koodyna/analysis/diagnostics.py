@@ -255,6 +255,54 @@ def _diagnose_warning_patterns(
             recommendation="메시 품질을 개선하거나 erosion을 활성화하세요.",
         ))
 
+    # Check for tied contact warnings (50135, 50136)
+    warning_50135 = next((w for w in warnings if w.code == 50135), None)
+    warning_50136 = next((w for w in warnings if w.code == 50136), None)
+
+    if warning_50135 and warning_50135.count > 1000:
+        interface_desc = f"인터페이스 {', '.join(map(str, warning_50135.affected_interfaces[:10]))}"
+        if len(warning_50135.affected_interfaces) > 10:
+            interface_desc += f" 등 {len(warning_50135.affected_interfaces)}개"
+
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="warnings",
+            title=f"Tied contact 노드 누락 (Warning 50135: {warning_50135.count}회)",
+            description=(
+                f"Tied contact에서 slave 노드가 master segment를 찾지 못했습니다 "
+                f"({warning_50135.count}회 발생). "
+                f"{interface_desc}에서 메시 불일치가 있습니다."
+            ),
+            recommendation=(
+                f"1. Tied contact 메시 호환성 확인 (master/slave)\n"
+                f"2. *CONTACT에서 SBOPT=3, DEPTH=5 옵션 추가\n"
+                f"3. 인터페이스 근처 메시 세분화\n"
+                f"4. Tied contact 대신 merge nodes 고려"
+            ),
+        ))
+
+    if warning_50136 and warning_50136.count > 100:
+        interface_desc = f"인터페이스 {', '.join(map(str, warning_50136.affected_interfaces[:10]))}"
+        if len(warning_50136.affected_interfaces) > 10:
+            interface_desc += f" 등 {len(warning_50136.affected_interfaces)}개"
+
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="warnings",
+            title=f"Tied contact 노드 거리 초과 (Warning 50136: {warning_50136.count}회)",
+            description=(
+                f"Slave 노드가 master segment로부터 너무 멀리 떨어져 있습니다 "
+                f"({warning_50136.count}회 발생). "
+                f"{interface_desc}에서 기하학적 간격이 있습니다."
+            ),
+            recommendation=(
+                f"1. Tied contact 검색 거리 증가 (SFACT 파라미터)\n"
+                f"2. Master/slave 표면 간 정렬 개선\n"
+                f"3. 파트 간 기하학적 간격 제거\n"
+                f"4. 메시 간격 확인 (초기 간섭 여부)"
+            ),
+        ))
+
     return findings
 
 
