@@ -226,18 +226,24 @@ def render_report(report: Report, no_color: bool = False):
     if ts.smallest_timesteps:
         # Table 1: Element-level detail (top 20)
         sorted_entries = sorted(ts.smallest_timesteps, key=lambda e: e.timestep)
+        has_proc = any(e.processor_id >= 0 for e in sorted_entries[:20])
         elem_table = Table(title="최소 타임스텝 요소 (상위 20개)", border_style="magenta")
         elem_table.add_column("#", justify="right", style="dim")
         elem_table.add_column("타입")
         elem_table.add_column("요소 ID", justify="right", style="cyan")
         elem_table.add_column("파트", justify="right")
         elem_table.add_column("dt", justify="right")
+        if has_proc:
+            elem_table.add_column("코어", justify="right", style="yellow")
 
         for i, entry in enumerate(sorted_entries[:20], 1):
-            elem_table.add_row(
+            row = [
                 str(i), entry.element_type, str(entry.element_number),
                 str(entry.part_number), f"{entry.timestep:.4E}",
-            )
+            ]
+            if has_proc:
+                row.append(f"#{entry.processor_id}" if entry.processor_id >= 0 else "?")
+            elem_table.add_row(*row)
         console.print(elem_table)
 
         # Table 2: Part summary (condensed)
@@ -441,6 +447,66 @@ def render_report(report: Report, no_color: bool = False):
             f"(~{max_mem * 8 / 1024 / 1024:.0f} MB) 평균={avg_mem:,.0f} "
             f"| 피크 랭크: #{max_rank}[/dim]"
         )
+
+    # === Interface Surface Timesteps ===
+    if report.interface_surface_timesteps:
+        active_surfs = [s for s in report.interface_surface_timesteps if s.is_active]
+        if active_surfs:
+            surf_table = Table(title="접촉 서프스 타임스텝 (활성 인터페이스)", border_style="red")
+            surf_table.add_column("인터페이스", justify="right", style="cyan")
+            surf_table.add_column("서프스")
+            surf_table.add_column("타입")
+            surf_table.add_column("서프스 dt", justify="right")
+            surf_table.add_column("제어 노드", justify="right")
+            surf_table.add_column("파트", justify="right")
+            for s in sorted(active_surfs, key=lambda x: x.surface_timestep):
+                dt_style = "bold red" if s.surface_timestep < 5e-8 else ""
+                surf_table.add_row(
+                    str(s.interface_id), s.surface, s.type_code,
+                    f"[{dt_style}]{s.surface_timestep:.4E}[/{dt_style}]" if dt_style else f"{s.surface_timestep:.4E}",
+                    str(s.controlling_node_id), str(s.part_id),
+                )
+            console.print(surf_table)
+        if report.contact_dt_limit > 0:
+            console.print(
+                f"  [yellow]LS-DYNA 접촉 안정성 권장 dt 상한: {report.contact_dt_limit:.3E}[/yellow]"
+            )
+
+    # === Decomposition Metrics ===
+    dm = report.decomp_metrics
+    if dm.min_cost > 0:
+        cost_ratio = dm.max_cost / dm.min_cost
+        ratio_style = "bold red" if cost_ratio > 1.05 else "dim"
+        console.print(
+            f"  [{ratio_style}]Decomposition: min={dm.min_cost:.6f} max={dm.max_cost:.6f} "
+            f"ratio={cost_ratio:.4f} std={dm.std_deviation:.2E} "
+            f"| 메모리: {dm.decomp_memory:,} + {dm.dynamic_memory:,} d-words[/{ratio_style}]"
+        )
+
+    # === Mass Properties ===
+    if report.mass_properties:
+        mp_table = Table(title="파트별 질량 특성", border_style="dim")
+        mp_table.add_column("파트", justify="right", style="cyan")
+        mp_table.add_column("질량", justify="right")
+        mp_table.add_column("CG (x,y,z)", justify="center")
+        mp_table.add_column("I11", justify="right")
+        mp_table.add_column("I22", justify="right")
+        mp_table.add_column("I33", justify="right")
+        mp_table.add_column("I비율", justify="right")
+        for mp in report.mass_properties:
+            i_vals = [mp.i11, mp.i22, mp.i33]
+            i_min = min(i_vals)
+            i_max = max(i_vals)
+            ratio = i_max / i_min if i_min > 0 else 0
+            ratio_style = "bold red" if ratio > 100 else ""
+            mp_table.add_row(
+                str(mp.part_id),
+                f"{mp.total_mass:.3E}",
+                f"({mp.cx:.2E},{mp.cy:.2E},{mp.cz:.2E})",
+                f"{mp.i11:.3E}", f"{mp.i22:.3E}", f"{mp.i33:.3E}",
+                f"[{ratio_style}]{ratio:.0f}x[/{ratio_style}]" if ratio_style else f"{ratio:.0f}x",
+            )
+        console.print(mp_table)
 
     # === Part Summary ===
     if report.parts:

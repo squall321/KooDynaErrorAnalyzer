@@ -86,6 +86,8 @@ class Analyzer:
             report.mpp_timing = d3hsp_data.mpp_timing
             report.keyword_counts = d3hsp_data.keyword_counts
             report.contact_definitions = d3hsp_data.contact_definitions
+            report.decomp_metrics = d3hsp_data.decomp_metrics
+            report.mass_properties = d3hsp_data.mass_properties
 
         if status_info:
             report.status = status_info
@@ -108,6 +110,18 @@ class Analyzer:
             report.initial_penetrations = all_pens
             # Memory per rank
             report.memory_per_rank = [md.max_memory_d for md in mes_data]
+            # Surface timestep + contact dt limit (from rank 0)
+            rank0 = next((md for md in mes_data if md.rank == 0), None)
+            if rank0:
+                report.interface_surface_timesteps = rank0.interface_surface_timesteps
+                report.contact_dt_limit = rank0.contact_dt_limit
+            # Build element→processor lookup from mes timestep data
+            elem_to_proc: dict[tuple[str, int], int] = {}
+            for md in mes_data:
+                for ts in md.smallest_timesteps:
+                    key = (ts.element_type, ts.element_number)
+                    if key not in elem_to_proc:
+                        elem_to_proc[key] = ts.processor_id
 
         # --- Phase 4: Analysis ---
         # Use glstat snapshots if available, otherwise d3hsp energy data
@@ -128,6 +142,13 @@ class Analyzer:
             tsmin=d3hsp_data.tsmin if d3hsp_data else 0.0,
         )
         report.timestep = timestep_analysis
+
+        # Map processor IDs onto timestep entries from mes data
+        if mes_data:
+            for ts in report.timestep.smallest_timesteps:
+                key = (ts.element_type, ts.element_number)
+                if key in elem_to_proc:
+                    ts.processor_id = elem_to_proc[key]
 
         if self.verbose:
             print(f"  Running warning analysis...")
@@ -174,6 +195,11 @@ class Analyzer:
             warning_findings=warning_findings,
             contact_findings=contact_findings,
             performance_findings=perf_findings,
+            contact_dt_limit=report.contact_dt_limit,
+            min_dt=timestep_analysis.min_dt,
+            interface_surface_timesteps=report.interface_surface_timesteps,
+            mass_properties=report.mass_properties,
+            decomp_metrics=report.decomp_metrics,
         )
         report.findings = all_findings
 

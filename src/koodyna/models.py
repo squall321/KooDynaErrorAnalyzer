@@ -116,6 +116,7 @@ class TimestepEntry:
     element_number: int = 0
     part_number: int = 0
     timestep: float = 0.0
+    processor_id: int = -1  # -1 = unknown, from mesXXXX file number
 
 
 @dataclass
@@ -222,6 +223,38 @@ class ScalingProjection:
 
 
 @dataclass
+class InterfaceSurfaceTimestep:
+    interface_id: int = 0
+    surface: str = ""           # "surfa" or "surfb"
+    type_code: str = ""         # e.g. "13", "o 6"
+    surface_timestep: float = 0.0
+    controlling_node_id: int = 0
+    part_id: int = 0
+    is_active: bool = True      # False if timestep == 1e16
+
+
+@dataclass
+class DecompMetrics:
+    min_cost: float = 0.0
+    max_cost: float = 0.0
+    std_deviation: float = 0.0
+    decomp_memory: int = 0
+    dynamic_memory: int = 0
+
+
+@dataclass
+class MassProperty:
+    part_id: int = 0
+    total_mass: float = 0.0
+    cx: float = 0.0
+    cy: float = 0.0
+    cz: float = 0.0
+    i11: float = 0.0
+    i22: float = 0.0
+    i33: float = 0.0
+
+
+@dataclass
 class StatusInfo:
     cpu_per_zone_ns: int = 0
     avg_cpu_per_zone_ns: int = 0
@@ -262,6 +295,10 @@ class Report:
     initial_penetrations: dict[int, int] = field(default_factory=dict)
     memory_per_rank: list[int] = field(default_factory=list)
     scaling_projections: list[ScalingProjection] = field(default_factory=list)
+    interface_surface_timesteps: list[InterfaceSurfaceTimestep] = field(default_factory=list)
+    contact_dt_limit: float = 0.0  # LS-DYNA 권장 접촉 안정성 dt 상한
+    decomp_metrics: DecompMetrics = field(default_factory=DecompMetrics)
+    mass_properties: list[MassProperty] = field(default_factory=list)
     status: StatusInfo = field(default_factory=StatusInfo)
     findings: list[Finding] = field(default_factory=list)
     keyword_counts: dict[str, int] = field(default_factory=dict)

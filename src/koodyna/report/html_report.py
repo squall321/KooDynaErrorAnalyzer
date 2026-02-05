@@ -370,13 +370,20 @@ def write_html_report(report: Report, filepath: Path):
         _w("<h2>최소 타임스텝 요소 (상위 20개)</h2>")
         sorted_entries = sorted(ts.smallest_timesteps, key=lambda e: e.timestep)
 
+        has_proc = any(e.processor_id >= 0 for e in sorted_entries[:20])
         _w("<table><thead><tr>")
         _w('<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>')
+        if has_proc:
+            _w('<th class="r">코어</th>')
         _w("</tr></thead><tbody>")
         for i, entry in enumerate(sorted_entries[:20], 1):
             _w(f'<tr><td class="r">{i}</td><td>{_esc(entry.element_type)}</td>')
             _w(f'<td class="id">{entry.element_number}</td><td class="r">{entry.part_number}</td>')
-            _w(f'<td class="r mono">{entry.timestep:.4E}</td></tr>')
+            _w(f'<td class="r mono">{entry.timestep:.4E}</td>')
+            if has_proc:
+                proc_str = f"#{entry.processor_id}" if entry.processor_id >= 0 else "?"
+                _w(f'<td class="r">{proc_str}</td>')
+            _w('</tr>')
         _w("</tbody></table>")
 
         # Part summary
@@ -569,6 +576,58 @@ def write_html_report(report: Report, filepath: Path):
         _w(f'<div class="note">메모리 (최대 d-words): 최소={min_mem:,} 최대={max_mem:,} '
            f'(~{max_mem * 8 / 1024 / 1024:.0f} MB) 평균={avg_mem:,.0f} '
            f'| 피크 랭크: #{max_rank}</div>')
+
+    # === Interface Surface Timesteps ===
+    if report.interface_surface_timesteps:
+        active = [s for s in report.interface_surface_timesteps if s.is_active]
+        if active:
+            active_sorted = sorted(active, key=lambda s: s.surface_timestep)
+            _w("<h2>접촉 서프스 타임스텝</h2>")
+            if report.contact_dt_limit > 0:
+                _w(f'<div class="warn">접촉 안정성 dt 상한: {report.contact_dt_limit:.3E} '
+                   f'— 이 값을 초과하면 접촉 불안정 발생 가능</div>')
+            _w("<table><thead><tr>")
+            _w('<th class="r">인터페이스</th><th class="c">서프스</th><th>타입</th>')
+            _w('<th class="r">서프스 dt</th><th class="r">제어 노드</th><th class="r">파트 ID</th>')
+            _w("</tr></thead><tbody>")
+            for s in active_sorted:
+                dt_cls = ' class="r mono critical"' if s.surface_timestep < 5e-8 else ' class="r mono"'
+                _w(f'<tr><td class="id">{s.interface_id}</td><td class="c">{_esc(s.surface)}</td>')
+                _w(f'<td>{_esc(s.type_code)}</td>')
+                _w(f'<td{dt_cls}>{s.surface_timestep:.3E}</td>')
+                _w(f'<td class="r">{s.controlling_node_id}</td><td class="r">{s.part_id}</td></tr>')
+            _w("</tbody></table>")
+
+    # === Decomposition Metrics ===
+    if report.decomp_metrics and report.decomp_metrics.min_cost > 0:
+        dm = report.decomp_metrics
+        ratio = dm.max_cost / dm.min_cost
+        ratio_cls = ' class="critical"' if ratio > 1.05 else ''
+        _w("<h2>Decomposition 부하 분포</h2>")
+        _w(f'<div class="note">Min cost={dm.min_cost:.6f} | Max cost={dm.max_cost:.6f} | '
+           f'StdDev={dm.std_deviation:.6f} | '
+           f'Max/Min 비율: <span{ratio_cls}>{ratio:.5f}</span></div>')
+
+    # === Mass Properties ===
+    if report.mass_properties:
+        _w("<h2>파트별 질량 특성</h2>")
+        _w("<table><thead><tr>")
+        _w('<th class="r">파트 ID</th><th class="r">총 질량</th>')
+        _w('<th class="r">CG-X</th><th class="r">CG-Y</th><th class="r">CG-Z</th>')
+        _w('<th class="r">I11</th><th class="r">I22</th><th class="r">I33</th><th class="r">I비율</th>')
+        _w("</tr></thead><tbody>")
+        for mp in report.mass_properties:
+            i_vals = [mp.i11, mp.i22, mp.i33]
+            i_min = min(i_vals)
+            i_max = max(i_vals)
+            ratio = (i_max / i_min) if i_min > 0 else 0.0
+            ratio_cls = ' class="r mono critical"' if ratio > 100 else ' class="r mono"'
+            _w(f'<tr><td class="id">{mp.part_id}</td><td class="r mono">{_fmt_sci(mp.total_mass)}</td>')
+            _w(f'<td class="r mono">{_fmt_sci(mp.cx)}</td><td class="r mono">{_fmt_sci(mp.cy)}</td>')
+            _w(f'<td class="r mono">{_fmt_sci(mp.cz)}</td>')
+            _w(f'<td class="r mono">{_fmt_sci(mp.i11)}</td><td class="r mono">{_fmt_sci(mp.i22)}</td>')
+            _w(f'<td class="r mono">{_fmt_sci(mp.i33)}</td><td{ratio_cls}>{ratio:.0f}x</td></tr>')
+        _w("</tbody></table>")
 
     # === Part Definitions ===
     if report.parts:

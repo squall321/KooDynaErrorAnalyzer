@@ -7,6 +7,7 @@ from koodyna.models import (
     SimulationHeader, ModelSize, TerminationInfo, TerminationStatus,
     WarningEntry, TimestepEntry, PartDefinition, PerformanceTiming,
     ContactTiming, MPPProcessorTiming, EnergySnapshot, ContactDefinition,
+    DecompMetrics, MassProperty,
 )
 
 # --- Header patterns ---
@@ -120,6 +121,23 @@ RE_INTERF_ID = re.compile(
 RE_CPU_PROC = re.compile(
     r'#\s+(\d+)\s+(\S+)\s+([\d.]+)\s+([\d.E+\-]+)'
 )
+# --- Decomposition metrics ---
+RE_DECOMP_MIN = re.compile(r'Minumum:\s+([\d.E+\-]+)')
+RE_DECOMP_MAX = re.compile(r'Maximum:\s+([\d.E+\-]+)')
+RE_DECOMP_STDDEV = re.compile(r'Standard Deviation:\s+([\d.E+\-]+)')
+RE_DECOMP_MEM = re.compile(r'Memory required for decomposition\s+:\s+(\d+)')
+RE_DECOMP_DYN_MEM = re.compile(r'Additional dynamic memory required\s+:\s+(\d+)')
+
+# --- Mass properties ---
+RE_MASS_PART_HEADER = re.compile(r'm a s s\s+p r o p e r t i e s\s+o f\s+p a r t\s*#\s*(\d+)')
+RE_MASS_TOTAL = re.compile(r'total mass of part\s+=\s+([\d.E+\-]+)')
+RE_MASS_CX = re.compile(r'x-coordinate of mass center\s*=\s*(-?[\d.E+\-]+)')
+RE_MASS_CY = re.compile(r'y-coordinate of mass center\s*=\s*(-?[\d.E+\-]+)')
+RE_MASS_CZ = re.compile(r'z-coordinate of mass center\s*=\s*(-?[\d.E+\-]+)')
+RE_MASS_I11 = re.compile(r'i11\s*=\s*([\d.E+\-]+)')
+RE_MASS_I22 = re.compile(r'i22\s*=\s*([\d.E+\-]+)')
+RE_MASS_I33 = re.compile(r'i33\s*=\s*([\d.E+\-]+)')
+
 RE_START_TIME = re.compile(r'Start time\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})')
 RE_END_TIME = re.compile(r'End time\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})')
 RE_ELAPSED = re.compile(r'Elapsed time\s+(\d+)\s+seconds')
@@ -173,6 +191,8 @@ class D3hspData:
         self.dt_scale_factor: float = 0.0
         self.dt2ms: float = 0.0
         self.tsmin: float = 0.0
+        self.decomp_metrics = DecompMetrics()
+        self.mass_properties: list[MassProperty] = []
 
 
 class D3hspParser:
@@ -446,6 +466,51 @@ class D3hspParser:
                         data.mpp_timing.append(mpp)
                     if "T o t a l s" in stripped:
                         in_cpu_timing = False
+
+                # --- Decomposition metrics ---
+                m = RE_DECOMP_MIN.search(stripped)
+                if m:
+                    data.decomp_metrics.min_cost = _safe_float(m.group(1))
+                m = RE_DECOMP_MAX.search(stripped)
+                if m:
+                    data.decomp_metrics.max_cost = _safe_float(m.group(1))
+                m = RE_DECOMP_STDDEV.search(stripped)
+                if m:
+                    data.decomp_metrics.std_deviation = _safe_float(m.group(1))
+                m = RE_DECOMP_MEM.search(stripped)
+                if m:
+                    data.decomp_metrics.decomp_memory = _safe_int(m.group(1))
+                m = RE_DECOMP_DYN_MEM.search(stripped)
+                if m:
+                    data.decomp_metrics.dynamic_memory = _safe_int(m.group(1))
+
+                # --- Mass properties ---
+                m = RE_MASS_PART_HEADER.search(stripped)
+                if m:
+                    data.mass_properties.append(MassProperty(part_id=_safe_int(m.group(1))))
+                if data.mass_properties:
+                    mp = data.mass_properties[-1]
+                    m = RE_MASS_TOTAL.search(stripped)
+                    if m:
+                        mp.total_mass = _safe_float(m.group(1))
+                    m = RE_MASS_CX.search(stripped)
+                    if m:
+                        mp.cx = _safe_float(m.group(1))
+                    m = RE_MASS_CY.search(stripped)
+                    if m:
+                        mp.cy = _safe_float(m.group(1))
+                    m = RE_MASS_CZ.search(stripped)
+                    if m:
+                        mp.cz = _safe_float(m.group(1))
+                    m = RE_MASS_I11.search(stripped)
+                    if m:
+                        mp.i11 = _safe_float(m.group(1))
+                    m = RE_MASS_I22.search(stripped)
+                    if m:
+                        mp.i22 = _safe_float(m.group(1))
+                    m = RE_MASS_I33.search(stripped)
+                    if m:
+                        mp.i33 = _safe_float(m.group(1))
 
                 # --- Final summary ---
                 m = RE_PROBLEM_TIME.search(stripped)
