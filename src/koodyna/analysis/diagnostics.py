@@ -4,6 +4,7 @@ from koodyna.models import (
     TerminationInfo, TerminationStatus, Finding, Severity,
     DecompMetrics, MassProperty, InterfaceSurfaceTimestep,
     WarningEntry, EnergySnapshot, PerformanceTiming,
+    TimestepEntry, PartDefinition,
 )
 
 
@@ -420,6 +421,59 @@ def _diagnose_performance_bottlenecks(
     return findings
 
 
+def _diagnose_problematic_parts(
+    smallest_timesteps: list[TimestepEntry],
+    parts: list[PartDefinition],
+) -> list[Finding]:
+    """Diagnose parts that dominate timestep control or have issues.
+
+    Identifies parts that:
+    - Dominate the smallest timesteps (>50% of top 100)
+    - Have excessively small timesteps indicating mesh problems
+    """
+    findings: list[Finding] = []
+
+    if not smallest_timesteps or not parts:
+        return findings
+
+    # Count timesteps per part
+    part_ts_count: dict[int, int] = {}
+    for ts in smallest_timesteps:
+        part_id = ts.part_number
+        part_ts_count[part_id] = part_ts_count.get(part_id, 0) + 1
+
+    # Find part name mapping
+    part_names = {p.part_id: p.name for p in parts}
+
+    # Find dominant parts (>50% of smallest timesteps)
+    total_ts = len(smallest_timesteps)
+    for part_id, count in sorted(part_ts_count.items(), key=lambda x: x[1], reverse=True):
+        ratio = count / total_ts
+        if ratio > 0.50:
+            part_name = part_names.get(part_id, f"Part {part_id}")
+            min_dt = min(ts.timestep for ts in smallest_timesteps if ts.part_number == part_id)
+
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="part_analysis",
+                title=f"파트 {part_id} ({part_name})가 timestep 지배 ({ratio:.0%})",
+                description=(
+                    f"파트 {part_id} ({part_name})가 가장 작은 timestep의 {ratio:.0%}를 차지합니다 "
+                    f"({count}/{total_ts}개). "
+                    f"최소 dt={min_dt:.3E}. "
+                    f"이 파트의 메시 품질이 전체 시뮬레이션 속도를 결정합니다."
+                ),
+                recommendation=(
+                    f"1. 파트 {part_id}의 메시 품질 개선 (왜곡된 요소 제거)\n"
+                    f"2. 요소 크기 증가 (over-refined 메시 확인)\n"
+                    f"3. 재료 물성 확인 (과도하게 높은 탄성계수)\n"
+                    f"4. Mass scaling 적용 고려 (*CONTROL_TIMESTEP)"
+                ),
+            ))
+
+    return findings
+
+
 def run_diagnostics(
     termination: TerminationInfo,
     energy_findings: list[Finding],
@@ -435,6 +489,8 @@ def run_diagnostics(
     warnings: list[WarningEntry] | None = None,
     energy_snapshots: list[EnergySnapshot] | None = None,
     performance: list[PerformanceTiming] | None = None,
+    smallest_timesteps: list[TimestepEntry] | None = None,
+    parts: list[PartDefinition] | None = None,
 ) -> list[Finding]:
     """Aggregate and prioritize all findings from analysis modules."""
     all_findings: list[Finding] = []
@@ -519,6 +575,10 @@ def run_diagnostics(
     ))
     all_findings.extend(_diagnose_performance_bottlenecks(
         performance or [],
+    ))
+    all_findings.extend(_diagnose_problematic_parts(
+        smallest_timesteps or [],
+        parts or [],
     ))
 
     # Sort by severity: CRITICAL > WARNING > INFO

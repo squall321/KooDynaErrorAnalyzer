@@ -274,6 +274,8 @@ class Analyzer:
             warnings=report.warnings,
             energy_snapshots=energy_analysis.snapshots,
             performance=report.performance,
+            smallest_timesteps=timestep_analysis.smallest_timesteps,
+            parts=report.parts,
         )
         report.findings = all_findings
 
