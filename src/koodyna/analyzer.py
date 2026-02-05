@@ -22,6 +22,7 @@ from koodyna.analysis.numerical_instability import (
     detect_hourglass_dominance,
     detect_kinetic_energy_explosion,
     detect_contact_energy_anomaly,
+    detect_timestep_volatility,
 )
 
 
@@ -250,6 +251,10 @@ class Analyzer:
             if self.verbose:
                 print(f"    Checking contact energy...")
             numerical_findings.extend(detect_contact_energy_anomaly(energy_snapshots))
+
+            if self.verbose:
+                print(f"    Checking timestep stability...")
+            numerical_findings.extend(detect_timestep_volatility(energy_snapshots))
 
         # --- Phase 6: Diagnostics ---
         if self.verbose:

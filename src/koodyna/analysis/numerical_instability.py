@@ -583,3 +583,92 @@ def detect_contact_energy_anomaly(
                 break
 
     return findings
+
+
+def detect_timestep_volatility(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect sudden timestep changes (volatility).
+
+    Sudden timestep changes indicate numerical instability precursors:
+    - dt drops 10× within short period → instability starting
+    - Frequent dt fluctuations → marginal stability
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots or len(energy_snapshots) < 20:
+        return findings
+
+    # Check for sudden dt drop (compare consecutive windows)
+    window_size = max(5, len(energy_snapshots) // 20)
+
+    for i in range(window_size, len(energy_snapshots) - window_size):
+        prev_window = energy_snapshots[i-window_size:i]
+        next_window = energy_snapshots[i:i+window_size]
+
+        prev_dt = [s.timestep for s in prev_window if s.timestep > 0]
+        next_dt = [s.timestep for s in next_window if s.timestep > 0]
+
+        if not prev_dt or not next_dt:
+            continue
+
+        avg_prev = sum(prev_dt) / len(prev_dt)
+        avg_next = sum(next_dt) / len(next_dt)
+
+        if avg_prev > 0 and avg_next > 0 and avg_prev / avg_next >= 10:
+            time_span = energy_snapshots[i+window_size-1].time - energy_snapshots[i-window_size].time
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="numerical_instability",
+                title=f"Timestep sudden drop (10x in {time_span:.3E}s)",
+                description=(
+                    f"Timestep이 {time_span:.3E}초 동안 {avg_prev/avg_next:.1f}배 감소했습니다 "
+                    f"(dt: {avg_prev:.3E} → {avg_next:.3E}). "
+                    f"수치 불안정성의 전조 증상일 수 있습니다."
+                ),
+                recommendation=(
+                    f"1. 시간 {energy_snapshots[i].time:.3E}s 전후의 변형 확인 (애니메이션)\n"
+                    f"2. 관련 파트의 메시 품질 확인\n"
+                    f"3. Contact 관통 여부 확인\n"
+                    f"4. Timestep collapse 방지 조치 필요"
+                ),
+            ))
+            break  # Report only first occurrence
+
+    # Check for frequent fluctuations (oscillating dt)
+    if len(energy_snapshots) > 50:
+        dt_values = [s.timestep for s in energy_snapshots if s.timestep > 0]
+        if len(dt_values) > 20:
+            # Count direction changes in dt
+            changes = 0
+            for i in range(1, len(dt_values) - 1):
+                if (dt_values[i] > dt_values[i-1] and dt_values[i] > dt_values[i+1]) or \
+                   (dt_values[i] < dt_values[i-1] and dt_values[i] < dt_values[i+1]):
+                    changes += 1
+
+            # If more than 30% of points are local extrema → oscillating
+            if changes / len(dt_values) > 0.3:
+                mean_dt = sum(dt_values) / len(dt_values)
+                findings.append(Finding(
+                    severity=Severity.INFO,
+                    category="numerical_instability",
+                    title=f"Timestep oscillation detected",
+                    description=(
+                        f"Timestep이 빈번하게 변동합니다 (평균={mean_dt:.3E}). "
+                        f"시뮬레이션이 안정성 경계에서 작동하고 있을 수 있습니다."
+                    ),
+                    recommendation=(
+                        f"1. 변형이 큰 영역의 메시 개선\n"
+                        f"2. Contact 설정 재검토\n"
+                        f"3. Mass scaling 검토 (DT2MS 설정)"
+                    ),
+                ))
+
+    return findings

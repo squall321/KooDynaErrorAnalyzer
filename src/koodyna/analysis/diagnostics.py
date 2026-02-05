@@ -52,23 +52,51 @@ def _diagnose_mass_properties(mass_properties: list[MassProperty]) -> list[Findi
 
 
 def _diagnose_decomp(decomp_metrics: DecompMetrics) -> list[Finding]:
+    """Diagnose MPP decomposition load imbalance.
+
+    Imbalance > 50% → CRITICAL (severe imbalance, some processors overloaded)
+    Imbalance > 30% → WARNING (significant imbalance, scaling efficiency reduced)
+    """
     findings: list[Finding] = []
-    if decomp_metrics.min_cost <= 0:
+    if decomp_metrics.min_cost <= 0 or decomp_metrics.max_cost <= 0:
         return findings
-    ratio = decomp_metrics.max_cost / decomp_metrics.min_cost
-    if ratio > 1.05:
+
+    # Calculate imbalance percentage: (max - min) / max
+    imbalance = (decomp_metrics.max_cost - decomp_metrics.min_cost) / decomp_metrics.max_cost
+
+    if imbalance > 0.50:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="decomposition",
+            title=f"MPP 부하 불균형 심각 ({imbalance:.1%})",
+            description=(
+                f"프로세서 간 부하 차이가 {imbalance:.1%}입니다 "
+                f"(Min={decomp_metrics.min_cost:.6f}, Max={decomp_metrics.max_cost:.6f}). "
+                f"일부 프로세서만 과부하 상태이며, 병렬 효율이 크게 저하됩니다."
+            ),
+            recommendation=(
+                f"1. Decomposition 방법 변경 (*CONTROL_MPP_DECOMPOSITION_METHOD=METIS)\n"
+                f"2. 프로세서 수 조정 (현재 설정이 모델에 부적합)\n"
+                f"3. 모델 구조 재검토 (불균형한 파트 분포)"
+            ),
+        ))
+    elif imbalance > 0.30:
         findings.append(Finding(
             severity=Severity.WARNING,
             category="decomposition",
-            title=f"Decomposition 부하 불균형: max/min 비율 {ratio:.3f}",
+            title=f"MPP 부하 불균형 ({imbalance:.1%})",
             description=(
-                f"Min cost={decomp_metrics.min_cost:.6f}, "
-                f"Max cost={decomp_metrics.max_cost:.6f}, "
-                f"StdDev={decomp_metrics.std_deviation:.6f}. "
-                f"코어 수 증가 시 스케일링 효율이 저하될 수 있습니다."
+                f"프로세서 간 부하 차이가 {imbalance:.1%}입니다 "
+                f"(Min={decomp_metrics.min_cost:.6f}, Max={decomp_metrics.max_cost:.6f}). "
+                f"병렬 스케일링 효율이 저하될 수 있습니다."
             ),
-            recommendation="RCB 대신 METIS decomposition을 시도하거나, 모델 구조를 검토하세요.",
+            recommendation=(
+                f"1. Decomposition 방법 변경 (RCB → METIS)\n"
+                f"2. 프로세서 수 최적화\n"
+                f"3. Standard deviation: {decomp_metrics.std_deviation:.6f}"
+            ),
         ))
+
     return findings
 
 
