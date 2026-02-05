@@ -3,6 +3,7 @@
 from koodyna.models import (
     TerminationInfo, TerminationStatus, Finding, Severity,
     DecompMetrics, MassProperty, InterfaceSurfaceTimestep,
+    WarningEntry, EnergySnapshot,
 )
 
 
@@ -36,25 +37,17 @@ def _diagnose_contact_dt(
 
 
 def _diagnose_mass_properties(mass_properties: list[MassProperty]) -> list[Finding]:
+    """
+    Inertia ratio check disabled.
+
+    Rationale: Part-level inertia ratios reflect design geometry (thin walls,
+    beams, PCBs), not mesh quality issues. For deformable parts, inertia tensors
+    are post-processing metrics and don't affect simulation stability. Only rigid
+    bodies with extreme ratios (>1000) might show numerical issues in rotational
+    dynamics, which is rare in typical drop/impact simulations.
+    """
     findings: list[Finding] = []
-    for mp in mass_properties:
-        i_vals = [mp.i11, mp.i22, mp.i33]
-        i_min = min(i_vals)
-        i_max = max(i_vals)
-        if i_min <= 0:
-            continue
-        ratio = i_max / i_min
-        if ratio > 100:
-            findings.append(Finding(
-                severity=Severity.WARNING,
-                category="mass",
-                title=f"파트 {mp.part_id}: 주관성모멘트 비율 {ratio:.0f}x (I_max/I_min > 100)",
-                description=(
-                    f"I11={mp.i11:.3E}, I22={mp.i22:.3E}, I33={mp.i33:.3E}. "
-                    f"극단적인 관성 비율은 강체 회전 불안정성을 유발할 수 있습니다."
-                ),
-                recommendation="해당 파트의 기하학적 형상과 재료 설정을 검토하세요.",
-            ))
+    # Diagnostic disabled - inertia ratio is not a reliability indicator for deformable parts
     return findings
 
 
@@ -79,6 +72,164 @@ def _diagnose_decomp(decomp_metrics: DecompMetrics) -> list[Finding]:
     return findings
 
 
+def _diagnose_timestep_collapse(
+    min_dt: float,
+    warnings: list[WarningEntry],
+    termination: TerminationInfo,
+) -> list[Finding]:
+    """Detect timestep collapse - simulation becoming impractical due to tiny timestep."""
+    findings: list[Finding] = []
+
+    # Check for extreme timestep reduction
+    if min_dt < 1e-11 and min_dt > 0:
+        # Count negative volume warnings
+        neg_vol_warnings = [w for w in warnings if w.code == 40509]
+        neg_vol_count = sum(w.count for w in neg_vol_warnings)
+
+        severity = Severity.CRITICAL if neg_vol_count > 50 else Severity.WARNING
+        findings.append(Finding(
+            severity=severity,
+            category="timestep",
+            title=f"Timestep collapse detected (dt = {min_dt:.3E})",
+            description=(
+                f"최소 timestep이 {min_dt:.3E}로 감소했습니다. "
+                f"이는 시뮬레이션을 실질적으로 불가능하게 만듭니다. "
+                + (f"Negative volume warning(40509)이 {neg_vol_count}회 발생했습니다."
+                   if neg_vol_count > 0 else "")
+            ),
+            recommendation=(
+                "요소 붕괴(element collapse) 또는 과도한 변형이 원인입니다. "
+                "해당 요소의 메시 품질을 개선하거나 *MAT_ADD_EROSION으로 "
+                "파손 요소를 제거하세요. dt < 1e-11은 실용적이지 않습니다."
+            ),
+        ))
+
+    return findings
+
+
+def _diagnose_energy_instability(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """Detect energy instability patterns that indicate impending failure."""
+    findings: list[Finding] = []
+
+    if not energy_snapshots:
+        return findings
+
+    final = energy_snapshots[-1]
+    initial_total = energy_snapshots[0].total if energy_snapshots[0].total != 0 else 1.0
+
+    # Check energy ratio explosion
+    if final.energy_ratio > 4.0:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="energy",
+            title=f"에너지 비율 폭주 (ratio = {final.energy_ratio:.2f})",
+            description=(
+                f"에너지 비율이 {final.energy_ratio:.2f}로 상승했습니다. "
+                f"이는 NaN이나 제약조건 행렬 오류(Error 30358)의 전조입니다."
+            ),
+            recommendation=(
+                "제약조건(*CONSTRAINED_*)과 접촉 정의를 점검하세요. "
+                "'shooting nodes' (비정상적으로 멀리 이동하는 노드)를 확인하세요."
+            ),
+        ))
+    elif final.energy_ratio > 3.0:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="energy",
+            title=f"에너지 비율 상승 (ratio = {final.energy_ratio:.2f})",
+            description=(
+                f"에너지 비율이 {final.energy_ratio:.2f}입니다. "
+                f"정상 범위(0.95~1.05)를 크게 벗어났습니다."
+            ),
+            recommendation="접촉 정의와 경계조건을 검토하세요.",
+        ))
+
+    # Check for negative internal energy
+    if final.internal < 0:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="energy",
+            title=f"음수 내부 에너지 (IE = {final.internal:.3E})",
+            description=(
+                "내부 에너지가 음수입니다. 이는 물리적으로 불가능하며 "
+                "수치적 불안정성을 의미합니다."
+            ),
+            recommendation=(
+                "제약조건과 접촉 설정을 점검하세요. "
+                "과도한 관통(penetration)이나 잘못된 경계조건이 원인일 수 있습니다."
+            ),
+        ))
+
+    return findings
+
+
+def _diagnose_warning_patterns(
+    warnings: list[WarningEntry],
+    termination: TerminationInfo,
+) -> list[Finding]:
+    """Detect problematic warning patterns based on frequency and type."""
+    findings: list[Finding] = []
+
+    if termination.total_cycles == 0:
+        return findings
+
+    # Check for high-frequency warnings (> 50% of cycles)
+    for w in warnings:
+        if w.count == 0:
+            continue
+        ratio = w.count / termination.total_cycles
+
+        if ratio > 0.5:
+            # Warning appears in > 50% of cycles - systemic issue
+            if w.code == 40509:  # Negative volume
+                findings.append(Finding(
+                    severity=Severity.CRITICAL,
+                    category="warnings",
+                    title=f"Warning {w.code}: 전체 사이클의 {ratio:.0%} 발생",
+                    description=(
+                        f"Negative volume warning이 {w.count}회 발생 "
+                        f"(전체 사이클 {termination.total_cycles}의 {ratio:.0%}). "
+                        f"이는 근본적인 요소 품질 문제를 나타냅니다."
+                    ),
+                    recommendation=(
+                        "해당 요소의 메시를 개선하거나 erosion 기준을 추가하세요. "
+                        "매 사이클 반복되는 경고는 모델 재작성이 필요할 수 있습니다."
+                    ),
+                ))
+            elif w.code in [40538, 40540]:  # Contact issues
+                findings.append(Finding(
+                    severity=Severity.WARNING,
+                    category="warnings",
+                    title=f"Warning {w.code}: 접촉 정의 문제 (사이클의 {ratio:.0%})",
+                    description=(
+                        f"접촉 관련 warning이 {w.count}회 발생. "
+                        f"Tied interface 정의에 문제가 있습니다."
+                    ),
+                    recommendation=(
+                        f"인터페이스 {', '.join(map(str, w.affected_interfaces[:5]))} "
+                        f"등의 접촉 정의를 재검토하세요."
+                    ),
+                ))
+
+    # Check for specific critical errors embedded as warnings
+    neg_vol_total = sum(w.count for w in warnings if w.code == 40509)
+    if neg_vol_total > 100:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="warnings",
+            title=f"Negative volume 누적 {neg_vol_total}회",
+            description=(
+                f"Negative volume이 {neg_vol_total}회 발생했습니다. "
+                f"요소 붕괴가 진행 중입니다."
+            ),
+            recommendation="메시 품질을 개선하거나 erosion을 활성화하세요.",
+        ))
+
+    return findings
+
+
 def run_diagnostics(
     termination: TerminationInfo,
     energy_findings: list[Finding],
@@ -91,6 +242,8 @@ def run_diagnostics(
     interface_surface_timesteps: list[InterfaceSurfaceTimestep] | None = None,
     mass_properties: list[MassProperty] | None = None,
     decomp_metrics: DecompMetrics | None = None,
+    warnings: list[WarningEntry] | None = None,
+    energy_snapshots: list[EnergySnapshot] | None = None,
 ) -> list[Finding]:
     """Aggregate and prioritize all findings from analysis modules."""
     all_findings: list[Finding] = []
@@ -162,6 +315,17 @@ def run_diagnostics(
     ))
     all_findings.extend(_diagnose_mass_properties(mass_properties or []))
     all_findings.extend(_diagnose_decomp(decomp_metrics or DecompMetrics()))
+
+    # Advanced diagnostics based on test case analysis
+    all_findings.extend(_diagnose_timestep_collapse(
+        min_dt, warnings or [], termination,
+    ))
+    all_findings.extend(_diagnose_energy_instability(
+        energy_snapshots or [],
+    ))
+    all_findings.extend(_diagnose_warning_patterns(
+        warnings or [], termination,
+    ))
 
     # Sort by severity: CRITICAL > WARNING > INFO
     severity_order = {Severity.CRITICAL: 0, Severity.WARNING: 1, Severity.INFO: 2}

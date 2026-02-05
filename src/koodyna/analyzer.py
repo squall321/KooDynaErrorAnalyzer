@@ -14,6 +14,7 @@ from koodyna.analysis.warnings import analyze_warnings
 from koodyna.analysis.contact import analyze_contacts
 from koodyna.analysis.performance import analyze_performance, project_scaling
 from koodyna.analysis.diagnostics import run_diagnostics
+from koodyna.analysis.failure_analysis import analyze_failure_source
 
 
 class Analyzer:
@@ -185,7 +186,26 @@ class Analyzer:
             elapsed_seconds=report.termination.elapsed_seconds,
         )
 
-        # --- Phase 5: Diagnostics ---
+        # --- Phase 5: Failure Source Analysis ---
+        if self.verbose:
+            print(f"  Analyzing failure sources...")
+
+        # Find messag file if it exists
+        messag_path = None
+        for candidate in ['messag', 'message', 'MESSAG']:
+            path = self.result_dir / candidate
+            if path.exists():
+                messag_path = path
+                break
+
+        failure_findings = analyze_failure_source(
+            messag_path=messag_path,
+            d3hsp_path=discovered.get("d3hsp"),
+            smallest_timesteps=d3hsp_data.smallest_timesteps if d3hsp_data else [],
+            result_dir=self.result_dir,
+        )
+
+        # --- Phase 6: Diagnostics ---
         if self.verbose:
             print(f"  Running diagnostics...")
         all_findings = run_diagnostics(
@@ -194,12 +214,14 @@ class Analyzer:
             timestep_findings=timestep_analysis.findings,
             warning_findings=warning_findings,
             contact_findings=contact_findings,
-            performance_findings=perf_findings,
+            performance_findings=perf_findings + failure_findings,
             contact_dt_limit=report.contact_dt_limit,
             min_dt=timestep_analysis.min_dt,
             interface_surface_timesteps=report.interface_surface_timesteps,
             mass_properties=report.mass_properties,
             decomp_metrics=report.decomp_metrics,
+            warnings=report.warnings,
+            energy_snapshots=energy_analysis.snapshots,
         )
         report.findings = all_findings
 
