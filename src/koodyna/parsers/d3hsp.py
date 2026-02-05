@@ -1,0 +1,686 @@
+"""Parser for LS-DYNA d3hsp file (high-speed post-processing database)."""
+
+import re
+from pathlib import Path
+
+from koodyna.models import (
+    SimulationHeader, ModelSize, TerminationInfo, TerminationStatus,
+    WarningEntry, TimestepEntry, PartDefinition, PerformanceTiming,
+    ContactTiming, MPPProcessorTiming, EnergySnapshot, ContactDefinition,
+)
+
+# --- Header patterns ---
+RE_RUN_DATE = re.compile(r'^\s+Date:\s+(\S+)\s+Time:\s+(\S+)')
+RE_VERSION = re.compile(r'^\s*\|\s+Version\s*:\s*(.+?)\s*\|')
+RE_REVISION = re.compile(r'^\s*\|\s+Revision\s*:\s*(.+?)\s*\|')
+RE_PLATFORM = re.compile(r'^\s*\|\s+Platform\s+:\s*(.+?)\s*\|')
+RE_OS_LEVEL = re.compile(r'^\s*\|\s+OS Level\s+:\s*(.+?)\s*\|')
+RE_COMPILER = re.compile(r'^\s*\|\s+Compiler\s+:\s*(.+?)\s*\|')
+RE_HOSTNAME = re.compile(r'^\s*\|\s+Hostname\s+:\s*(.+?)\s*\|')
+RE_PRECISION = re.compile(r'^\s*\|\s+Precision\s+:\s*(.+?)\s*\|')
+RE_LICENSEE = re.compile(r'^\s*\|\s+Licensed to:\s*(.+?)\s*\|')
+RE_INPUT_FILE = re.compile(r'Input file:\s*(\S+)')
+RE_CMD_LINE = re.compile(r'Command line options:\s*i=(\S+)')
+RE_MPP_PROCS = re.compile(r'(?:MPP|Parallel)\s+execution with\s+(\d+)\s+(?:MPP\s+)?procs?')
+
+# --- Keyword counts ---
+RE_KEYWORD_COUNT = re.compile(r"total # of \*([A-Za-z_0-9/,\.\+\-\(\)\s]+?)\.{2,}\s+(\d+)")
+
+# --- Model size ---
+RE_NUM_MATERIALS = re.compile(r'number of materials or property sets\.+\s+(\d+)')
+RE_NUM_NODES = re.compile(r'number of nodal\+scalar points\.+\s+(\d+)')
+RE_NUM_SOLIDS = re.compile(r'number of solid elements\.+\s+(\d+)')
+RE_NUM_SHELLS = re.compile(r'number of shell elements\.+\s+(\d+)')
+RE_NUM_BEAMS = re.compile(r'number of beam elements\.+\s+(\d+)')
+RE_NUM_TSHELLS = re.compile(r'number of thick shell elements\.+\s+(\d+)')
+RE_NUM_SPH = re.compile(r'number of SPH particles\.+\s+(\d+)')
+RE_NUM_CONTACTS = re.compile(r'number of number of contact definitions\.+\s+(\d+)')
+RE_NUM_SPC = re.compile(r'number of spc nodes\.+\s+(\d+)')
+RE_NUM_PARTS = re.compile(r'total # of \*PART_option card\.+\s+(\d+)')
+
+# --- Computation options ---
+RE_TERM_TIME = re.compile(r'termination time\.+\s+([\d.E+\-]+)')
+RE_TSSFAC = re.compile(r'time step scale factor\.+\s+([\d.E+\-]+)')
+RE_DT2MS = re.compile(r'time step size for mass scaled solution.*?\.+\s+([\d.E+\-]+)')
+RE_TSMIN = re.compile(r'reduction factor for minimum time step.*?\.+\s+([\d.E+\-]+)')
+
+# --- Part definitions ---
+RE_PART_SEPARATOR = re.compile(r'^\s*\*{60,}')
+RE_PART_ID = re.compile(r'part\s+id\s*\.+\s*(\d+)')
+RE_SECTION_ID = re.compile(r'section\s+id\s*\.+\s*(\d+)')
+RE_MATERIAL_ID = re.compile(r'material\s+id\s*\.+\s*(\d+)')
+RE_MATERIAL_TYPE = re.compile(r'material type\s*\.+\s*(\d+)')
+RE_EOS_TYPE = re.compile(r'equation-of-state type\s*\.+\s*(\d+)')
+RE_HG_TYPE = re.compile(r'hourglass type\s*\.+\s*(\d+)')
+RE_DENSITY = re.compile(r'density\s*\.+\s*=\s*([\d.E+\-]+)')
+RE_HG_COEFF = re.compile(r'hourglass coefficient\s*\.+\s*=\s*([\d.E+\-]+)')
+RE_YOUNGS_MOD = re.compile(r'^\s+e\s+\.+\s*=\s*([\d.E+\-]+)')
+RE_POISSON = re.compile(r'vnu\s*\.+\s*=\s*([\d.E+\-]+)')
+RE_SOLID_FORM = re.compile(r'solid\s+formulation\s*\.+\s*=\s*(\d+)')
+RE_SECTION_TITLE_MARKER = re.compile(r'section\s+title\s*\.+')
+RE_MATERIAL_TITLE_MARKER = re.compile(r'material title\s*\.+')
+
+# --- Contact interfaces ---
+RE_CONTACT_HEADER = re.compile(r'Contact Interface\s+(\d+)')
+RE_CONTACT_TYPE = re.compile(r'contact type\.+\s+(\d+)')
+
+# --- Contact summary table ---
+RE_CONTACT_SUMMARY_ENTRY = re.compile(
+    r'^\s+(\d+)\s+(\d+)\s+([oa]?\s*\d+)\s+(.*?)\s*$'
+)
+
+# --- Warnings/Errors ---
+RE_WARNING = re.compile(r'^\s*\*\*\*\s+Warning\s+(\d+)')
+RE_ERROR = re.compile(r'^\s*\*\*\*\s+Error\s+(\d+)')
+RE_TIED_INTERFACE = re.compile(r'tied interface #\s*=\s*(\d+)')
+RE_TRACKED_NODE = re.compile(r'tracked node #\s*=\s*(\d+)')
+
+# --- Energy blocks (from glstat section in d3hsp) ---
+RE_DT_CYCLE = re.compile(
+    r'dt of cycle\s+(\d+)\s+is controlled by\s+(\w+)\s+(\d+)\s+of part\s+(\d+)'
+)
+RE_ENERGY_FIELD = re.compile(r'^\s*([\w\s/().]+?)\.{2,}\s+([\d.E+\-]+|\d+)\s*$')
+
+# --- 100 smallest timesteps ---
+RE_SMALLEST_TS_HEADER = re.compile(r'100 smallest timesteps')
+RE_SMALLEST_TS_ENTRY = re.compile(
+    r'(solid|shell|beam|tshell)\s+(\d+)\s+(\d+)\s+([\d.E+\-]+)'
+)
+
+# --- Cycle progress ---
+RE_CYCLE_PROGRESS = re.compile(
+    r'^\s*(\d+)\s+t\s+([\d.E+\-]+)\s+dt\s+([\d.E+\-]+)'
+)
+
+# --- Termination ---
+RE_TERM_REACHED = re.compile(r'\*\*\*\s+termination time reached\s+\*\*\*')
+RE_NORMAL_TERM = re.compile(r'N o r m a l\s+t e r m i n a t i o n')
+RE_ERROR_TERM = re.compile(r'E r r o r\s+t e r m i n a t i o n')
+
+# --- Final summary ---
+RE_PROBLEM_TIME = re.compile(r'Problem time\s+=\s+([\d.E+\-]+)')
+RE_PROBLEM_CYCLE = re.compile(r'Problem cycle\s+=\s+(\d+)')
+RE_TOTAL_CPU = re.compile(r'Total CPU time\s+=\s+(\d+)\s+seconds')
+RE_CPU_PER_ZONE = re.compile(r'CPU time per zone cycle\s*=\s+([\d.]+)\s+nanoseconds')
+RE_CLOCK_PER_ZONE = re.compile(r'Clock time per zone cycle\s*=\s+([\d.]+)\s+nanoseconds')
+
+# --- Timing table ---
+RE_TIMING_HEADER = re.compile(r'T i m i n g\s+i n f o r m a t i o n')
+RE_TIMING_ENTRY = re.compile(
+    r'^\s{1,2}(\S.*?)\s*\.{2,}\s*([\d.E+\-]+)\s+([\d.]+)\s+([\d.E+\-]+)\s+([\d.]+)'
+)
+RE_TIMING_SUB = re.compile(
+    r'^\s{2,6}(\S.*?)\s*\.{2,}\s*([\d.E+\-]+)\s+([\d.]+)\s+([\d.E+\-]+)\s+([\d.]+)'
+)
+RE_INTERF_ID = re.compile(
+    r'^\s+Interf\.\s+ID\s+(\d+)\s+([\d.E+\-]+)\s+([\d.]+)\s+([\d.E+\-]+)\s+([\d.]+)'
+)
+
+# --- CPU timing per processor ---
+RE_CPU_PROC = re.compile(
+    r'#\s+(\d+)\s+(\S+)\s+([\d.]+)\s+([\d.E+\-]+)'
+)
+RE_START_TIME = re.compile(r'Start time\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})')
+RE_END_TIME = re.compile(r'End time\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})')
+RE_ELAPSED = re.compile(r'Elapsed time\s+(\d+)\s+seconds')
+
+# Material type name map
+MATERIAL_TYPE_NAMES = {
+    1: "Elastic", 2: "Orthotropic", 3: "Elastic-Plastic (von Mises)",
+    5: "Soil/Crushable Foam", 6: "Viscoelastic", 7: "Blatz-Ko Rubber",
+    9: "Null", 20: "Rigid", 24: "Piecewise Linear Plasticity",
+    57: "Low Density Urethane Foam", 76: "Linear Viscoelastic",
+    77: "General Hyperelastic/Ogden", 98: "Simplified Johnson Cook",
+}
+
+
+def _safe_float(s: str) -> float:
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def _safe_int(s: str) -> int:
+    try:
+        return int(s)
+    except (ValueError, TypeError):
+        return 0
+
+
+class D3hspData:
+    """Container for all parsed d3hsp data."""
+
+    def __init__(self):
+        self.header = SimulationHeader()
+        self.model_size = ModelSize()
+        self.termination = TerminationInfo()
+        self.keyword_counts: dict[str, int] = {}
+        self.parts: list[PartDefinition] = []
+        self.contact_ids: list[int] = []
+        self.contact_types: dict[int, int] = {}
+        self.warning_counts: dict[int, int] = {}
+        self.warning_messages: dict[int, str] = {}
+        self.warning_interfaces: dict[int, set[int]] = {}
+        self.error_counts: dict[int, int] = {}
+        self.error_messages: dict[int, str] = {}
+        self.energy_snapshots: list[EnergySnapshot] = []
+        self.smallest_timesteps: list[TimestepEntry] = []
+        self.performance: list[PerformanceTiming] = []
+        self.contact_timing: list[ContactTiming] = []
+        self.mpp_timing: list[MPPProcessorTiming] = []
+        self.contact_definitions: list[ContactDefinition] = []
+        self.dt_scale_factor: float = 0.0
+        self.dt2ms: float = 0.0
+        self.tsmin: float = 0.0
+
+
+class D3hspParser:
+    """Streaming line-by-line parser for LS-DYNA d3hsp file."""
+
+    def __init__(self, filepath: Path):
+        self.filepath = filepath
+
+    def parse(self) -> D3hspData:
+        data = D3hspData()
+
+        state = "HEADER"
+        part_block: list[str] = []
+        in_part_defs = False
+        in_contact_section = False
+        in_contact_summary = False
+        in_smallest_ts = False
+        in_timing = False
+        in_cpu_timing = False
+        in_energy_block = False
+        current_energy: dict[str, float] = {}
+        current_cycle_info: dict = {}
+        warning_context_lines: list[str] = []
+        last_warning_code: int | None = None
+        lines_after_warning: int = 0
+
+        with open(self.filepath, "r", errors="replace") as f:
+            for line in f:
+                stripped = line.rstrip()
+
+                # --- Header parsing (always active until we see keyword counts) ---
+                if state == "HEADER":
+                    self._parse_header_line(stripped, data)
+                    if "L I S T   O F   K E Y W O R D   C O U N T S" in stripped:
+                        state = "KEYWORD_COUNTS"
+                        continue
+
+                # --- Keyword counts ---
+                if state == "KEYWORD_COUNTS":
+                    m = RE_KEYWORD_COUNT.match(stripped)
+                    if m:
+                        kw = m.group(1).strip()
+                        count = _safe_int(m.group(2))
+                        if count > 0:
+                            data.keyword_counts[kw] = count
+                        # Extract model size from keyword counts
+                        if "PART_option card" in kw:
+                            data.model_size.num_parts = count
+                    # MPP procs line appears between keyword counts and control info
+                    m = RE_MPP_PROCS.search(stripped)
+                    if m:
+                        data.header.num_procs = _safe_int(m.group(1))
+                    if "c o n t r o l   i n f o r m a t i o n" in stripped:
+                        state = "CONTROL_INFO"
+                        continue
+
+                # --- Control info / model size ---
+                if state == "CONTROL_INFO":
+                    self._parse_model_size(stripped, data)
+                    self._parse_computation_options(stripped, data)
+                    # Pick up MPP procs here (appears in control section too)
+                    m = RE_MPP_PROCS.search(stripped)
+                    if m:
+                        data.header.num_procs = _safe_int(m.group(1))
+                    if "p a r t   d e f i n i t i o n s" in stripped:
+                        state = "PART_DEFS"
+                        in_part_defs = True
+                        continue
+
+                # --- Part definitions ---
+                if state == "PART_DEFS":
+                    if "c o n t a c t   i n t e r f a c e s" in stripped:
+                        # Flush last part block
+                        if part_block:
+                            part = self._parse_part_block(part_block)
+                            if part:
+                                data.parts.append(part)
+                            part_block = []
+                        state = "CONTACTS"
+                        in_part_defs = False
+                        in_contact_section = True
+                        continue
+
+                    if RE_PART_SEPARATOR.match(stripped):
+                        if part_block:
+                            part = self._parse_part_block(part_block)
+                            if part:
+                                data.parts.append(part)
+                            part_block = []
+                    else:
+                        part_block.append(stripped)
+
+                # --- Contact interfaces ---
+                if state == "CONTACTS":
+                    # Contact summary table parsing
+                    if "Contact summary" in stripped:
+                        in_contact_summary = True
+                        continue
+                    if in_contact_summary:
+                        if "Order #" in stripped:
+                            continue  # skip header line
+                        m = RE_CONTACT_SUMMARY_ENTRY.match(stripped)
+                        if m:
+                            type_raw = m.group(3).strip()
+                            prefix = ""
+                            type_num = 0
+                            parts = type_raw.split()
+                            if len(parts) == 2:
+                                prefix = parts[0]
+                                type_num = _safe_int(parts[1])
+                            else:
+                                type_num = _safe_int(parts[0])
+                            data.contact_definitions.append(ContactDefinition(
+                                order=_safe_int(m.group(1)),
+                                contact_id=_safe_int(m.group(2)),
+                                type_code=type_raw,
+                                type_number=type_num,
+                                type_prefix=prefix,
+                                title=m.group(4).strip(),
+                            ))
+                            continue
+                        if RE_PART_SEPARATOR.match(stripped) and in_contact_summary:
+                            in_contact_summary = False
+
+                    m = RE_CONTACT_HEADER.search(stripped)
+                    if m:
+                        cid = _safe_int(m.group(1))
+                        data.contact_ids.append(cid)
+                    m = RE_CONTACT_TYPE.search(stripped)
+                    if m and data.contact_ids:
+                        data.contact_types[data.contact_ids[-1]] = _safe_int(m.group(1))
+
+                # --- Warnings and errors (can appear anywhere after contacts) ---
+                m = RE_WARNING.match(stripped)
+                if m:
+                    code = _safe_int(m.group(1))
+                    data.warning_counts[code] = data.warning_counts.get(code, 0) + 1
+                    last_warning_code = code
+                    lines_after_warning = 0
+                    continue
+
+                m = RE_ERROR.match(stripped)
+                if m:
+                    code = _safe_int(m.group(1))
+                    data.error_counts[code] = data.error_counts.get(code, 0) + 1
+                    last_warning_code = None
+                    continue
+
+                # Capture warning context (tied interface info)
+                if last_warning_code is not None:
+                    lines_after_warning += 1
+                    if lines_after_warning <= 5:
+                        # Store first message for this code
+                        if last_warning_code not in data.warning_messages:
+                            data.warning_messages[last_warning_code] = ""
+                        if data.warning_counts.get(last_warning_code, 0) <= 3:
+                            data.warning_messages[last_warning_code] += stripped.strip() + " "
+
+                        m_intf = RE_TIED_INTERFACE.search(stripped)
+                        if m_intf:
+                            intf_id = _safe_int(m_intf.group(1))
+                            if last_warning_code not in data.warning_interfaces:
+                                data.warning_interfaces[last_warning_code] = set()
+                            data.warning_interfaces[last_warning_code].add(intf_id)
+                    else:
+                        last_warning_code = None
+
+                # --- Energy blocks ---
+                m = RE_DT_CYCLE.search(stripped)
+                if m:
+                    current_cycle_info = {
+                        "cycle": _safe_int(m.group(1)),
+                        "elem_type": m.group(2),
+                        "elem_num": _safe_int(m.group(3)),
+                        "part_num": _safe_int(m.group(4)),
+                    }
+                    current_energy = {}
+                    in_energy_block = True
+                    continue
+
+                if in_energy_block:
+                    m = RE_ENERGY_FIELD.match(stripped)
+                    if m:
+                        field_name = m.group(1).strip().lower()
+                        value_str = m.group(2).strip()
+                        current_energy[field_name] = _safe_float(value_str)
+                    elif stripped.strip() == "" and current_energy:
+                        # End of energy block
+                        snap = self._build_energy_snapshot(current_cycle_info, current_energy)
+                        if snap:
+                            data.energy_snapshots.append(snap)
+                        in_energy_block = False
+                        current_energy = {}
+
+                # --- 100 smallest timesteps ---
+                if RE_SMALLEST_TS_HEADER.search(stripped):
+                    in_smallest_ts = True
+                    continue
+
+                if in_smallest_ts:
+                    m = RE_SMALLEST_TS_ENTRY.match(stripped.strip())
+                    if m:
+                        entry = TimestepEntry(
+                            element_type=m.group(1),
+                            element_number=_safe_int(m.group(2)),
+                            part_number=_safe_int(m.group(3)),
+                            timestep=_safe_float(m.group(4)),
+                        )
+                        data.smallest_timesteps.append(entry)
+                    elif stripped.strip() == "" and data.smallest_timesteps:
+                        in_smallest_ts = False
+
+                # --- Termination markers ---
+                if RE_TERM_REACHED.search(stripped):
+                    data.termination.status = TerminationStatus.NORMAL
+
+                if RE_NORMAL_TERM.search(stripped):
+                    data.termination.status = TerminationStatus.NORMAL
+
+                if RE_ERROR_TERM.search(stripped):
+                    data.termination.status = TerminationStatus.ERROR
+
+                # --- Timing table ---
+                if RE_TIMING_HEADER.search(stripped) and "C P U" not in stripped:
+                    in_timing = True
+                    continue
+
+                if in_timing:
+                    if "T o t a l s" in stripped and not "C P U" in stripped:
+                        m = RE_TIMING_ENTRY.match(stripped.replace("T o t a l s", "TOTAL"))
+                        in_timing = False
+                        continue
+
+                    m_interf = RE_INTERF_ID.match(stripped)
+                    if m_interf:
+                        ct = ContactTiming(
+                            interface_id=_safe_int(m_interf.group(1)),
+                            cpu_seconds=_safe_float(m_interf.group(2)),
+                            cpu_percent=_safe_float(m_interf.group(3)),
+                            clock_seconds=_safe_float(m_interf.group(4)),
+                            clock_percent=_safe_float(m_interf.group(5)),
+                        )
+                        data.contact_timing.append(ct)
+                        continue
+
+                    m = RE_TIMING_ENTRY.match(stripped)
+                    if m:
+                        pt = PerformanceTiming(
+                            component=m.group(1).strip(),
+                            cpu_seconds=_safe_float(m.group(2)),
+                            cpu_percent=_safe_float(m.group(3)),
+                            clock_seconds=_safe_float(m.group(4)),
+                            clock_percent=_safe_float(m.group(5)),
+                        )
+                        data.performance.append(pt)
+
+                # --- CPU timing per processor ---
+                if "C P U   T i m i n g" in stripped:
+                    in_cpu_timing = True
+                    continue
+
+                if in_cpu_timing:
+                    m = RE_CPU_PROC.match(stripped.strip())
+                    if m:
+                        mpp = MPPProcessorTiming(
+                            processor_id=_safe_int(m.group(1)),
+                            hostname=m.group(2),
+                            cpu_ratio=_safe_float(m.group(3)),
+                            cpu_seconds=_safe_float(m.group(4)),
+                        )
+                        data.mpp_timing.append(mpp)
+                    if "T o t a l s" in stripped:
+                        in_cpu_timing = False
+
+                # --- Final summary ---
+                m = RE_PROBLEM_TIME.search(stripped)
+                if m:
+                    data.termination.actual_time = _safe_float(m.group(1))
+
+                m = RE_PROBLEM_CYCLE.search(stripped)
+                if m:
+                    data.termination.total_cycles = _safe_int(m.group(1))
+
+                m = RE_TOTAL_CPU.search(stripped)
+                if m:
+                    data.termination.total_cpu_seconds = _safe_float(m.group(1))
+
+                m = RE_CPU_PER_ZONE.search(stripped)
+                if m:
+                    data.termination.cpu_per_zone_cycle_ns = _safe_float(m.group(1))
+
+                m = RE_CLOCK_PER_ZONE.search(stripped)
+                if m:
+                    data.termination.clock_per_zone_cycle_ns = _safe_float(m.group(1))
+
+                m = RE_START_TIME.search(stripped)
+                if m:
+                    data.termination.start_datetime = m.group(1)
+
+                m = RE_END_TIME.search(stripped)
+                if m:
+                    data.termination.end_datetime = m.group(1)
+
+                m = RE_ELAPSED.search(stripped)
+                if m:
+                    data.termination.elapsed_seconds = _safe_float(m.group(1))
+
+        return data
+
+    def _parse_header_line(self, line: str, data: D3hspData):
+        for pattern, attr in [
+            (RE_RUN_DATE, None),
+            (RE_VERSION, "version"),
+            (RE_REVISION, "revision"),
+            (RE_PLATFORM, "platform"),
+            (RE_OS_LEVEL, "os_level"),
+            (RE_COMPILER, "compiler"),
+            (RE_HOSTNAME, "hostname"),
+            (RE_PRECISION, "precision"),
+            (RE_LICENSEE, "licensee"),
+        ]:
+            m = pattern.search(line)
+            if m:
+                if attr is None:  # date/time
+                    data.header.date = m.group(1)
+                    data.header.time = m.group(2)
+                else:
+                    setattr(data.header, attr, m.group(1))
+                return
+
+        m = RE_INPUT_FILE.search(line)
+        if m:
+            data.header.input_file = m.group(1)
+            return
+
+        m = RE_CMD_LINE.search(line)
+        if m and not data.header.input_file:
+            data.header.input_file = m.group(1)
+            return
+
+        m = RE_MPP_PROCS.search(line)
+        if m:
+            data.header.num_procs = _safe_int(m.group(1))
+
+    def _parse_model_size(self, line: str, data: D3hspData):
+        for pattern, attr in [
+            (RE_NUM_MATERIALS, "num_materials"),
+            (RE_NUM_NODES, "num_nodes"),
+            (RE_NUM_SOLIDS, "num_solid_elements"),
+            (RE_NUM_SHELLS, "num_shell_elements"),
+            (RE_NUM_BEAMS, "num_beam_elements"),
+            (RE_NUM_TSHELLS, "num_thick_shell_elements"),
+            (RE_NUM_SPH, "num_sph_particles"),
+            (RE_NUM_CONTACTS, "num_contacts"),
+            (RE_NUM_SPC, "num_spc_nodes"),
+        ]:
+            m = pattern.search(line)
+            if m:
+                setattr(data.model_size, attr, _safe_int(m.group(1)))
+                return
+
+    def _parse_computation_options(self, line: str, data: D3hspData):
+        m = RE_TERM_TIME.search(line)
+        if m:
+            data.termination.target_time = _safe_float(m.group(1))
+
+        m = RE_TSSFAC.search(line)
+        if m:
+            data.dt_scale_factor = _safe_float(m.group(1))
+
+        m = RE_DT2MS.search(line)
+        if m:
+            data.dt2ms = _safe_float(m.group(1))
+
+        m = RE_TSMIN.search(line)
+        if m:
+            data.tsmin = _safe_float(m.group(1))
+
+    def _parse_part_block(self, lines: list[str]) -> PartDefinition | None:
+        part = PartDefinition()
+        name_line = ""
+        expect_section_title = False
+        expect_material_title = False
+
+        for i, line in enumerate(lines):
+            if expect_section_title:
+                part.section_title = line.strip()
+                expect_section_title = False
+                continue
+            if expect_material_title:
+                part.material_title = line.strip()
+                expect_material_title = False
+                continue
+
+            m = RE_PART_ID.search(line)
+            if m:
+                part.part_id = _safe_int(m.group(1))
+                # Part name is usually 2-3 lines before part id
+                for j in range(max(0, i - 3), i):
+                    candidate = lines[j].strip()
+                    if candidate and not candidate.startswith("*") and "part" not in candidate.lower():
+                        part.name = candidate
+                        break
+                continue
+
+            m = RE_SECTION_ID.search(line)
+            if m:
+                part.section_id = _safe_int(m.group(1))
+                continue
+
+            m = RE_MATERIAL_ID.search(line)
+            if m:
+                part.material_id = _safe_int(m.group(1))
+                continue
+
+            if RE_SECTION_TITLE_MARKER.search(line):
+                expect_section_title = True
+                continue
+
+            if RE_MATERIAL_TITLE_MARKER.search(line):
+                expect_material_title = True
+                continue
+
+            m = RE_MATERIAL_TYPE.search(line)
+            if m:
+                part.material_type = _safe_int(m.group(1))
+                part.material_type_name = MATERIAL_TYPE_NAMES.get(
+                    part.material_type, f"Type {part.material_type}"
+                )
+                continue
+
+            m = RE_EOS_TYPE.search(line)
+            if m:
+                part.eos_type = _safe_int(m.group(1))
+                continue
+
+            m = RE_HG_TYPE.search(line)
+            if m:
+                part.hourglass_type = _safe_int(m.group(1))
+                continue
+
+            m = RE_DENSITY.search(line)
+            if m:
+                part.density = _safe_float(m.group(1))
+                continue
+
+            m = RE_HG_COEFF.search(line)
+            if m:
+                part.hourglass_coefficient = _safe_float(m.group(1))
+                continue
+
+            m = RE_YOUNGS_MOD.search(line)
+            if m:
+                part.youngs_modulus = _safe_float(m.group(1))
+                continue
+
+            m = RE_POISSON.search(line)
+            if m:
+                part.poisson_ratio = _safe_float(m.group(1))
+                continue
+
+            m = RE_SOLID_FORM.search(line)
+            if m:
+                part.solid_formulation = _safe_int(m.group(1))
+                continue
+
+        if part.part_id == 0:
+            return None
+        return part
+
+    def _build_energy_snapshot(
+        self, cycle_info: dict, energy: dict
+    ) -> EnergySnapshot | None:
+        if not cycle_info or not energy:
+            return None
+
+        def get_exact(key: str) -> float:
+            """Get value by exact key match first, then substring."""
+            if key in energy:
+                return energy[key]
+            return 0.0
+
+        # Use exact key lookup from the energy dict
+        # Keys are lowercase field names from the regex match
+        return EnergySnapshot(
+            cycle=cycle_info.get("cycle", 0),
+            time=get_exact("time"),
+            timestep=get_exact("time step"),
+            kinetic=get_exact("kinetic energy"),
+            internal=get_exact("internal energy"),
+            spring_damper=get_exact("spring and damper energy"),
+            hourglass=get_exact("hourglass energy"),
+            system_damping=get_exact("system damping energy"),
+            sliding_interface=get_exact("sliding interface energy"),
+            external_work=get_exact("external work"),
+            eroded_kinetic=get_exact("eroded kinetic energy"),
+            eroded_internal=get_exact("eroded internal energy"),
+            eroded_hourglass=get_exact("eroded hourglass energy"),
+            total=get_exact("total energy"),
+            energy_ratio=get_exact("total energy / initial energy") or 1.0,
+            energy_ratio_no_eroded=get_exact("energy ratio w/o eroded energy") or 1.0,
+            global_velocity=(
+                get_exact("global x velocity"),
+                get_exact("global y velocity"),
+                get_exact("global z velocity"),
+            ),
+            controlling_element_type=cycle_info.get("elem_type", ""),
+            controlling_element=cycle_info.get("elem_num", 0),
+            controlling_part=cycle_info.get("part_num", 0),
+            time_per_zone_ns=int(get_exact("time per zone cycle.(nanosec)")),
+        )

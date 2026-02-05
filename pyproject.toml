@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "KooDynaErrorAnalyzer"
+version = "0.1.0"
+description = "LS-DYNA simulation result analyzer for debugging and performance profiling"
+requires-python = ">=3.10"
+dependencies = ["rich>=13.0"]
+
+[project.scripts]
+koodyna = "koodyna.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

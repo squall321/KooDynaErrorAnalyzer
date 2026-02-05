@@ -1,0 +1,28 @@
+# Build artifacts
+dist/
+build/
+*.spec
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Claude sessions
+.claude/
+.koo-llm-sessions/
+
+# LS-DYNA result files (large binary data)
+results/
+
+# Generated reports
+*.html
+!src/**/*.html
+
+# OS
+.DS_Store
+Thumbs.db
