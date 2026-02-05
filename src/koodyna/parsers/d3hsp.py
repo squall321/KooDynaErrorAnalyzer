@@ -198,8 +198,9 @@ class D3hspData:
 class D3hspParser:
     """Streaming line-by-line parser for LS-DYNA d3hsp file."""
 
-    def __init__(self, filepath: Path):
+    def __init__(self, filepath: Path, verbose: bool = False):
         self.filepath = filepath
+        self.verbose = verbose
 
     def parse(self) -> D3hspData:
         data = D3hspData()
@@ -220,9 +221,25 @@ class D3hspParser:
         last_warning_code: int | None = None
         lines_after_warning: int = 0
 
+        # 진행율 추적용
+        total_bytes = self.filepath.stat().st_size if self.verbose else 1
+        last_pct_reported = -1
+        line_counter = 0
+        bytes_read = 0
+
         with open(self.filepath, "r", errors="replace") as f:
             for line in f:
                 stripped = line.rstrip()
+
+                # --- 진행율 출력 (verbose, 매 1000줄마다 체크) ---
+                if self.verbose:
+                    bytes_read += len(line)
+                    line_counter += 1
+                    if line_counter % 1000 == 0:
+                        pct = min(int(bytes_read / total_bytes * 100), 99)
+                        if pct != last_pct_reported and pct % 10 == 0:
+                            print(f"    d3hsp: {pct}% ({state})")
+                            last_pct_reported = pct
 
                 # ========== HEADER ==========
                 if state == "HEADER":
@@ -654,6 +671,9 @@ class D3hspParser:
                     m = RE_ELAPSED.search(stripped)
                     if m:
                         data.termination.elapsed_seconds = _safe_float(m.group(1))
+
+        if self.verbose:
+            print(f"    d3hsp: 100% done ({line_counter} lines)")
 
         return data
 

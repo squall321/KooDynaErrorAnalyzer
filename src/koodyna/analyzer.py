@@ -35,7 +35,7 @@ class Analyzer:
         if "d3hsp" in discovered:
             if self.verbose:
                 print(f"  Parsing d3hsp...")
-            d3hsp_data = D3hspParser(discovered["d3hsp"]).parse()
+            d3hsp_data = D3hspParser(discovered["d3hsp"], verbose=self.verbose).parse()
             files_found.append("d3hsp")
 
         glstat_snapshots = []
