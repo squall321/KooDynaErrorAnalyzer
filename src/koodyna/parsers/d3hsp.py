@@ -204,10 +204,12 @@ class D3hspParser:
     def parse(self) -> D3hspData:
         data = D3hspData()
 
+        # State machine phases: HEADER → KEYWORD_COUNTS → CONTROL_INFO →
+        # PART_DEFS → CONTACTS → BODY → TAIL
+        # BODY: warnings + energy blocks (bulk of the file, regex-minimal loop)
+        # TAIL: timing, cpu, decomp, mass, summary (only after "T i m i n g")
         state = "HEADER"
         part_block: list[str] = []
-        in_part_defs = False
-        in_contact_section = False
         in_contact_summary = False
         in_smallest_ts = False
         in_timing = False
@@ -215,7 +217,6 @@ class D3hspParser:
         in_energy_block = False
         current_energy: dict[str, float] = {}
         current_cycle_info: dict = {}
-        warning_context_lines: list[str] = []
         last_warning_code: int | None = None
         lines_after_warning: int = 0
 
@@ -223,59 +224,54 @@ class D3hspParser:
             for line in f:
                 stripped = line.rstrip()
 
-                # --- Header parsing (always active until we see keyword counts) ---
+                # ========== HEADER ==========
                 if state == "HEADER":
                     self._parse_header_line(stripped, data)
                     if "L I S T   O F   K E Y W O R D   C O U N T S" in stripped:
                         state = "KEYWORD_COUNTS"
-                        continue
+                    continue
 
-                # --- Keyword counts ---
+                # ========== KEYWORD_COUNTS ==========
                 if state == "KEYWORD_COUNTS":
+                    if "c o n t r o l   i n f o r m a t i o n" in stripped:
+                        state = "CONTROL_INFO"
+                        continue
                     m = RE_KEYWORD_COUNT.match(stripped)
                     if m:
                         kw = m.group(1).strip()
                         count = _safe_int(m.group(2))
                         if count > 0:
                             data.keyword_counts[kw] = count
-                        # Extract model size from keyword counts
                         if "PART_option card" in kw:
                             data.model_size.num_parts = count
-                    # MPP procs line appears between keyword counts and control info
-                    m = RE_MPP_PROCS.search(stripped)
-                    if m:
-                        data.header.num_procs = _safe_int(m.group(1))
-                    if "c o n t r o l   i n f o r m a t i o n" in stripped:
-                        state = "CONTROL_INFO"
-                        continue
+                    else:
+                        m = RE_MPP_PROCS.search(stripped)
+                        if m:
+                            data.header.num_procs = _safe_int(m.group(1))
+                    continue
 
-                # --- Control info / model size ---
+                # ========== CONTROL_INFO ==========
                 if state == "CONTROL_INFO":
-                    self._parse_model_size(stripped, data)
-                    self._parse_computation_options(stripped, data)
-                    # Pick up MPP procs here (appears in control section too)
-                    m = RE_MPP_PROCS.search(stripped)
-                    if m:
-                        data.header.num_procs = _safe_int(m.group(1))
                     if "p a r t   d e f i n i t i o n s" in stripped:
                         state = "PART_DEFS"
-                        in_part_defs = True
                         continue
+                    self._parse_model_size(stripped, data)
+                    self._parse_computation_options(stripped, data)
+                    m = RE_MPP_PROCS.search(stripped)
+                    if m:
+                        data.header.num_procs = _safe_int(m.group(1))
+                    continue
 
-                # --- Part definitions ---
+                # ========== PART_DEFS ==========
                 if state == "PART_DEFS":
                     if "c o n t a c t   i n t e r f a c e s" in stripped:
-                        # Flush last part block
                         if part_block:
                             part = self._parse_part_block(part_block)
                             if part:
                                 data.parts.append(part)
                             part_block = []
                         state = "CONTACTS"
-                        in_part_defs = False
-                        in_contact_section = True
                         continue
-
                     if RE_PART_SEPARATOR.match(stripped):
                         if part_block:
                             part = self._parse_part_block(part_block)
@@ -284,266 +280,380 @@ class D3hspParser:
                             part_block = []
                     else:
                         part_block.append(stripped)
+                    continue
 
-                # --- Contact interfaces ---
+                # ========== CONTACTS ==========
                 if state == "CONTACTS":
-                    # Contact summary table parsing
-                    if "Contact summary" in stripped:
-                        in_contact_summary = True
-                        continue
-                    if in_contact_summary:
-                        if "Order #" in stripped:
-                            continue  # skip header line
-                        m = RE_CONTACT_SUMMARY_ENTRY.match(stripped)
-                        if m:
-                            type_raw = m.group(3).strip()
-                            prefix = ""
-                            type_num = 0
-                            parts = type_raw.split()
-                            if len(parts) == 2:
-                                prefix = parts[0]
-                                type_num = _safe_int(parts[1])
-                            else:
-                                type_num = _safe_int(parts[0])
-                            data.contact_definitions.append(ContactDefinition(
-                                order=_safe_int(m.group(1)),
-                                contact_id=_safe_int(m.group(2)),
-                                type_code=type_raw,
-                                type_number=type_num,
-                                type_prefix=prefix,
-                                title=m.group(4).strip(),
-                            ))
-                            continue
-                        if RE_PART_SEPARATOR.match(stripped) and in_contact_summary:
-                            in_contact_summary = False
-
-                    m = RE_CONTACT_HEADER.search(stripped)
-                    if m:
-                        cid = _safe_int(m.group(1))
-                        data.contact_ids.append(cid)
-                    m = RE_CONTACT_TYPE.search(stripped)
-                    if m and data.contact_ids:
-                        data.contact_types[data.contact_ids[-1]] = _safe_int(m.group(1))
-
-                # --- Warnings and errors (can appear anywhere after contacts) ---
-                m = RE_WARNING.match(stripped)
-                if m:
-                    code = _safe_int(m.group(1))
-                    data.warning_counts[code] = data.warning_counts.get(code, 0) + 1
-                    last_warning_code = code
-                    lines_after_warning = 0
-                    continue
-
-                m = RE_ERROR.match(stripped)
-                if m:
-                    code = _safe_int(m.group(1))
-                    data.error_counts[code] = data.error_counts.get(code, 0) + 1
-                    last_warning_code = None
-                    continue
-
-                # Capture warning context (tied interface info)
-                if last_warning_code is not None:
-                    lines_after_warning += 1
-                    if lines_after_warning <= 5:
-                        # Store first message for this code
-                        if last_warning_code not in data.warning_messages:
-                            data.warning_messages[last_warning_code] = ""
-                        if data.warning_counts.get(last_warning_code, 0) <= 3:
-                            data.warning_messages[last_warning_code] += stripped.strip() + " "
-
-                        m_intf = RE_TIED_INTERFACE.search(stripped)
-                        if m_intf:
-                            intf_id = _safe_int(m_intf.group(1))
-                            if last_warning_code not in data.warning_interfaces:
-                                data.warning_interfaces[last_warning_code] = set()
-                            data.warning_interfaces[last_warning_code].add(intf_id)
+                    # Transition to BODY on first warning/error or energy block
+                    if "***" in stripped and ("Warning" in stripped or "Error" in stripped):
+                        state = "BODY"
+                        # fall through to BODY handling below
                     else:
-                        last_warning_code = None
+                        if "Contact summary" in stripped:
+                            in_contact_summary = True
+                            continue
+                        if in_contact_summary:
+                            if "Order #" in stripped:
+                                continue
+                            m = RE_CONTACT_SUMMARY_ENTRY.match(stripped)
+                            if m:
+                                type_raw = m.group(3).strip()
+                                prefix = ""
+                                type_num = 0
+                                parts = type_raw.split()
+                                if len(parts) == 2:
+                                    prefix = parts[0]
+                                    type_num = _safe_int(parts[1])
+                                else:
+                                    type_num = _safe_int(parts[0])
+                                data.contact_definitions.append(ContactDefinition(
+                                    order=_safe_int(m.group(1)),
+                                    contact_id=_safe_int(m.group(2)),
+                                    type_code=type_raw,
+                                    type_number=type_num,
+                                    type_prefix=prefix,
+                                    title=m.group(4).strip(),
+                                ))
+                                continue
+                            if RE_PART_SEPARATOR.match(stripped):
+                                in_contact_summary = False
+                                continue
+                        m = RE_CONTACT_HEADER.search(stripped)
+                        if m:
+                            data.contact_ids.append(_safe_int(m.group(1)))
+                        else:
+                            m = RE_CONTACT_TYPE.search(stripped)
+                            if m and data.contact_ids:
+                                data.contact_types[data.contact_ids[-1]] = _safe_int(m.group(1))
+                        continue
 
-                # --- Energy blocks ---
-                m = RE_DT_CYCLE.search(stripped)
-                if m:
-                    current_cycle_info = {
-                        "cycle": _safe_int(m.group(1)),
-                        "elem_type": m.group(2),
-                        "elem_num": _safe_int(m.group(3)),
-                        "part_num": _safe_int(m.group(4)),
-                    }
-                    current_energy = {}
-                    in_energy_block = True
+                # ========== BODY (warnings + energy — bulk of file) ==========
+                if state == "BODY":
+                    # Transition to TAIL on timing header or termination
+                    if "T i m i n g   i n f o r m a t i o n" in stripped:
+                        state = "TAIL"
+                        in_timing = True
+                        continue
+                    if "N o r m a l   t e r m i n a t i o n" in stripped:
+                        data.termination.status = TerminationStatus.NORMAL
+                        state = "TAIL"
+                        continue
+                    if "E r r o r   t e r m i n a t i o n" in stripped:
+                        data.termination.status = TerminationStatus.ERROR
+                        state = "TAIL"
+                        continue
+
+                    # --- Warnings / Errors (hot path — cheap prefix check) ---
+                    if "***" in stripped:
+                        m = RE_WARNING.match(stripped)
+                        if m:
+                            code = _safe_int(m.group(1))
+                            data.warning_counts[code] = data.warning_counts.get(code, 0) + 1
+                            last_warning_code = code
+                            lines_after_warning = 0
+                            continue
+                        m = RE_ERROR.match(stripped)
+                        if m:
+                            code = _safe_int(m.group(1))
+                            data.error_counts[code] = data.error_counts.get(code, 0) + 1
+                            last_warning_code = None
+                            continue
+                        # "*** termination time reached ***"
+                        if "termination time reached" in stripped:
+                            data.termination.status = TerminationStatus.NORMAL
+                        continue
+
+                    # Warning context capture (tied interface info)
+                    if last_warning_code is not None:
+                        lines_after_warning += 1
+                        if lines_after_warning <= 5:
+                            if last_warning_code not in data.warning_messages:
+                                data.warning_messages[last_warning_code] = ""
+                            if data.warning_counts.get(last_warning_code, 0) <= 3:
+                                data.warning_messages[last_warning_code] += stripped.strip() + " "
+                            m_intf = RE_TIED_INTERFACE.search(stripped)
+                            if m_intf:
+                                intf_id = _safe_int(m_intf.group(1))
+                                if last_warning_code not in data.warning_interfaces:
+                                    data.warning_interfaces[last_warning_code] = set()
+                                data.warning_interfaces[last_warning_code].add(intf_id)
+                        else:
+                            last_warning_code = None
+                        continue
+
+                    # --- Energy blocks ---
+                    if in_energy_block:
+                        m = RE_ENERGY_FIELD.match(stripped)
+                        if m:
+                            current_energy[m.group(1).strip().lower()] = _safe_float(m.group(2).strip())
+                        elif not stripped.strip():
+                            snap = self._build_energy_snapshot(current_cycle_info, current_energy)
+                            if snap:
+                                data.energy_snapshots.append(snap)
+                            in_energy_block = False
+                            current_energy = {}
+                        continue
+
+                    if "dt of cycle" in stripped:
+                        m = RE_DT_CYCLE.search(stripped)
+                        if m:
+                            current_cycle_info = {
+                                "cycle": _safe_int(m.group(1)),
+                                "elem_type": m.group(2),
+                                "elem_num": _safe_int(m.group(3)),
+                                "part_num": _safe_int(m.group(4)),
+                            }
+                            current_energy = {}
+                            in_energy_block = True
+                        continue
+
+                    # --- 100 smallest timesteps ---
+                    if in_smallest_ts:
+                        m = RE_SMALLEST_TS_ENTRY.match(stripped.strip())
+                        if m:
+                            data.smallest_timesteps.append(TimestepEntry(
+                                element_type=m.group(1),
+                                element_number=_safe_int(m.group(2)),
+                                part_number=_safe_int(m.group(3)),
+                                timestep=_safe_float(m.group(4)),
+                            ))
+                        elif not stripped.strip() and data.smallest_timesteps:
+                            in_smallest_ts = False
+                        continue
+
+                    if "100 smallest timesteps" in stripped:
+                        in_smallest_ts = True
+                        continue
+
+                    # --- Decomposition metrics (cheap keyword gate) ---
+                    if "Minumum:" in stripped:
+                        m = RE_DECOMP_MIN.search(stripped)
+                        if m:
+                            data.decomp_metrics.min_cost = _safe_float(m.group(1))
+                        continue
+                    if "Maximum:" in stripped:
+                        m = RE_DECOMP_MAX.search(stripped)
+                        if m:
+                            data.decomp_metrics.max_cost = _safe_float(m.group(1))
+                        continue
+                    if "Standard Deviation:" in stripped:
+                        m = RE_DECOMP_STDDEV.search(stripped)
+                        if m:
+                            data.decomp_metrics.std_deviation = _safe_float(m.group(1))
+                        continue
+                    if "Memory required for decomposition" in stripped:
+                        m = RE_DECOMP_MEM.search(stripped)
+                        if m:
+                            data.decomp_metrics.decomp_memory = _safe_int(m.group(1))
+                        continue
+                    if "Additional dynamic memory" in stripped:
+                        m = RE_DECOMP_DYN_MEM.search(stripped)
+                        if m:
+                            data.decomp_metrics.dynamic_memory = _safe_int(m.group(1))
+                        continue
+
+                    # --- Mass properties (cheap keyword gate) ---
+                    if "m a s s" in stripped and "p r o p e r t i e s" in stripped:
+                        m = RE_MASS_PART_HEADER.search(stripped)
+                        if m:
+                            data.mass_properties.append(MassProperty(part_id=_safe_int(m.group(1))))
+                        continue
+                    if data.mass_properties:
+                        mp = data.mass_properties[-1]
+                        if "mass center" in stripped:
+                            if "x-coordinate" in stripped:
+                                m = RE_MASS_CX.search(stripped)
+                                if m:
+                                    mp.cx = _safe_float(m.group(1))
+                            elif "y-coordinate" in stripped:
+                                m = RE_MASS_CY.search(stripped)
+                                if m:
+                                    mp.cy = _safe_float(m.group(1))
+                            elif "z-coordinate" in stripped:
+                                m = RE_MASS_CZ.search(stripped)
+                                if m:
+                                    mp.cz = _safe_float(m.group(1))
+                            continue
+                        if "total mass" in stripped:
+                            m = RE_MASS_TOTAL.search(stripped)
+                            if m:
+                                mp.total_mass = _safe_float(m.group(1))
+                            continue
+                        if "i11" in stripped:
+                            m = RE_MASS_I11.search(stripped)
+                            if m:
+                                mp.i11 = _safe_float(m.group(1))
+                            continue
+                        if "i22" in stripped:
+                            m = RE_MASS_I22.search(stripped)
+                            if m:
+                                mp.i22 = _safe_float(m.group(1))
+                            continue
+                        if "i33" in stripped:
+                            m = RE_MASS_I33.search(stripped)
+                            if m:
+                                mp.i33 = _safe_float(m.group(1))
+                            continue
+
                     continue
 
-                if in_energy_block:
-                    m = RE_ENERGY_FIELD.match(stripped)
-                    if m:
-                        field_name = m.group(1).strip().lower()
-                        value_str = m.group(2).strip()
-                        current_energy[field_name] = _safe_float(value_str)
-                    elif stripped.strip() == "" and current_energy:
-                        # End of energy block
-                        snap = self._build_energy_snapshot(current_cycle_info, current_energy)
-                        if snap:
-                            data.energy_snapshots.append(snap)
-                        in_energy_block = False
-                        current_energy = {}
-
-                # --- 100 smallest timesteps ---
-                if RE_SMALLEST_TS_HEADER.search(stripped):
-                    in_smallest_ts = True
-                    continue
-
-                if in_smallest_ts:
-                    m = RE_SMALLEST_TS_ENTRY.match(stripped.strip())
-                    if m:
-                        entry = TimestepEntry(
-                            element_type=m.group(1),
-                            element_number=_safe_int(m.group(2)),
-                            part_number=_safe_int(m.group(3)),
-                            timestep=_safe_float(m.group(4)),
-                        )
-                        data.smallest_timesteps.append(entry)
-                    elif stripped.strip() == "" and data.smallest_timesteps:
-                        in_smallest_ts = False
-
-                # --- Termination markers ---
-                if RE_TERM_REACHED.search(stripped):
-                    data.termination.status = TerminationStatus.NORMAL
-
-                if RE_NORMAL_TERM.search(stripped):
-                    data.termination.status = TerminationStatus.NORMAL
-
-                if RE_ERROR_TERM.search(stripped):
-                    data.termination.status = TerminationStatus.ERROR
-
-                # --- Timing table ---
-                if RE_TIMING_HEADER.search(stripped) and "C P U" not in stripped:
-                    in_timing = True
-                    continue
-
+                # ========== TAIL (timing, cpu, decomp, mass, summary) ==========
+                # Only ~200 lines — no performance concern, run all patterns
                 if in_timing:
-                    if "T o t a l s" in stripped and not "C P U" in stripped:
-                        m = RE_TIMING_ENTRY.match(stripped.replace("T o t a l s", "TOTAL"))
+                    if "T o t a l s" in stripped and "C P U" not in stripped:
                         in_timing = False
                         continue
-
                     m_interf = RE_INTERF_ID.match(stripped)
                     if m_interf:
-                        ct = ContactTiming(
+                        data.contact_timing.append(ContactTiming(
                             interface_id=_safe_int(m_interf.group(1)),
                             cpu_seconds=_safe_float(m_interf.group(2)),
                             cpu_percent=_safe_float(m_interf.group(3)),
                             clock_seconds=_safe_float(m_interf.group(4)),
                             clock_percent=_safe_float(m_interf.group(5)),
-                        )
-                        data.contact_timing.append(ct)
+                        ))
                         continue
-
                     m = RE_TIMING_ENTRY.match(stripped)
                     if m:
-                        pt = PerformanceTiming(
+                        data.performance.append(PerformanceTiming(
                             component=m.group(1).strip(),
                             cpu_seconds=_safe_float(m.group(2)),
                             cpu_percent=_safe_float(m.group(3)),
                             clock_seconds=_safe_float(m.group(4)),
                             clock_percent=_safe_float(m.group(5)),
-                        )
-                        data.performance.append(pt)
-
-                # --- CPU timing per processor ---
-                if "C P U   T i m i n g" in stripped:
-                    in_cpu_timing = True
+                        ))
                     continue
 
                 if in_cpu_timing:
+                    if "T o t a l s" in stripped:
+                        in_cpu_timing = False
+                        continue
                     m = RE_CPU_PROC.match(stripped.strip())
                     if m:
-                        mpp = MPPProcessorTiming(
+                        data.mpp_timing.append(MPPProcessorTiming(
                             processor_id=_safe_int(m.group(1)),
                             hostname=m.group(2),
                             cpu_ratio=_safe_float(m.group(3)),
                             cpu_seconds=_safe_float(m.group(4)),
-                        )
-                        data.mpp_timing.append(mpp)
-                    if "T o t a l s" in stripped:
-                        in_cpu_timing = False
+                        ))
+                    continue
 
-                # --- Decomposition metrics ---
-                m = RE_DECOMP_MIN.search(stripped)
-                if m:
-                    data.decomp_metrics.min_cost = _safe_float(m.group(1))
-                m = RE_DECOMP_MAX.search(stripped)
-                if m:
-                    data.decomp_metrics.max_cost = _safe_float(m.group(1))
-                m = RE_DECOMP_STDDEV.search(stripped)
-                if m:
-                    data.decomp_metrics.std_deviation = _safe_float(m.group(1))
-                m = RE_DECOMP_MEM.search(stripped)
-                if m:
-                    data.decomp_metrics.decomp_memory = _safe_int(m.group(1))
-                m = RE_DECOMP_DYN_MEM.search(stripped)
-                if m:
-                    data.decomp_metrics.dynamic_memory = _safe_int(m.group(1))
+                # --- Tail section markers ---
+                if "C P U   T i m i n g" in stripped:
+                    in_cpu_timing = True
+                    continue
+                if "T i m i n g   i n f o r m a t i o n" in stripped:
+                    in_timing = True
+                    continue
 
-                # --- Mass properties ---
-                m = RE_MASS_PART_HEADER.search(stripped)
-                if m:
-                    data.mass_properties.append(MassProperty(part_id=_safe_int(m.group(1))))
+                # --- Termination markers (tail) ---
+                if "N o r m a l" in stripped and "t e r m i n a t i o n" in stripped:
+                    data.termination.status = TerminationStatus.NORMAL
+                    continue
+                if "E r r o r" in stripped and "t e r m i n a t i o n" in stripped:
+                    data.termination.status = TerminationStatus.ERROR
+                    continue
+
+                # --- Mass properties (spaced header) ---
+                if "m a s s" in stripped and "p r o p e r t i e s" in stripped:
+                    m = RE_MASS_PART_HEADER.search(stripped)
+                    if m:
+                        data.mass_properties.append(MassProperty(part_id=_safe_int(m.group(1))))
+                    continue
+
+                # --- Mass property fields ---
                 if data.mass_properties:
                     mp = data.mass_properties[-1]
-                    m = RE_MASS_TOTAL.search(stripped)
+                    if "mass center" in stripped:
+                        if "x-coordinate" in stripped:
+                            m = RE_MASS_CX.search(stripped)
+                            if m:
+                                mp.cx = _safe_float(m.group(1))
+                        elif "y-coordinate" in stripped:
+                            m = RE_MASS_CY.search(stripped)
+                            if m:
+                                mp.cy = _safe_float(m.group(1))
+                        elif "z-coordinate" in stripped:
+                            m = RE_MASS_CZ.search(stripped)
+                            if m:
+                                mp.cz = _safe_float(m.group(1))
+                        continue
+                    if "total mass" in stripped:
+                        m = RE_MASS_TOTAL.search(stripped)
+                        if m:
+                            mp.total_mass = _safe_float(m.group(1))
+                        continue
+                    if "i11" in stripped:
+                        m = RE_MASS_I11.search(stripped)
+                        if m:
+                            mp.i11 = _safe_float(m.group(1))
+                        continue
+                    if "i22" in stripped:
+                        m = RE_MASS_I22.search(stripped)
+                        if m:
+                            mp.i22 = _safe_float(m.group(1))
+                        continue
+                    if "i33" in stripped:
+                        m = RE_MASS_I33.search(stripped)
+                        if m:
+                            mp.i33 = _safe_float(m.group(1))
+                        continue
+
+                # --- Decomposition metrics ---
+                if "Minumum:" in stripped:
+                    m = RE_DECOMP_MIN.search(stripped)
                     if m:
-                        mp.total_mass = _safe_float(m.group(1))
-                    m = RE_MASS_CX.search(stripped)
+                        data.decomp_metrics.min_cost = _safe_float(m.group(1))
+                elif "Maximum:" in stripped:
+                    m = RE_DECOMP_MAX.search(stripped)
                     if m:
-                        mp.cx = _safe_float(m.group(1))
-                    m = RE_MASS_CY.search(stripped)
+                        data.decomp_metrics.max_cost = _safe_float(m.group(1))
+                elif "Standard Deviation:" in stripped:
+                    m = RE_DECOMP_STDDEV.search(stripped)
                     if m:
-                        mp.cy = _safe_float(m.group(1))
-                    m = RE_MASS_CZ.search(stripped)
+                        data.decomp_metrics.std_deviation = _safe_float(m.group(1))
+                elif "Memory required for decomposition" in stripped:
+                    m = RE_DECOMP_MEM.search(stripped)
                     if m:
-                        mp.cz = _safe_float(m.group(1))
-                    m = RE_MASS_I11.search(stripped)
+                        data.decomp_metrics.decomp_memory = _safe_int(m.group(1))
+                elif "Additional dynamic memory" in stripped:
+                    m = RE_DECOMP_DYN_MEM.search(stripped)
                     if m:
-                        mp.i11 = _safe_float(m.group(1))
-                    m = RE_MASS_I22.search(stripped)
-                    if m:
-                        mp.i22 = _safe_float(m.group(1))
-                    m = RE_MASS_I33.search(stripped)
-                    if m:
-                        mp.i33 = _safe_float(m.group(1))
+                        data.decomp_metrics.dynamic_memory = _safe_int(m.group(1))
 
                 # --- Final summary ---
-                m = RE_PROBLEM_TIME.search(stripped)
-                if m:
-                    data.termination.actual_time = _safe_float(m.group(1))
-
-                m = RE_PROBLEM_CYCLE.search(stripped)
-                if m:
-                    data.termination.total_cycles = _safe_int(m.group(1))
-
-                m = RE_TOTAL_CPU.search(stripped)
-                if m:
-                    data.termination.total_cpu_seconds = _safe_float(m.group(1))
-
-                m = RE_CPU_PER_ZONE.search(stripped)
-                if m:
-                    data.termination.cpu_per_zone_cycle_ns = _safe_float(m.group(1))
-
-                m = RE_CLOCK_PER_ZONE.search(stripped)
-                if m:
-                    data.termination.clock_per_zone_cycle_ns = _safe_float(m.group(1))
-
-                m = RE_START_TIME.search(stripped)
-                if m:
-                    data.termination.start_datetime = m.group(1)
-
-                m = RE_END_TIME.search(stripped)
-                if m:
-                    data.termination.end_datetime = m.group(1)
-
-                m = RE_ELAPSED.search(stripped)
-                if m:
-                    data.termination.elapsed_seconds = _safe_float(m.group(1))
+                elif "Problem time" in stripped:
+                    m = RE_PROBLEM_TIME.search(stripped)
+                    if m:
+                        data.termination.actual_time = _safe_float(m.group(1))
+                elif "Problem cycle" in stripped:
+                    m = RE_PROBLEM_CYCLE.search(stripped)
+                    if m:
+                        data.termination.total_cycles = _safe_int(m.group(1))
+                elif "Total CPU time" in stripped:
+                    m = RE_TOTAL_CPU.search(stripped)
+                    if m:
+                        data.termination.total_cpu_seconds = _safe_float(m.group(1))
+                elif "CPU time per zone cycle" in stripped:
+                    m = RE_CPU_PER_ZONE.search(stripped)
+                    if m:
+                        data.termination.cpu_per_zone_cycle_ns = _safe_float(m.group(1))
+                elif "Clock time per zone cycle" in stripped:
+                    m = RE_CLOCK_PER_ZONE.search(stripped)
+                    if m:
+                        data.termination.clock_per_zone_cycle_ns = _safe_float(m.group(1))
+                elif "Start time" in stripped:
+                    m = RE_START_TIME.search(stripped)
+                    if m:
+                        data.termination.start_datetime = m.group(1)
+                elif "End time" in stripped:
+                    m = RE_END_TIME.search(stripped)
+                    if m:
+                        data.termination.end_datetime = m.group(1)
+                elif "Elapsed time" in stripped:
+                    m = RE_ELAPSED.search(stripped)
+                    if m:
+                        data.termination.elapsed_seconds = _safe_float(m.group(1))
 
         return data
 
