@@ -18,6 +18,7 @@ venv/
 
 # LS-DYNA result files (large binary data)
 results/
+Tests/
 
 # Generated reports
 *.html
