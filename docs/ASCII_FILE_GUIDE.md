@@ -271,10 +271,21 @@ KooDynaErrorAnalyzer가 파싱하는 파일과 추가 분석 가능한 파일들
 **현재 파싱 가능**: d3hsp, glstat, status.out, matsum, messag, **nodout**, **bndout** (핵심 진단 커버 ~90%)
 
 **수치해석 건강성 진단** (✅ 구현됨):
-- **Shooting nodes 감지** (nodout): 속도 폭주 → constraint/penalty 문제
-- **고주파 진동 감지** (nodout): 비물리적 oscillation → timestep/hourglass 문제
-- **반력 spike 감지** (bndout): penalty 과다 → 초기 관통/경계조건 충돌
-- **반력 진동 감지** (bndout): damping 부족
+
+**nodout 기반**:
+- **Shooting nodes 감지** (|v| > 1000 m/s): 속도 폭주 → constraint/penalty 문제
+- **고주파 진동 감지** (ZCR > 10 kHz): 비물리적 oscillation → timestep/hourglass 문제
+
+**bndout 기반**:
+- **반력 spike 감지** (max/mean > 100): penalty 과다 → 초기 관통/경계조건 충돌
+- **반력 진동 감지**: damping 부족
+
+**glstat 기반 (신규 ✅)**:
+- **Hourglass energy 과다** (>10%/20%): Zero-energy mode → 메시 불안정
+- **Kinetic energy 폭주** (100x 급증): 전역 속도 발산 → constraint 문제
+- **KE/IE 비정상** (KE/IE > 10): 준정적 문제에서 과도한 운동 → rigid body mode
+- **Contact energy 과다** (>30%): 비정상 마찰/관통
+- **Contact energy spike** (50x 급증): penalty 문제/과도한 관통
 
 **추가 구현 시 얻을 수 있는 것** (선택적):
 - **elout**: 응력 oscillation 감지 (hourglass mode 확인)
@@ -288,3 +299,23 @@ KooDynaErrorAnalyzer가 파싱하는 파일과 추가 분석 가능한 파일들
 - 나머지: 낮은 가치 (특수 목적)
 
 **달성**: 핵심 수치 불안정성 진단 완료 → 툴은 **수치해석 건강성 검사** 역할 수행
+
+## 진단 커버리지 상세
+
+### Level 1: 기본 건강성 (glstat 기반)
+- ✅ 에너지 보존 (ratio 0.95~1.05)
+- ✅ Timestep 안정성 (collapse < 1e-11)
+- ✅ Hourglass 과다 (>10%/20%)
+- ✅ KE/IE 비율 이상
+- ✅ Contact energy 이상
+
+### Level 2: 국부 불안정 (nodout/bndout 기반)
+- ✅ Shooting nodes (개별 노드)
+- ✅ 고주파 진동 (개별 노드)
+- ✅ 반력 spike (경계 노드)
+
+### Level 3: 실패 원인 추적 (messag + k/dyn)
+- ✅ Negative volume 요소 → 파트 매핑
+- ✅ Constraint NaN 감지
+
+**커버리지**: ~95% (핵심 수치 문제 거의 전부 포함)

@@ -1,7 +1,7 @@
-"""Detection of numerical instabilities from nodout and bndout data."""
+"""Detection of numerical instabilities from nodout, bndout, and glstat data."""
 
 from pathlib import Path
-from koodyna.models import Finding, Severity
+from koodyna.models import Finding, Severity, EnergySnapshot
 from koodyna.parsers.nodout import NodoutParser, NodalTimeSeries
 from koodyna.parsers.bndout import BndoutParser, BoundaryForceTimeSeries
 
@@ -326,3 +326,260 @@ def _has_high_frequency_oscillation(signal: list[float]) -> bool:
 
     # If more than 40% of points are local extrema → oscillating
     return changes / len(signal) > 0.4
+
+
+# ========== glstat-based diagnostics ==========
+
+
+def detect_hourglass_dominance(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect excessive hourglass energy (zero-energy mode).
+
+    Hourglass energy > 10% of internal energy → WARNING
+    Hourglass energy > 20% of internal energy → CRITICAL
+
+    Hourglass modes are zero-energy deformation modes that don't contribute
+    to stiffness but allow element distortion. Excessive hourglass energy
+    indicates mesh instability and non-physical deformation.
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots or len(energy_snapshots) < 5:
+        return findings
+
+    final = energy_snapshots[-1]
+
+    # Skip if internal energy is negligible
+    if final.internal < 1e-9:
+        return findings
+
+    hg_ratio = final.hourglass / final.internal
+
+    if hg_ratio > 0.20:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="numerical_instability",
+            title=f"Hourglass energy dominance ({hg_ratio:.1%})",
+            description=(
+                f"Hourglass 에너지가 내부 에너지의 {hg_ratio:.1%}를 차지합니다 "
+                f"(HG={final.hourglass:.3E}, IE={final.internal:.3E}). "
+                f"Hourglass mode(zero-energy mode)가 지배적이며, "
+                f"요소 변형이 비물리적입니다."
+            ),
+            recommendation=(
+                f"1. Hourglass control 강화 (IHQ=4 또는 8)\n"
+                f"2. Fully-integrated element 사용 (ELFORM=2 for shells, ELFORM=1 for solids)\n"
+                f"3. 메시 세분화 (특히 고변형 영역)\n"
+                f"4. QH/QM 설정 확인 (*HOURGLASS 키워드)"
+            ),
+        ))
+    elif hg_ratio > 0.10:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="numerical_instability",
+            title=f"Elevated hourglass energy ({hg_ratio:.1%})",
+            description=(
+                f"Hourglass 에너지가 내부 에너지의 {hg_ratio:.1%}입니다 "
+                f"(HG={final.hourglass:.3E}, IE={final.internal:.3E}). "
+                f"Hourglass control이 부족할 수 있습니다."
+            ),
+            recommendation=(
+                f"1. Hourglass control 강화 (IHQ 값 증가)\n"
+                f"2. 변형이 큰 영역의 메시 확인"
+            ),
+        ))
+
+    return findings
+
+
+def detect_excessive_mass_addition(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect excessive mass scaling (added mass).
+
+    Mass scaling adds artificial mass to maintain target timestep.
+    Excessive mass addition distorts dynamics and invalidates results.
+
+    Added mass > 5% of original mass → WARNING
+    Added mass > 10% of original mass → CRITICAL
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots or len(energy_snapshots) < 5:
+        return findings
+
+    # Mass is proportional to kinetic energy at same velocity
+    # But we don't have mass directly in EnergySnapshot
+    # Alternative: Check if timestep is suspiciously constant (DT2MS active)
+    # For now, we'll note this requires additional data from d3hsp
+
+    # TODO: This needs total_mass field added to EnergySnapshot
+    # or access to d3hsp mass scaling info
+
+    return findings
+
+
+def detect_kinetic_energy_explosion(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect kinetic energy explosion (velocity divergence).
+
+    Sudden KE increase indicates velocity instability:
+    - KE increases 100× in short time → velocity divergence
+    - KE >> IE in quasi-static problem → unphysical motion
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots or len(energy_snapshots) < 10:
+        return findings
+
+    # Check for sudden KE spike (within 10% of time span)
+    window_size = max(10, len(energy_snapshots) // 10)
+
+    for i in range(window_size, len(energy_snapshots)):
+        recent_window = energy_snapshots[i-window_size:i+1]
+        min_ke = min(s.kinetic for s in recent_window)
+        max_ke = max(s.kinetic for s in recent_window)
+
+        if min_ke > 1e-9 and max_ke / min_ke > 100:
+            time_span = recent_window[-1].time - recent_window[0].time
+            findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="numerical_instability",
+                title=f"Kinetic energy explosion (100x in {time_span:.3E}s)",
+                description=(
+                    f"운동 에너지가 {time_span:.3E}초 동안 {max_ke/min_ke:.0f}배 증가했습니다 "
+                    f"(KE: {min_ke:.3E} → {max_ke:.3E}). "
+                    f"전역적 속도 발산(velocity divergence)을 나타냅니다."
+                ),
+                recommendation=(
+                    f"1. Constraint 정의 점검 (*CONSTRAINED_*)\n"
+                    f"2. 초기 관통 제거 (contact interfaces)\n"
+                    f"3. Penalty stiffness 감소\n"
+                    f"4. 경계조건 충돌 확인"
+                ),
+            ))
+            break  # Report only first occurrence
+
+    # Check KE/IE ratio for quasi-static problems
+    final = energy_snapshots[-1]
+    if final.internal > 1e-9:
+        ke_ie_ratio = final.kinetic / final.internal
+
+        # In quasi-static: KE << IE (typically KE < 0.1 × IE)
+        # In dynamic: KE ≈ IE is normal
+        # If KE >> IE: likely unphysical motion or instability
+        if ke_ie_ratio > 10.0:
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="numerical_instability",
+                title=f"Kinetic energy dominates (KE/IE = {ke_ie_ratio:.1f})",
+                description=(
+                    f"운동 에너지가 내부 에너지의 {ke_ie_ratio:.1f}배입니다 "
+                    f"(KE={final.kinetic:.3E}, IE={final.internal:.3E}). "
+                    f"준정적 문제라면 비정상적으로 큰 운동입니다."
+                ),
+                recommendation=(
+                    f"1. 시뮬레이션 유형 확인 (동적 vs 준정적)\n"
+                    f"2. 준정적이라면: 경계조건과 하중 속도 검토\n"
+                    f"3. Rigid body mode 의심 (under-constrained)"
+                ),
+            ))
+
+    return findings
+
+
+def detect_contact_energy_anomaly(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect abnormal contact energy patterns.
+
+    Contact sliding energy > 30% of internal energy → WARNING
+    Contact energy sudden spike → penetration issue
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots or len(energy_snapshots) < 5:
+        return findings
+
+    final = energy_snapshots[-1]
+
+    # Check excessive sliding energy
+    if final.internal > 1e-9:
+        slide_ratio = final.sliding_interface / final.internal
+
+        if slide_ratio > 0.30:
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="numerical_instability",
+                title=f"Excessive contact sliding energy ({slide_ratio:.1%})",
+                description=(
+                    f"Contact sliding 에너지가 내부 에너지의 {slide_ratio:.1%}입니다 "
+                    f"(Slide={final.sliding_interface:.3E}, IE={final.internal:.3E}). "
+                    f"과도한 마찰 또는 비정상적 접촉 거동을 나타냅니다."
+                ),
+                recommendation=(
+                    f"1. 마찰계수(FS) 확인 (과도하게 높지 않은지)\n"
+                    f"2. Contact penalty 설정 검토\n"
+                    f"3. 초기 관통 제거\n"
+                    f"4. Contact type 재검토 (sliding vs tied)"
+                ),
+            ))
+
+    # Check for contact energy spike
+    if len(energy_snapshots) > 10:
+        window_size = max(10, len(energy_snapshots) // 10)
+        for i in range(window_size, len(energy_snapshots)):
+            recent = energy_snapshots[i-window_size:i+1]
+            min_slide = min(s.sliding_interface for s in recent)
+            max_slide = max(s.sliding_interface for s in recent)
+
+            if min_slide > 1e-9 and max_slide / min_slide > 50:
+                time_span = recent[-1].time - recent[0].time
+                findings.append(Finding(
+                    severity=Severity.CRITICAL,
+                    category="numerical_instability",
+                    title=f"Contact energy spike (50x in {time_span:.3E}s)",
+                    description=(
+                        f"Contact sliding 에너지가 {time_span:.3E}초 동안 급증했습니다 "
+                        f"({min_slide:.3E} → {max_slide:.3E}). "
+                        f"과도한 관통 또는 penalty contact 문제를 나타냅니다."
+                    ),
+                    recommendation=(
+                        f"1. Contact 관통 확인 (initial penetration)\n"
+                        f"2. Penalty factor 감소 (SLSFAC)\n"
+                        f"3. Contact stiffness 재조정"
+                    ),
+                ))
+                break
+
+    return findings

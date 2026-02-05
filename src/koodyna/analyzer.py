@@ -19,6 +19,9 @@ from koodyna.analysis.numerical_instability import (
     detect_shooting_nodes,
     detect_high_frequency_oscillation,
     detect_excessive_reaction_force,
+    detect_hourglass_dominance,
+    detect_kinetic_energy_explosion,
+    detect_contact_energy_anomaly,
 )
 
 
@@ -233,6 +236,20 @@ class Analyzer:
             if self.verbose:
                 print(f"    Checking for excessive reaction forces...")
             numerical_findings.extend(detect_excessive_reaction_force(bndout_path))
+
+        # glstat-based instability checks
+        if energy_snapshots:
+            if self.verbose:
+                print(f"    Checking hourglass energy...")
+            numerical_findings.extend(detect_hourglass_dominance(energy_snapshots))
+
+            if self.verbose:
+                print(f"    Checking kinetic energy stability...")
+            numerical_findings.extend(detect_kinetic_energy_explosion(energy_snapshots))
+
+            if self.verbose:
+                print(f"    Checking contact energy...")
+            numerical_findings.extend(detect_contact_energy_anomaly(energy_snapshots))
 
         # --- Phase 6: Diagnostics ---
         if self.verbose:
