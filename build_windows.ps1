@@ -36,10 +36,12 @@ Write-Host ""
 $env:PYTHONPATH = Join-Path $ScriptDir "src"
 
 $HiddenImports = @(
-    "koodyna", "koodyna.parsers", "koodyna.parsers.d3hsp",
+    "koodyna", "koodyna.cli", "koodyna.analyzer", "koodyna.models",
+    "koodyna.parsers", "koodyna.parsers.d3hsp",
     "koodyna.parsers.glstat", "koodyna.parsers.status",
     "koodyna.parsers.profile", "koodyna.parsers.messag",
     "koodyna.parsers.nodout", "koodyna.parsers.bndout",
+    "koodyna.parsers.matsum", "koodyna.parsers.element_mapper",
     "koodyna.analysis", "koodyna.analysis.energy",
     "koodyna.analysis.timestep", "koodyna.analysis.warnings",
     "koodyna.analysis.contact", "koodyna.analysis.performance",
@@ -49,6 +51,7 @@ $HiddenImports = @(
     "koodyna.report", "koodyna.report.terminal",
     "koodyna.report.json_report", "koodyna.report.html_report",
     "koodyna.knowledge", "koodyna.knowledge.warning_db",
+    "koodyna.knowledge.error_db",
     "tkinter", "tkinter.filedialog", "tkinter.scrolledtext",
     "webbrowser"
 )

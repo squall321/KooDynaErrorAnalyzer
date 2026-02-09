@@ -23,6 +23,9 @@ venv/bin/pyinstaller --onefile \
     --log-level DEBUG \
     --name koodyna \
     --hidden-import=koodyna \
+    --hidden-import=koodyna.cli \
+    --hidden-import=koodyna.analyzer \
+    --hidden-import=koodyna.models \
     --hidden-import=koodyna.parsers \
     --hidden-import=koodyna.parsers.d3hsp \
     --hidden-import=koodyna.parsers.glstat \
@@ -31,6 +34,8 @@ venv/bin/pyinstaller --onefile \
     --hidden-import=koodyna.parsers.messag \
     --hidden-import=koodyna.parsers.nodout \
     --hidden-import=koodyna.parsers.bndout \
+    --hidden-import=koodyna.parsers.matsum \
+    --hidden-import=koodyna.parsers.element_mapper \
     --hidden-import=koodyna.analysis \
     --hidden-import=koodyna.analysis.energy \
     --hidden-import=koodyna.analysis.timestep \
@@ -46,6 +51,7 @@ venv/bin/pyinstaller --onefile \
     --hidden-import=koodyna.report.html_report \
     --hidden-import=koodyna.knowledge \
     --hidden-import=koodyna.knowledge.warning_db \
+    --hidden-import=koodyna.knowledge.error_db \
     --paths=src \
     src/koodyna/__main__.py
 
