@@ -1,14 +1,18 @@
 """Parser for LS-DYNA glstat file (global statistics - energy data)."""
 
+import math
 import re
 from pathlib import Path
 
 from koodyna.models import EnergySnapshot
 
+# Two formats:
+#   "dt of cycle    1 is controlled by solid  34050 of part   12"
+#   "dt of cycle    1 is controlled by dt2ms"
 RE_DT_CYCLE = re.compile(
-    r'dt of cycle\s+(\d+)\s+is controlled by\s+(\w+)\s+(\d+)\s+of part\s+(\d+)'
+    r'dt of cycle\s+(\d+)\s+is controlled by\s+(\w+)(?:\s+(\d+)\s+of part\s+(\d+))?'
 )
-RE_ENERGY_FIELD = re.compile(r'^\s*([\w\s/().]+?)\.{2,}\s+([\d.E+\-]+|\d+)\s*$')
+RE_ENERGY_FIELD = re.compile(r'^\s*([\w\s/().]+?)\.{2,}\s+([\d.E+\-]+|\d+|[Nn][Aa][Nn]|[-+]?[Ii][Nn][Ff])\s*$')
 
 # Ordered from most specific to least specific to avoid substring conflicts
 FIELD_MAP_ORDERED = [
@@ -38,6 +42,7 @@ FIELD_MAP_ORDERED = [
 
 
 def _safe_float(s: str) -> float:
+    """Convert string to float. NaN/Inf are returned as-is (not replaced with 0)."""
     try:
         return float(s)
     except (ValueError, TypeError):
@@ -61,6 +66,7 @@ class GlstatParser:
         snapshots: list[EnergySnapshot] = []
         current_cycle_info: dict = {}
         current_fields: dict[str, float] = {}
+        block_has_nan = False
         in_block = False
 
         with open(self.filepath, "r", errors="replace") as f:
@@ -71,17 +77,18 @@ class GlstatParser:
                 if m:
                     # Flush previous block
                     if current_fields:
-                        snap = self._build_snapshot(current_cycle_info, current_fields)
+                        snap = self._build_snapshot(current_cycle_info, current_fields, block_has_nan)
                         if snap:
                             snapshots.append(snap)
 
                     current_cycle_info = {
                         "cycle": _safe_int(m.group(1)),
                         "elem_type": m.group(2),
-                        "elem_num": _safe_int(m.group(3)),
-                        "part_num": _safe_int(m.group(4)),
+                        "elem_num": _safe_int(m.group(3) or "0"),
+                        "part_num": _safe_int(m.group(4) or "0"),
                     }
                     current_fields = {}
+                    block_has_nan = False
                     in_block = True
                     continue
 
@@ -90,21 +97,24 @@ class GlstatParser:
                     if m:
                         field_name = m.group(1).strip().lower()
                         value_str = m.group(2).strip()
+                        val = _safe_float(value_str)
+                        if math.isnan(val) or math.isinf(val):
+                            block_has_nan = True
                         for key, attr in FIELD_MAP_ORDERED:
                             if key in field_name:
-                                current_fields[attr] = _safe_float(value_str)
+                                current_fields[attr] = val
                                 break
 
         # Flush last block
         if current_fields:
-            snap = self._build_snapshot(current_cycle_info, current_fields)
+            snap = self._build_snapshot(current_cycle_info, current_fields, block_has_nan)
             if snap:
                 snapshots.append(snap)
 
         return snapshots
 
     def _build_snapshot(
-        self, cycle_info: dict, fields: dict[str, float]
+        self, cycle_info: dict, fields: dict[str, float], has_nan: bool = False
     ) -> EnergySnapshot | None:
         if not fields:
             return None
@@ -135,4 +145,5 @@ class GlstatParser:
             controlling_element=cycle_info.get("elem_num", 0),
             controlling_part=cycle_info.get("part_num", 0),
             time_per_zone_ns=int(fields.get("zone_ns", 0)),
+            has_nan=has_nan,
         )

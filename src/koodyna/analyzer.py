@@ -23,7 +23,11 @@ from koodyna.analysis.numerical_instability import (
     detect_kinetic_energy_explosion,
     detect_contact_energy_anomaly,
     detect_timestep_volatility,
+    detect_nan_in_energy,
+    detect_negative_energy_components,
+    diagnose_slurm_failures,
 )
+from koodyna.parsers.slurm import find_and_parse_slurm
 
 
 class Analyzer:
@@ -83,6 +87,13 @@ class Analyzer:
             mes_data = parse_all_mes_files(self.result_dir)
             files_found.append(f"mes[0000-{len(discovered['mes'])-1:04d}]")
 
+        slurm_info = None
+        if self.verbose:
+            print(f"  Checking for slurm error files...")
+        slurm_info = find_and_parse_slurm(self.result_dir)
+        if slurm_info:
+            files_found.append(f"slurm_{slurm_info.job_id}.err")
+
         report.files_found = files_found
 
         # --- Phase 3: Populate report from d3hsp ---
@@ -98,6 +109,9 @@ class Analyzer:
             report.contact_definitions = d3hsp_data.contact_definitions
             report.decomp_metrics = d3hsp_data.decomp_metrics
             report.mass_properties = d3hsp_data.mass_properties
+
+        if slurm_info:
+            report.slurm_info = slurm_info
 
         if status_info:
             report.status = status_info
@@ -133,6 +147,29 @@ class Analyzer:
                     if key not in elem_to_proc:
                         elem_to_proc[key] = ts.processor_id
 
+        # --- Phase 3b: Merge mes error counts with d3hsp ---
+        # In MPP runs, errors may only appear in non-zero rank mes files
+        merged_error_counts: dict[int, int] = dict(d3hsp_data.error_counts) if d3hsp_data else {}
+        merged_error_messages: dict[int, str] = dict(d3hsp_data.error_messages) if d3hsp_data else {}
+        if mes_data:
+            for md in mes_data:
+                for code, count in md.error_counts.items():
+                    if code not in merged_error_counts:
+                        merged_error_counts[code] = count
+                    else:
+                        merged_error_counts[code] = max(merged_error_counts[code], count)
+                # Use error details from mes files as messages if d3hsp doesn't have them
+                for detail in md.error_details:
+                    # detail format: "Error NNNNN: description text"
+                    parts = detail.split(": ", 1)
+                    if len(parts) == 2:
+                        try:
+                            code = int(parts[0].replace("Error ", ""))
+                            if code not in merged_error_messages:
+                                merged_error_messages[code] = parts[1]
+                        except ValueError:
+                            pass
+
         # --- Phase 4: Analysis ---
         # Use glstat snapshots if available, otherwise d3hsp energy data
         energy_snapshots = glstat_snapshots or (d3hsp_data.energy_snapshots if d3hsp_data else [])
@@ -166,8 +203,8 @@ class Analyzer:
             warning_counts=d3hsp_data.warning_counts if d3hsp_data else {},
             warning_messages=d3hsp_data.warning_messages if d3hsp_data else {},
             warning_interfaces=d3hsp_data.warning_interfaces if d3hsp_data else {},
-            error_counts=d3hsp_data.error_counts if d3hsp_data else {},
-            error_messages=d3hsp_data.error_messages if d3hsp_data else {},
+            error_counts=merged_error_counts,
+            error_messages=merged_error_messages,
         )
         report.warnings = warning_entries
 
@@ -255,6 +292,20 @@ class Analyzer:
             if self.verbose:
                 print(f"    Checking timestep stability...")
             numerical_findings.extend(detect_timestep_volatility(energy_snapshots))
+
+            if self.verbose:
+                print(f"    Checking for NaN in energy...")
+            numerical_findings.extend(detect_nan_in_energy(energy_snapshots))
+
+            if self.verbose:
+                print(f"    Checking for negative energy components...")
+            numerical_findings.extend(detect_negative_energy_components(energy_snapshots))
+
+        # Slurm failure diagnostics
+        if slurm_info:
+            if self.verbose:
+                print(f"    Diagnosing slurm failures...")
+            numerical_findings.extend(diagnose_slurm_failures(slurm_info))
 
         # --- Phase 6: Diagnostics ---
         if self.verbose:

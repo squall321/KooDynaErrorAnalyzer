@@ -40,6 +40,12 @@ RE_CONTACT_DT_LIMIT = re.compile(
     r'time step size should not exceed\s+([\d.E+\-]+)'
 )
 
+# Error detail line patterns (appear right after *** Error NNNNN lines)
+RE_NEG_VOL_DETAIL = re.compile(
+    r'negative volume in (solid|shell|beam|tshell) element #\s*(\d+)\s+cycle\s+(\d+)\s+time\s+([\d.E+\-]+)'
+)
+RE_NAN_DETAIL = re.compile(r'NaN detected(?:\s+on processor\s+#\s*(\d+))?')
+
 
 class MessagData:
     """Parsed data from a single mes file."""
@@ -49,6 +55,7 @@ class MessagData:
         self.filepath = filepath
         self.warning_counts: dict[int, int] = {}
         self.error_counts: dict[int, int] = {}
+        self.error_details: list[str] = []  # detail lines following *** Error
         self.initial_penetrations: dict[int, int] = {}  # interface_id -> count
         self.interface_warning_counts: dict[int, int] = {}
         self.smallest_timesteps: list[TimestepEntry] = []
@@ -71,6 +78,7 @@ def parse_mes_file(filepath: Path) -> MessagData:
     data = MessagData(rank, filepath)
     pending_intf_id: int | None = None
     in_timestep_section = False
+    pending_error_code: int | None = None  # track last *** Error code for detail line
 
     # Surface timestep state (rank 0 only)
     current_surf: InterfaceSurfaceTimestep | None = None
@@ -152,7 +160,15 @@ def parse_mes_file(filepath: Path) -> MessagData:
             if m:
                 code = int(m.group(1))
                 data.error_counts[code] = data.error_counts.get(code, 0) + 1
+                pending_error_code = code
                 continue
+
+            # Capture error detail line (appears right after *** Error)
+            if pending_error_code is not None:
+                detail = stripped.strip()
+                if detail:
+                    data.error_details.append(f"Error {pending_error_code}: {detail}")
+                pending_error_code = None
 
             m = RE_INIT_PENETRATION.search(stripped)
             if m:

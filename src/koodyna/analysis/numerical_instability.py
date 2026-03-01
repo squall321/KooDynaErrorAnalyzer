@@ -1,7 +1,8 @@
 """Detection of numerical instabilities from nodout, bndout, and glstat data."""
 
+import math
 from pathlib import Path
-from koodyna.models import Finding, Severity, EnergySnapshot
+from koodyna.models import Finding, Severity, EnergySnapshot, SlurmJobInfo
 from koodyna.parsers.nodout import NodoutParser, NodalTimeSeries
 from koodyna.parsers.bndout import BndoutParser, BoundaryForceTimeSeries
 
@@ -794,5 +795,328 @@ def detect_timestep_volatility(
                         f"m_added = m × ((dt_target/dt_element)² - 1)"
                     ),
                 ))
+
+    return findings
+
+
+# ========== NaN / Negative energy diagnostics ==========
+
+
+def detect_nan_in_energy(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect NaN values in glstat energy data.
+
+    NaN in energy fields means the simulation has diverged irreversibly.
+    Once NaN appears, all subsequent calculations produce NaN (NaN propagation).
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots:
+        return findings
+
+    # Find the first snapshot with NaN
+    first_nan_idx = None
+    for i, snap in enumerate(energy_snapshots):
+        if snap.has_nan:
+            first_nan_idx = i
+            break
+
+    if first_nan_idx is None:
+        return findings
+
+    first_nan = energy_snapshots[first_nan_idx]
+    total_snapshots = len(energy_snapshots)
+    nan_count = sum(1 for s in energy_snapshots if s.has_nan)
+
+    # Get pre-NaN snapshot for context
+    pre_nan_desc = ""
+    if first_nan_idx > 0:
+        prev = energy_snapshots[first_nan_idx - 1]
+        pre_nan_desc = (
+            f"NaN 발생 직전(cycle {prev.cycle}): "
+            f"KE={prev.kinetic:.3E}, IE={prev.internal:.3E}, "
+            f"energy_ratio={prev.energy_ratio:.4f}, dt={prev.timestep:.3E}. "
+        )
+
+    findings.append(Finding(
+        severity=Severity.CRITICAL,
+        category="numerical_instability",
+        title=f"NaN detected in energy (cycle {first_nan.cycle})",
+        description=(
+            f"Cycle {first_nan.cycle} (t={first_nan.time:.3E}s)에서 에너지 값이 NaN이 되었습니다. "
+            f"이후 {nan_count}개 스냅샷(전체 {total_snapshots}개 중)이 NaN입니다. "
+            f"{pre_nan_desc}"
+            f"NaN(Not a Number)은 IEEE 754 부동소수점 연산에서 0/0, ∞-∞, √(-x) 등 "
+            f"정의되지 않는 연산의 결과입니다. LS-DYNA에서 NaN 발생은 주로: "
+            f"(1) negative volume 요소에서 det(J) < 0으로 음속 c = √(K/ρ)가 "
+            f"허수가 되거나, (2) 노드 좌표가 ±∞로 발산한 후 후속 연산에서 발생합니다. "
+            f"NaN은 전파성이 있어(NaN + x = NaN, NaN × x = NaN), 한 번 발생하면 "
+            f"모든 후속 에너지 계산이 NaN으로 오염되어 시뮬레이션이 의미를 잃습니다. "
+            f"LS-DYNA R16+에서는 *CONTROL_CHECK_NAN으로 NaN 발생 시 자동 종료 가능합니다."
+        ),
+        recommendation=(
+            f"1. NaN 발생 직전 시점(cycle {first_nan.cycle - 1 if first_nan_idx > 0 else 0}) "
+            f"의 변형 확인 — 후처리기에서 과도하게 왜곡된 요소/발산하는 노드 식별\n"
+            f"2. *CONTROL_CHECK_NAN 추가 — NaN 발생 시 자동 종료하여 "
+            f"원인 시점을 정확히 파악 가능 (R16 이상)\n"
+            f"3. Negative volume 방지 — *CONTROL_TIMESTEP의 ERODE=1로 "
+            f"과도 왜곡 요소 자동 삭제, 또는 *MAT_ADD_EROSION으로 "
+            f"변형률 기준 erosion 설정\n"
+            f"4. 접촉 설정 재검토 — penalty stiffness 감소(SLSFAC < 0.1), "
+            f"초기 관통 제거, SOFT=1(segment-based) 사용\n"
+            f"5. Single precision 사용 시 double precision 전환 고려 — "
+            f"SP에서는 부동소수점 overflow가 더 빨리 발생 (max ~3.4E38 vs DP ~1.8E308)"
+        ),
+    ))
+
+    return findings
+
+
+def detect_negative_energy_components(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """
+    Detect negative energy components that should be non-negative.
+
+    Negative sliding interface energy is physically impossible and indicates
+    severe contact instability. Negative internal energy indicates
+    non-physical material behavior.
+
+    Args:
+        energy_snapshots: Energy history from glstat
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if not energy_snapshots:
+        return findings
+
+    # Check for negative sliding interface energy
+    worst_slide = None
+    worst_slide_snap = None
+    for snap in energy_snapshots:
+        if snap.has_nan:
+            continue
+        if snap.sliding_interface < -1e-6:
+            if worst_slide is None or snap.sliding_interface < worst_slide:
+                worst_slide = snap.sliding_interface
+                worst_slide_snap = snap
+
+    if worst_slide_snap is not None:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="numerical_instability",
+            title=f"Negative sliding interface energy ({worst_slide:.3E})",
+            description=(
+                f"Cycle {worst_slide_snap.cycle} (t={worst_slide_snap.time:.3E}s)에서 "
+                f"sliding interface energy = {worst_slide:.3E}입니다. "
+                f"접촉 슬라이딩 에너지 E_slide = Σ(F_contact × δ_slide)는 "
+                f"마찰에 의한 에너지 소산이므로 항상 양수(≥0)여야 합니다. "
+                f"음의 접촉 에너지는 penalty contact에서 비정상적인 에너지 생성을 "
+                f"의미하며, 접촉면에서 인공적으로 에너지가 시스템에 주입되고 있습니다. "
+                f"이는 주로 penalty stiffness가 과도하여 관통-반발 사이클에서 "
+                f"접촉력이 오버슈팅하거나, tied contact에서 풀린 노드가 "
+                f"비정상적인 penalty force를 받을 때 발생합니다. "
+                f"음의 접촉 에너지는 energy ratio를 1.0 이상으로 증가시켜 "
+                f"에너지 비보존을 유발하며, 시뮬레이션 결과의 신뢰성을 손상시킵니다."
+            ),
+            recommendation=(
+                f"1. Penalty stiffness 감소 — SLSFAC를 0.05~0.1로 설정하여 "
+                f"접촉력의 오버슈팅 방지. k_contact = fs × K × A²/V에서 "
+                f"fs(SLSFAC)를 줄이면 관통 시 반발력이 완화됨\n"
+                f"2. SOFT=1 (segment-based contact) 사용 — 양측 표면의 "
+                f"강성을 고려하여 균형 잡힌 접촉력 적용. SOFT=2(pinball)도 고려\n"
+                f"3. Contact type 변경 — AUTOMATIC_SURFACE_TO_SURFACE 대신 "
+                f"MORTAR contact 사용 검토. Mortar은 에너지 보존이 우수\n"
+                f"4. 초기 관통 제거 — 초기 관통이 있으면 첫 스텝에서 과도한 "
+                f"penalty force → 반발 → 음의 에너지 생성 사이클 유발\n"
+                f"5. Contact damping(VDC) 추가 — VDC=20~40으로 접촉면 "
+                f"진동을 감쇠하여 에너지 생성 방지"
+            ),
+        ))
+
+    # Check for negative internal energy
+    worst_ie = None
+    worst_ie_snap = None
+    for snap in energy_snapshots:
+        if snap.has_nan:
+            continue
+        if snap.internal < -1e-6:
+            if worst_ie is None or snap.internal < worst_ie:
+                worst_ie = snap.internal
+                worst_ie_snap = snap
+
+    if worst_ie_snap is not None:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="numerical_instability",
+            title=f"Negative internal energy ({worst_ie:.3E})",
+            description=(
+                f"Cycle {worst_ie_snap.cycle} (t={worst_ie_snap.time:.3E}s)에서 "
+                f"internal energy = {worst_ie:.3E}입니다. "
+                f"내부 에너지(internal energy)는 변형 에너지 W = Σ∫σ:dε × V로 "
+                f"계산되며, 이는 물리적으로 항상 양수(≥0)여야 합니다. "
+                f"음의 내부 에너지는 재료 모델이 비물리적 응력-변형률 관계를 "
+                f"생성하거나, 요소 왜곡이 심하여 적분점에서의 계산이 "
+                f"올바르지 않음을 나타냅니다. 이는 곧 시뮬레이션 발산으로 이어집니다."
+            ),
+            recommendation=(
+                f"1. 재료 모델 입력 검증 — 탄성 계수(E), 포아송 비(ν), "
+                f"항복 응력(σ_y) 등이 단위 체계에 맞는지 확인\n"
+                f"2. 요소 erosion 설정 — *MAT_ADD_EROSION으로 과도 변형 시 "
+                f"요소 삭제. 음의 IE를 생성하는 요소를 제거\n"
+                f"3. 요소 formulation 변경 — 고변형 영역에 fully-integrated "
+                f"요소(ELFORM=2/16) 사용하여 정확한 적분"
+            ),
+        ))
+
+    return findings
+
+
+def diagnose_slurm_failures(
+    slurm_info: SlurmJobInfo | None,
+) -> list[Finding]:
+    """
+    Generate diagnostic findings from Slurm job errors.
+
+    Covers: segmentation faults, MPI errors, exit codes.
+
+    Args:
+        slurm_info: Parsed Slurm job error information
+
+    Returns:
+        list of Finding objects
+    """
+    findings: list[Finding] = []
+
+    if slurm_info is None:
+        return findings
+
+    # Segmentation fault
+    if slurm_info.has_segfault:
+        stack_info = ""
+        if slurm_info.stack_trace:
+            stack_info = f" Stack trace ({len(slurm_info.stack_trace)} frames): {slurm_info.stack_trace[0]}"
+
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="slurm_failure",
+            title=f"Segmentation fault (Signal {slurm_info.signal})",
+            description=(
+                f"LS-DYNA 프로세스가 Segmentation fault (Signal 11)로 비정상 종료되었습니다. "
+                f"Slurm job {slurm_info.job_id}, 노드: {slurm_info.node_name or 'unknown'}. "
+                f"{stack_info} "
+                f"Segmentation fault는 프로세스가 할당되지 않은 메모리 영역에 접근할 때 "
+                f"OS가 보내는 SIGSEGV(Signal 11) 신호입니다. LS-DYNA에서 이는 주로: "
+                f"(1) 메모리 부족으로 배열 경계를 초과한 접근, "
+                f"(2) 극심한 요소 왜곡으로 내부 데이터 구조가 손상, "
+                f"(3) NaN 전파로 인덱싱 연산이 비정상적 메모리 주소 참조, "
+                f"(4) MPI 도메인 분해에서 프로세서 간 데이터 불일치 등으로 발생합니다. "
+                f"d3hsp 파일이 불완전하게 종료된 경우(termination message 없음), "
+                f"이 segfault가 종료 원인입니다."
+            ),
+            recommendation=(
+                f"1. 메모리 증가 — LS-DYNA 입력에서 memory=4000m 등으로 메모리 할당 증가. "
+                f"메모리 부족이 가장 흔한 segfault 원인\n"
+                f"2. d3hsp 분석 — d3hsp 파일의 마지막 경고/에러 메시지 확인. "
+                f"segfault 직전에 negative volume, NaN 등의 경고가 있었을 수 있음\n"
+                f"3. 요소 erosion 설정 — 요소 왜곡에 의한 메모리 손상 방지를 위해 "
+                f"*MAT_ADD_EROSION 또는 *CONTROL_TIMESTEP ERODE=1 설정\n"
+                f"4. 접촉 설정 완화 — penalty stiffness 감소, SOFT=1 사용, "
+                f"초기 관통 제거로 극심한 왜곡 방지\n"
+                f"5. Double precision 사용 — SP(single precision)에서 DP로 전환하면 "
+                f"부동소수점 overflow에 의한 비정상 메모리 접근 방지"
+            ),
+        ))
+
+    # MPI errors
+    if slurm_info.has_mpi_error:
+        mpi_msgs = [m for m in slurm_info.error_messages
+                     if 'MPI' in m or 'mpi' in m.lower()]
+        msg_desc = '; '.join(mpi_msgs[:3]) if mpi_msgs else "MPI error"
+
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="slurm_failure",
+            title=f"MPI communication error",
+            description=(
+                f"MPI 통신 오류가 발생했습니다: {msg_desc}. "
+                f"Slurm job {slurm_info.job_id}, 노드: {slurm_info.node_name or 'unknown'}. "
+                f"MPI(Message Passing Interface) 오류는 MPP(Massively Parallel Processing) "
+                f"실행에서 프로세서 간 통신이 실패한 것입니다. "
+                f"MPI_ERR_TRUNCATE는 수신 버퍼보다 큰 메시지가 도착했을 때 발생하며, "
+                f"이는 도메인 분해 경계에서 데이터 크기 불일치를 의미합니다. "
+                f"MPI_Allreduce에서 발생하면 전체 프로세서의 글로벌 합산(에너지, 질량 등) "
+                f"연산이 실패한 것으로, 한 프로세서에서 비정상적으로 큰 값이나 NaN이 "
+                f"발생하여 통신 데이터 크기가 예상과 달라진 것이 원인입니다."
+            ),
+            recommendation=(
+                f"1. 프로세서 수 줄이기 — MPP에서 프로세서 수가 많으면 "
+                f"도메인 경계면이 증가하여 통신 부하와 오류 확률 증가. "
+                f"예: -np 4 → -np 2로 줄여서 테스트\n"
+                f"2. 메모리 증가 — memory= 파라미터를 2배로 증가시켜 "
+                f"MPI 버퍼 부족 방지\n"
+                f"3. 도메인 분해 재검토 — *CONTROL_MPP_DECOMPOSITION 또는 "
+                f"MPP 도메인 분해 설정에서 프로세서별 부하 균형 확인\n"
+                f"4. 입력 파일에서 수치 불안정 원인 제거 — MPI 오류는 "
+                f"종종 한 프로세서에서 발생한 수치 발산(NaN, overflow)이 "
+                f"통신 오류로 나타난 것. 위의 접촉/요소 설정 권장사항 적용"
+            ),
+        ))
+
+    # MPI_ABORT
+    if slurm_info.has_mpi_abort and not slurm_info.has_mpi_error:
+        findings.append(Finding(
+            severity=Severity.CRITICAL,
+            category="slurm_failure",
+            title="MPI_ABORT — process terminated",
+            description=(
+                f"MPI_ABORT가 호출되어 모든 MPI 프로세스가 종료되었습니다. "
+                f"Slurm job {slurm_info.job_id}. "
+                f"MPI_ABORT는 한 프로세스에서 복구 불가능한 오류가 발생하여 "
+                f"전체 병렬 실행을 강제 종료시킨 것입니다. 이는 주로 LS-DYNA 내부 "
+                f"에러 처리에서 호출되며, d3hsp 파일의 에러 메시지에서 "
+                f"구체적인 원인을 확인할 수 있습니다."
+            ),
+            recommendation=(
+                f"1. d3hsp 파일의 에러/경고 메시지 확인 — MPI_ABORT 전에 발생한 "
+                f"LS-DYNA 에러가 실제 원인\n"
+                f"2. SMP(공유 메모리 병렬) 모드로 테스트 — MPI 관련 문제를 "
+                f"배제하기 위해 단일 프로세서 또는 SMP로 실행 테스트"
+            ),
+        ))
+
+    # Non-zero exit code (without segfault/MPI — pure LS-DYNA error termination)
+    if slurm_info.exit_code > 0 and not slurm_info.has_segfault and not slurm_info.has_mpi_error:
+        findings.append(Finding(
+            severity=Severity.CRITICAL if slurm_info.exit_code == 3 else Severity.WARNING,
+            category="slurm_failure",
+            title=f"LS-DYNA exit code {slurm_info.exit_code}",
+            description=(
+                f"LS-DYNA가 exit code {slurm_info.exit_code}로 종료되었습니다. "
+                f"Slurm job {slurm_info.job_id}. "
+                f"Exit code 3은 LS-DYNA의 표준 에러 종료(error termination)로, "
+                f"d3hsp 파일에 기록된 에러 메시지에 의해 시뮬레이션이 중단된 것입니다. "
+                f"일반적인 원인: negative volume(Error 40509), NaN detected(Error 40456), "
+                f"constraint matrix singular(Error 30358) 등. "
+                f"d3hsp의 termination 섹션과 에러/경고 카운트를 통해 "
+                f"정확한 원인을 파악할 수 있습니다."
+            ),
+            recommendation=(
+                f"1. d3hsp 파일의 'E r r o r' 메시지 확인 — 에러 코드별 대응\n"
+                f"2. 이 도구의 다른 진단 결과 참조 — 에너지 불안정, timestep 붕괴, "
+                f"경고 패턴 등이 종료 원인을 설명합니다"
+            ),
+        ))
 
     return findings

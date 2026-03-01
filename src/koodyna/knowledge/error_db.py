@@ -231,6 +231,64 @@ ERROR_DATABASE: dict[int, ErrorInfo] = {
         ),
     ),
 
+    # ===== NaN Detection Errors (40455/40456) =====
+    40455: ErrorInfo(
+        code=40455,
+        severity=Severity.CRITICAL,
+        title="NaN detected on processor",
+        description=(
+            "프로세서에서 NaN(Not a Number)이 검출되었습니다. "
+            "LS-DYNA의 명시적 시간 적분에서 v(t+dt) = v(t) + (F/m)×dt를 계산할 때, "
+            "힘 F가 무한대이거나 질량 m이 0이면 NaN이 발생합니다. "
+            "NaN은 IEEE 754 부동소수점 연산에서 0/0, ∞-∞, 0×∞ 등의 "
+            "결과이며, 한 번 발생하면 모든 후속 계산으로 전파됩니다(NaN + x = NaN). "
+            "MPP 환경에서는 특정 프로세서에서 먼저 발생하여 MPI 통신을 통해 "
+            "다른 프로세서로 전파됩니다. Error 40455는 프로세서별 NaN 감지로, "
+            "Error 40456(전역 NaN 감지)의 전조입니다."
+        ),
+        recommendation=(
+            "1. NaN 발생 프로세서의 도메인 확인 — 해당 프로세서가 담당하는 "
+            "요소/노드 영역에서 극심한 변형이나 접촉 불안정 확인\n"
+            "2. Timestep scale factor(TSSFAC) 감소 — 0.9 → 0.67로 줄여 "
+            "각 스텝의 변형량을 제한. 특히 대변형 해석에서 효과적\n"
+            "3. Negative volume 경고(40509) 확인 — NaN의 전조 증상인 "
+            "negative volume이 선행했는지 d3hsp/mes 파일에서 확인\n"
+            "4. 재료 물성 검증 — 밀도, 탄성계수가 0이 아닌지 확인. "
+            "단위 시스템(mm-ton-s vs m-kg-s) 통일 여부 점검\n"
+            "5. 요소 침식(*MAT_ADD_EROSION) 추가 — 과도 변형 요소를 "
+            "NaN 발생 전에 자동 제거"
+        ),
+    ),
+    40456: ErrorInfo(
+        code=40456,
+        severity=Severity.CRITICAL,
+        title="NaN detected (global)",
+        description=(
+            "전역적으로 NaN(Not a Number)이 검출되어 시뮬레이션이 종료됩니다. "
+            "Error 40456은 Error 40455(프로세서별 NaN)가 전역으로 전파된 후 "
+            "최종적으로 감지되는 에러입니다. 이 시점에서는 이미 수치 해가 "
+            "완전히 발산했으며, 복구가 불가능합니다. "
+            "NaN의 근본 원인은 대부분 (1) negative volume 요소, "
+            "(2) 과도한 접촉 관통, (3) 재료 모델의 비물리적 파라미터, "
+            "(4) 과도한 mass scaling 중 하나입니다. "
+            "glstat에서 NaN이 나타나는 시점 직전의 에너지 변화를 분석하면 "
+            "원인을 추적할 수 있습니다."
+        ),
+        recommendation=(
+            "1. glstat 에너지 이력 분석 — NaN 직전 사이클에서 "
+            "kinetic energy 급증, energy ratio 발산, 또는 "
+            "sliding interface energy 이상 여부 확인\n"
+            "2. mes 파일에서 Error 40455 확인 — 어느 프로세서에서 "
+            "NaN이 먼저 발생했는지 추적하여 문제 영역 특정\n"
+            "3. Negative volume 경고(40509) 추적 — NaN 발생 전에 "
+            "negative volume이 축적되었다면 해당 요소에 침식 기준 추가\n"
+            "4. 접촉 설정 검토 — 접촉 관통이 에너지 불안정을 유발했다면 "
+            "penalty scale factor(SLSFAC) 조정 또는 soft constraint(SOFT=1) 사용\n"
+            "5. TSSFAC 감소 + ERODE 활성화 — dt를 줄이고 "
+            "과도 왜곡 요소를 자동 제거하여 NaN 전파 방지"
+        ),
+    ),
+
     # ===== NaN / Numerical Errors (30xxx) =====
     30200: ErrorInfo(
         code=30200,

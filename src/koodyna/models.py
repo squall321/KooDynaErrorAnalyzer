@@ -11,6 +11,20 @@ class Severity(Enum):
     INFO = "INFO"
 
 
+@dataclass
+class SlurmJobInfo:
+    job_id: str = ""
+    exit_code: int = -1
+    signal: int = -1
+    has_segfault: bool = False
+    has_mpi_error: bool = False
+    has_mpi_abort: bool = False
+    error_messages: list[str] = field(default_factory=list)
+    stack_trace: list[str] = field(default_factory=list)
+    node_name: str = ""
+    err_file: str = ""
+
+
 class TerminationStatus(Enum):
     NORMAL = "NORMAL"
     ERROR = "ERROR"
@@ -92,6 +106,7 @@ class EnergySnapshot:
     total: float = 0.0
     energy_ratio: float = 1.0
     energy_ratio_no_eroded: float = 1.0
+    has_nan: bool = False
     global_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
     controlling_element_type: str = ""
     controlling_element: int = 0
@@ -302,4 +317,5 @@ class Report:
     status: StatusInfo = field(default_factory=StatusInfo)
     findings: list[Finding] = field(default_factory=list)
     keyword_counts: dict[str, int] = field(default_factory=dict)
+    slurm_info: Optional[SlurmJobInfo] = None
     files_found: list[str] = field(default_factory=list)

@@ -305,6 +305,21 @@ class D3hspParser:
                     if "***" in stripped and ("Warning" in stripped or "Error" in stripped):
                         state = "BODY"
                         # fall through to BODY handling below
+                    elif "E r r o r   t e r m i n a t i o n" in stripped:
+                        data.termination.status = TerminationStatus.ERROR
+                        state = "TAIL"
+                        continue
+                    elif "N o r m a l   t e r m i n a t i o n" in stripped:
+                        data.termination.status = TerminationStatus.NORMAL
+                        state = "TAIL"
+                        continue
+                    elif "T i m i n g   i n f o r m a t i o n" in stripped:
+                        state = "TAIL"
+                        in_timing = True
+                        continue
+                    elif "problem cycle" in stripped:
+                        state = "BODY"
+                        continue
                     else:
                         if "Contact summary" in stripped:
                             in_contact_summary = True
