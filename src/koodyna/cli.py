@@ -271,6 +271,11 @@ def main():
         action="store_true",
         help="Re-run analysis even for already-analyzed entries",
     )
+    parser.add_argument(
+        "--no-html",
+        action="store_true",
+        help="Skip HTML report generation in batch mode (JSON only)",
+    )
 
     args = parser.parse_args()
 
@@ -289,6 +294,7 @@ def main():
                 verbose=args.verbose,
                 limit=args.limit,
                 reanalyze=args.reanalyze,
+                html=not args.no_html,
             )
         return
 
@@ -302,6 +308,7 @@ def main():
             verbose=args.verbose,
             limit=args.limit,
             reanalyze=args.reanalyze,
+            html=not args.no_html,
         )
         return
 

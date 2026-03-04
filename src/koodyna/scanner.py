@@ -199,22 +199,25 @@ def run_batch_analyze(
     verbose: bool = False,
     limit: int = 0,
     reanalyze: bool = False,
+    html: bool = True,
 ) -> dict:
     """Run koodyna analysis on all pending (or all, if reanalyze=True) entries.
 
     For each directory:
     - Runs Analyzer.run()
     - Saves JSON report to output_dir/<study_type>/<case_name>.json
-    - Updates index status (analyzed / failed)
+    - Saves HTML report to output_dir/<study_type>/<case_name>.html (if html=True)
+    - Updates index status (analyzed / failed / skipped)
     - Saves index every 50 cases to preserve progress
 
     Args:
         index_path:  Path to the index JSON file.
-        output_dir:  Where to save JSON reports.
+        output_dir:  Where to save reports.
                      Defaults to ~/.koodyna/reports/
         verbose:     Show per-case progress.
         limit:       Max cases to process (0 = all).
         reanalyze:   If True, re-run even already-analyzed entries.
+        html:        Also generate HTML reports (default: True).
 
     Returns:
         Summary dict with counts.
@@ -235,7 +238,7 @@ def run_batch_analyze(
     if reanalyze:
         targets = all_entries
     else:
-        targets = [(p, e) for p, e in all_entries if e.get("status") != "analyzed"]
+        targets = [(p, e) for p, e in all_entries if e.get("status") not in ("analyzed", "skipped")]
 
     if limit > 0:
         targets = targets[:limit]
@@ -247,7 +250,8 @@ def run_batch_analyze(
 
     console.print(
         f"\n[bold cyan]배치 분석 시작:[/bold cyan] {total:,}개 폴더\n"
-        f"  리포트 저장 위치: [dim]{output_dir}[/dim]\n"
+        f"  리포트 저장 위치: [dim]{output_dir}[/dim]"
+        f"  {'(JSON + HTML)' if html else '(JSON 전용)'}\n"
     )
 
     analyzed = failed = skipped = 0
@@ -277,10 +281,11 @@ def run_batch_analyze(
                 progress.advance(task)
                 continue
 
-            # Determine output path
+            # Determine output paths (flat under study_type subdir)
             report_subdir = output_dir / study_type
             report_subdir.mkdir(parents=True, exist_ok=True)
             json_path = report_subdir / f"{case_name}.json"
+            html_path = report_subdir / f"{case_name}.html"
 
             try:
                 from koodyna.analyzer import Analyzer
@@ -290,15 +295,26 @@ def run_batch_analyze(
                 report = analyzer.run()
                 write_json_report(report, json_path)
 
+                if html:
+                    from koodyna.report.html_report import write_html_report
+                    write_html_report(report, html_path)
+
                 mark_analyzed(index, result_dir, status="analyzed")
                 analyzed += 1
 
                 if verbose:
                     n_crit = sum(
                         1 for f in report.findings
-                        if hasattr(f, "severity") and str(f.severity) in ("CRITICAL", "Severity.CRITICAL")
+                        if f.severity.name == "CRITICAL"
                     )
-                    console.print(f"  [green]✓[/green] {study_type}/{case_name}  CRIT:{n_crit}")
+                    n_warn = sum(
+                        1 for f in report.findings
+                        if f.severity.name == "WARNING"
+                    )
+                    console.print(
+                        f"  [green]✓[/green] {study_type}/{case_name}"
+                        f"  CRIT:[red]{n_crit}[/red]  WARN:[yellow]{n_warn}[/yellow]"
+                    )
 
             except Exception as exc:
                 mark_analyzed(index, result_dir, status="failed")
