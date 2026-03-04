@@ -981,17 +981,17 @@
     },
     {
       "severity": "CRITICAL",
+      "category": "performance",
+      "title": "MPP load imbalance: 129.1%",
+      "description": "CPU ratio range: [0.3544, 1.6456]. Slowest: proc #1 (node002), Fastest: proc #0 (node002). 가장 느린 프로세서가 평균 대비 1.6배 더 많은 작업을 처리하고 있습니다.",
+      "recommendation": "도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요."
+    },
+    {
+      "severity": "CRITICAL",
       "category": "slurm_failure",
       "title": "LS-DYNA exit code 3",
       "description": "LS-DYNA가 exit code 3로 종료되었습니다. Slurm job 21713. Exit code 3은 LS-DYNA의 표준 에러 종료(error termination)로, d3hsp 파일에 기록된 에러 메시지에 의해 시뮬레이션이 중단된 것입니다. 일반적인 원인: negative volume(Error 40509), NaN detected(Error 40456), constraint matrix singular(Error 30358) 등. d3hsp의 termination 섹션과 에러/경고 카운트를 통해 정확한 원인을 파악할 수 있습니다.",
       "recommendation": "1. d3hsp 파일의 'E r r o r' 메시지 확인 — 에러 코드별 대응\n2. 이 도구의 다른 진단 결과 참조 — 에너지 불안정, timestep 붕괴, 경고 패턴 등이 종료 원인을 설명합니다"
-    },
-    {
-      "severity": "WARNING",
-      "category": "performance",
-      "title": "MPP load imbalance: 129.1%",
-      "description": "CPU ratio range: [0.3544, 1.6456]. Slowest: proc #1 (node002), Fastest: proc #0 (node002).",
-      "recommendation": "Review domain decomposition. Consider using *CONTROL_MPP_DECOMPOSITION with RCBLOG for better balance."
     },
     {
       "severity": "INFO",

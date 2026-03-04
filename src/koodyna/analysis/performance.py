@@ -8,6 +8,7 @@ from koodyna.models import (
 )
 
 MPP_IMBALANCE_WARN = 0.15   # 15% CPU imbalance
+MPP_IMBALANCE_CRIT = 1.00   # 100% CPU imbalance (one proc takes 2x+ fair share)
 SHARING_OVERHEAD_WARN = 0.25  # 25% overhead in sharing
 
 
@@ -65,18 +66,24 @@ def analyze_performance(
         if imbalance > MPP_IMBALANCE_WARN:
             slowest = max(mpp_timing, key=lambda x: x.cpu_ratio)
             fastest = min(mpp_timing, key=lambda x: x.cpu_ratio)
+            severity = Severity.CRITICAL if imbalance >= MPP_IMBALANCE_CRIT else Severity.WARNING
             findings.append(Finding(
-                severity=Severity.WARNING,
+                severity=severity,
                 category="performance",
                 title=f"MPP load imbalance: {imbalance:.1%}",
                 description=(
                     f"CPU ratio range: [{min_ratio:.4f}, {max_ratio:.4f}]. "
                     f"Slowest: proc #{slowest.processor_id} ({slowest.hostname}), "
                     f"Fastest: proc #{fastest.processor_id} ({fastest.hostname})."
+                    + (
+                        f" 가장 느린 프로세서가 평균 대비 {max_ratio:.1f}배 더 많은 작업을 처리하고 있습니다."
+                        if imbalance >= MPP_IMBALANCE_CRIT else ""
+                    )
                 ),
                 recommendation=(
-                    "Review domain decomposition. Consider using "
-                    "*CONTROL_MPP_DECOMPOSITION with RCBLOG for better balance."
+                    "도메인 분해를 재검토하세요. "
+                    "*CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, "
+                    "모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요."
                 ),
             ))
         else:

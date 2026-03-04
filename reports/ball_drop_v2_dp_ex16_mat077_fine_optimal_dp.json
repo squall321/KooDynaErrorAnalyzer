@@ -2723,7 +2723,7 @@
       "category": "performance",
       "title": "MPP load imbalance: 18.6%",
       "description": "CPU ratio range: [0.9070, 1.0930]. Slowest: proc #1 (node002), Fastest: proc #0 (node002).",
-      "recommendation": "Review domain decomposition. Consider using *CONTROL_MPP_DECOMPOSITION with RCBLOG for better balance."
+      "recommendation": "도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요."
     },
     {
       "severity": "INFO",

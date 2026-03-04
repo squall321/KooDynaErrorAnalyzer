@@ -3236,17 +3236,10 @@
     },
     {
       "severity": "WARNING",
-      "category": "energy",
-      "title": "High sliding interface energy",
-      "description": "Max sliding interface / total energy ratio: 20.0%. This may indicate contact instability or excessive penetration.",
-      "recommendation": "Check contact definitions for excessive penetration. Consider increasing penalty stiffness (SLSFAC in *CONTROL_CONTACT) or using soft constraint (SOFT=1)."
-    },
-    {
-      "severity": "WARNING",
       "category": "performance",
       "title": "MPP load imbalance: 41.1%",
       "description": "CPU ratio range: [0.7945, 1.2055]. Slowest: proc #1 (node002), Fastest: proc #0 (node002).",
-      "recommendation": "Review domain decomposition. Consider using *CONTROL_MPP_DECOMPOSITION with RCBLOG for better balance."
+      "recommendation": "도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요."
     },
     {
       "severity": "WARNING",

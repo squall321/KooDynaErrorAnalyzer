@@ -35,20 +35,23 @@ def _deduplicate_findings(findings: list[Finding]) -> list[Finding]:
     """Remove lower-priority findings that are made redundant by higher-priority ones.
 
     Rules:
-    - "High sliding interface energy" (WARNING) is suppressed when a CRITICAL
+    - "High sliding interface energy" (WARNING) is suppressed when any CRITICAL or WARNING
       finding for negative or excessive sliding energy already exists.
     """
     titles = {f.title for f in findings}
-    has_critical_sliding = any(
+    has_superior_sliding = any(
         ("Negative sliding" in t or "Excessive contact sliding" in t)
         for t in titles
-        if any(f.severity == Severity.CRITICAL and f.title == t for f in findings)
+        if any(
+            f.severity in (Severity.CRITICAL, Severity.WARNING) and f.title == t
+            for f in findings
+        )
     )
 
     result: list[Finding] = []
     for f in findings:
-        if f.title == "High sliding interface energy" and has_critical_sliding:
-            continue  # suppressed — more severe sliding finding already present
+        if f.title == "High sliding interface energy" and has_superior_sliding:
+            continue  # suppressed — more specific sliding finding already present
         result.append(f)
     return result
 
