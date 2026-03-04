@@ -247,17 +247,62 @@ def main():
         action="store_true",
         help="Print the contents of the result index",
     )
+    parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="Analyze all pending entries in the index (use with --scan or alone)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        metavar="OUTPUT_DIR",
+        help="Directory for batch analysis JSON reports (default: ~/.koodyna/reports/)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Max number of cases to analyze in batch mode (0 = all)",
+    )
+    parser.add_argument(
+        "--reanalyze",
+        action="store_true",
+        help="Re-run analysis even for already-analyzed entries",
+    )
 
     args = parser.parse_args()
 
-    # --scan mode
+    # --scan mode (optionally followed by --analyze)
     if args.scan is not None:
-        from koodyna.scanner import run_batch_scan, DEFAULT_INDEX_PATH
+        from koodyna.scanner import run_batch_scan, run_batch_analyze, DEFAULT_INDEX_PATH
         index_path = args.index or DEFAULT_INDEX_PATH
         if not args.scan.is_dir():
             print(f"Error: '{args.scan}' is not a directory", file=sys.stderr)
             sys.exit(1)
         run_batch_scan(args.scan, index_path=index_path, verbose=args.verbose)
+        if args.analyze:
+            run_batch_analyze(
+                index_path=index_path,
+                output_dir=args.output_dir,
+                verbose=args.verbose,
+                limit=args.limit,
+                reanalyze=args.reanalyze,
+            )
+        return
+
+    # --analyze mode (without --scan: analyze pending from existing index)
+    if args.analyze:
+        from koodyna.scanner import run_batch_analyze, DEFAULT_INDEX_PATH
+        index_path = args.index or DEFAULT_INDEX_PATH
+        run_batch_analyze(
+            index_path=index_path,
+            output_dir=args.output_dir,
+            verbose=args.verbose,
+            limit=args.limit,
+            reanalyze=args.reanalyze,
+        )
         return
 
     # --list-index mode

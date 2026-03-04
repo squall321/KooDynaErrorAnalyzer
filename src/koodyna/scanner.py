@@ -151,8 +151,7 @@ def run_batch_scan(
     """Discover all d3plot directories under *base_dir*, update the index, and
     return a summary dict.
 
-    Does NOT run analysis — that is left to the CLI layer so that the user can
-    choose output formats (terminal / HTML / JSON) per-run.
+    Does NOT run analysis — use run_batch_analyze() for that.
     """
     from rich.console import Console
     from rich.table import Table
@@ -192,6 +191,139 @@ def run_batch_scan(
         "total_indexed": len(index["directories"]),
         "index_path": str(index_path),
     }
+
+
+def run_batch_analyze(
+    index_path: Path = DEFAULT_INDEX_PATH,
+    output_dir: Path | None = None,
+    verbose: bool = False,
+    limit: int = 0,
+    reanalyze: bool = False,
+) -> dict:
+    """Run koodyna analysis on all pending (or all, if reanalyze=True) entries.
+
+    For each directory:
+    - Runs Analyzer.run()
+    - Saves JSON report to output_dir/<study_type>/<case_name>.json
+    - Updates index status (analyzed / failed)
+    - Saves index every 50 cases to preserve progress
+
+    Args:
+        index_path:  Path to the index JSON file.
+        output_dir:  Where to save JSON reports.
+                     Defaults to ~/.koodyna/reports/
+        verbose:     Show per-case progress.
+        limit:       Max cases to process (0 = all).
+        reanalyze:   If True, re-run even already-analyzed entries.
+
+    Returns:
+        Summary dict with counts.
+    """
+    from rich.console import Console
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+
+    console = Console()
+
+    if output_dir is None:
+        output_dir = DEFAULT_INDEX_PATH.parent / "reports"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    index = load_index(index_path)
+    all_entries = list(index["directories"].items())
+
+    # Filter to pending (or all if reanalyze)
+    if reanalyze:
+        targets = all_entries
+    else:
+        targets = [(p, e) for p, e in all_entries if e.get("status") != "analyzed"]
+
+    if limit > 0:
+        targets = targets[:limit]
+
+    total = len(targets)
+    if total == 0:
+        console.print("[green]분석할 항목이 없습니다 (모두 완료됨).[/green]")
+        return {"analyzed": 0, "failed": 0, "skipped": 0}
+
+    console.print(
+        f"\n[bold cyan]배치 분석 시작:[/bold cyan] {total:,}개 폴더\n"
+        f"  리포트 저장 위치: [dim]{output_dir}[/dim]\n"
+    )
+
+    analyzed = failed = skipped = 0
+    SAVE_INTERVAL = 50  # index 저장 주기
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        console=console,
+        transient=False,
+    ) as progress:
+        task = progress.add_task("분석 중...", total=total)
+
+        for i, (path_str, entry) in enumerate(targets):
+            result_dir = Path(path_str)
+            case_name = result_dir.name
+            study_type = entry.get("study_type", "unknown")
+
+            progress.update(task, description=f"[cyan]{study_type}[/cyan] / {case_name}")
+
+            # Check d3hsp or mes0000 exists
+            if not (result_dir / "d3hsp").exists() and not (result_dir / "mes0000").exists():
+                skipped += 1
+                mark_analyzed(index, result_dir, status="skipped")
+                progress.advance(task)
+                continue
+
+            # Determine output path
+            report_subdir = output_dir / study_type
+            report_subdir.mkdir(parents=True, exist_ok=True)
+            json_path = report_subdir / f"{case_name}.json"
+
+            try:
+                from koodyna.analyzer import Analyzer
+                from koodyna.report.json_report import write_json_report
+
+                analyzer = Analyzer(result_dir, verbose=False)
+                report = analyzer.run()
+                write_json_report(report, json_path)
+
+                mark_analyzed(index, result_dir, status="analyzed")
+                analyzed += 1
+
+                if verbose:
+                    n_crit = sum(
+                        1 for f in report.findings
+                        if hasattr(f, "severity") and str(f.severity) in ("CRITICAL", "Severity.CRITICAL")
+                    )
+                    console.print(f"  [green]✓[/green] {study_type}/{case_name}  CRIT:{n_crit}")
+
+            except Exception as exc:
+                mark_analyzed(index, result_dir, status="failed")
+                failed += 1
+                if verbose:
+                    console.print(f"  [red]✗[/red] {study_type}/{case_name}: {exc}")
+
+            progress.advance(task)
+
+            # Periodic save
+            if (i + 1) % SAVE_INTERVAL == 0:
+                save_index(index, index_path)
+
+    # Final save
+    save_index(index, index_path)
+
+    console.print(
+        f"\n[bold]배치 분석 완료:[/bold]"
+        f"  성공 [green]{analyzed:,}[/green]"
+        f"  실패 [red]{failed:,}[/red]"
+        f"  건너뜀 [yellow]{skipped:,}[/yellow]\n"
+        f"  리포트: [dim]{output_dir}[/dim]"
+    )
+
+    return {"analyzed": analyzed, "failed": failed, "skipped": skipped}
 
 
 def print_index(index_path: Path = DEFAULT_INDEX_PATH) -> None:
