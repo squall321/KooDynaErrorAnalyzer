@@ -570,6 +570,657 @@ ERROR_DATABASE: dict[int, ErrorInfo] = {
         ),
     ),
 
+    # ===== Contact Velocity / Release Warnings (40xxx, 41xxx) =====
+    40532: ErrorInfo(
+        code=40532,
+        severity=Severity.WARNING,
+        title="Slave node penetration velocity exceeds limit",
+        description=(
+            "접촉 slave 노드의 관통 속도(penetration velocity)가 허용 한계를 초과했습니다. "
+            "Penalty contact에서 slave 노드가 master surface를 통과할 때 접촉력 F = k × g을 "
+            "적용하여 관통을 복원하는데, 속도가 너무 크면 penalty force가 불안정해집니다. "
+            "이 경고는 고속 충격 해석에서 자주 발생하며, 반복될수록 에너지 보존이 "
+            "깨져 에너지 비율(energy ratio)이 1.0에서 벗어납니다. "
+            "원인: (1) 과도한 초기 속도, (2) 너무 작은 접촉 stiffness, "
+            "(3) 메시 크기 불일치로 큰 요소가 작은 요소를 빠르게 관통."
+        ),
+        recommendation=(
+            "1. SLSFAC(penalty scale factor) 증가 — *CONTROL_CONTACT에서 SLSFAC를 "
+            "기본값(0.1)에서 0.3~0.5로 늘려 접촉 강성 향상\n"
+            "2. Soft constraint 사용 — SOFT=1(segment-based)로 변경하면 "
+            "관통 속도 기반이 아닌 면 기반 접촉력을 계산하여 안정성 향상\n"
+            "3. 메시 크기 균일화 — slave/master 면의 요소 크기 비율을 1:3 이하로 유지. "
+            "큰 요소 → 작은 요소 충돌 시 penetration velocity가 급증\n"
+            "4. TSSFAC 감소 — timestep scale factor를 낮춰 각 스텝의 관통 증가량을 제한"
+        ),
+    ),
+    40533: ErrorInfo(
+        code=40533,
+        severity=Severity.WARNING,
+        title="Contact velocity too high — slave node removed from tracking",
+        description=(
+            "접촉 slave 노드의 속도가 너무 높아 접촉 추적에서 제외되었습니다. "
+            "LS-DYNA의 segment-based contact(SOFT=1/2)에서 slave 노드 속도 |v| > VTHK × c "
+            "(c = 음속, VTHK = 속도 임계값 계수)이면 해당 노드를 contact bucket에서 제거합니다. "
+            "이는 비현실적인 고속 노드가 접촉 계산을 불안정하게 만드는 것을 방지하는 보호 메커니즘이지만, "
+            "제거된 노드는 그 후로 접촉력을 받지 않아 물리적 오류가 발생할 수 있습니다. "
+            "발생 빈도가 높으면(> 총 사이클의 10%) 접촉 불안정 또는 수치적 발산의 전조입니다."
+        ),
+        recommendation=(
+            "1. 에너지 이력 모니터링 — glstat의 kinetic energy와 sliding interface energy 확인. "
+            "비정상적인 급증이 있으면 수치 불안정이 발생 중\n"
+            "2. VTHK 파라미터 검토 — *CONTROL_CONTACT에서 VTHK를 높여 "
+            "더 많은 속도 범위를 허용. 단, 수치 안정성과 trade-off\n"
+            "3. 초기 속도 조건 검토 — 과도한 초기 속도(*INITIAL_VELOCITY)가 "
+            "설정되어 있지 않은지 확인. 단위 오류로 인한 과대 속도 주의\n"
+            "4. 접촉 타입 변경 — AUTOMATIC_SURFACE_TO_SURFACE 대신 "
+            "AUTOMATIC_NODES_TO_SURFACE 또는 ERODING_SURFACE_TO_SURFACE 사용 검토"
+        ),
+    ),
+    40538: ErrorInfo(
+        code=40538,
+        severity=Severity.WARNING,
+        title="Slave node released from contact surface",
+        description=(
+            "접촉 slave 노드가 접촉 표면에서 해제(released)되었습니다. "
+            "LS-DYNA는 접촉에서 노드 해제 시 에너지 보존을 위해 인공 에너지를 주입하는데, "
+            "이 경고는 그 과정이 발생했음을 알립니다. "
+            "노드 해제는 (1) 접촉면이 분리될 때(정상적), (2) 관통이 너무 깊어 "
+            "복원 불가능할 때(비정상적), (3) 접촉 검색 영역을 벗어날 때 발생합니다. "
+            "비정상적 해제가 반복되면 에너지 비율이 1.0을 벗어나고 "
+            "결과의 신뢰성이 저하됩니다."
+        ),
+        recommendation=(
+            "1. 초기 관통(initial penetration) 확인 — 시뮬레이션 시작 시 "
+            "d3hsp의 'initial penetration' 항목에서 관통 규모 확인. "
+            "큰 초기 관통이 있으면 PENOPT=4로 해소\n"
+            "2. 접촉 bucket 크기 확인 — BSORT(bucket sort 주기)를 줄여 "
+            "접촉 검색을 더 자주 수행하면 노드가 검색 영역을 벗어나는 것을 방지\n"
+            "3. 에너지 비율 추적 — energy ratio가 1.1을 초과하면 "
+            "비정상적인 노드 해제로 인한 에너지 누입이 발생 중\n"
+            "4. IGNORE 옵션 — *CONTACT에서 IGNORE=2 설정으로 초기 관통을 "
+            "점진적으로 해소하면 초기 해제 빈도 감소"
+        ),
+    ),
+    40552: ErrorInfo(
+        code=40552,
+        severity=Severity.WARNING,
+        title="Contact penetration depth exceeds penalty limit",
+        description=(
+            "접촉 slave 노드의 관통 깊이(penetration depth)가 "
+            "penalty contact의 허용 한계를 초과했습니다. "
+            "Penalty contact에서 최대 허용 관통 깊이는 MPAR × (요소 크기) × SLSFAC로 결정되며, "
+            "이를 초과하면 penalty force가 더 이상 증가하지 않거나 "
+            "노드가 해제됩니다. 이는 접촉 강성이 실제 재료 강성보다 "
+            "너무 낮게 설정되어 있음을 의미합니다."
+        ),
+        recommendation=(
+            "1. SLSFAC 증가 — penalty scale factor를 높여 접촉 강성 증가. "
+            "너무 크면 timestep이 줄어들 수 있으므로 단계적으로 조정(0.1 → 0.3 → 0.5)\n"
+            "2. 메시 세분화 — 접촉 영역의 요소 크기를 줄이면 "
+            "상대적 관통 깊이(penetration/element_size 비율)가 감소\n"
+            "3. SOFT=2 사용 — segment-based penalty를 사용하면 "
+            "segment 면적 기반으로 강성을 계산하여 더 일관된 접촉 거동\n"
+            "4. 접촉 타입 검토 — 매우 딱딱한(rigid/stiff) 재료 간 접촉에서는 "
+            "constraint-based contact(SOFT=0에서 TIED 계열) 사용 검토"
+        ),
+    ),
+    40571: ErrorInfo(
+        code=40571,
+        severity=Severity.INFO,
+        title="Initial penetration detected and adjusted",
+        description=(
+            "시뮬레이션 초기화 시 접촉면에서 초기 관통(initial penetration)이 "
+            "감지되어 자동으로 조정되었습니다. "
+            "LS-DYNA는 *CONTROL_CONTACT의 PENOPT 설정에 따라 초기 관통을 "
+            "다르게 처리합니다: PENOPT=1(기본)은 관통을 무시, "
+            "PENOPT=4는 초기 관통 기저값을 설정하여 접촉력이 관통 증분에만 반응하도록 합니다. "
+            "이 경고 자체는 정상 처리되었음을 나타내지만, "
+            "관통 규모가 요소 크기의 10%를 초과하면 초기 응력 오류가 발생할 수 있습니다."
+        ),
+        recommendation=(
+            "1. 초기 관통 규모 확인 — d3hsp에서 'initial penetration' 항목으로 "
+            "관통 깊이와 영향받는 인터페이스 확인\n"
+            "2. 기하학적 수정 — 메시 편집 도구에서 접촉면 사이의 초기 간격을 "
+            "제거하여 근본적으로 관통이 없는 초기 형상 구성\n"
+            "3. IGNORE=2 사용 — 관통을 처음 몇 스텝에 걸쳐 점진적으로 해소하여 "
+            "충격적인 초기 접촉력 방지"
+        ),
+    ),
+    41314: ErrorInfo(
+        code=41314,
+        severity=Severity.WARNING,
+        title="Contact slave node velocity exceeds removal threshold",
+        description=(
+            "접촉 slave 노드의 속도가 제거(removal) 임계값을 초과하여 "
+            "접촉 추적에서 제거되었습니다. "
+            "40533 경고와 유사하지만, 41314는 특히 eroding/failure 접촉에서 "
+            "노드가 파괴(erosion) 직전 고속으로 이동할 때 발생합니다. "
+            "이 경고가 발생하면 해당 노드는 접촉 계산에서 완전히 제외되어 "
+            "인접 요소와의 충돌이 무시될 수 있습니다."
+        ),
+        recommendation=(
+            "1. 침식 기준 검토 — *MAT_ADD_EROSION의 파괴 변형률이 너무 커서 "
+            "요소가 장시간 고속 거동하고 있는 것은 아닌지 확인\n"
+            "2. VTHK 값 조정 — *CONTROL_CONTACT에서 노드 제거 속도 임계값 조정\n"
+            "3. Eroding contact 사용 — *CONTACT_ERODING_SURFACE_TO_SURFACE 등 "
+            "erosion을 고려한 접촉 타입 사용이 적합한지 검토"
+        ),
+    ),
+
+    # ===== Curve / Table Warnings (21xxx) =====
+    21129: ErrorInfo(
+        code=21129,
+        severity=Severity.WARNING,
+        title="Curve value extrapolated beyond defined range",
+        description=(
+            "로드 커브(*DEFINE_CURVE)의 독립 변수값이 정의된 범위를 벗어나 "
+            "외삽(extrapolation)이 적용되었습니다. "
+            "LS-DYNA는 커브 범위 밖에서 마지막 두 점을 잇는 직선으로 외삽하는데, "
+            "이 결과는 재료의 실제 거동과 크게 다를 수 있습니다. "
+            "특히 응력-변형률 커브, 변형률 속도 의존 커브, 하중 이력 커브에서 "
+            "외삽이 발생하면 재료 응답이 비물리적으로 계산됩니다. "
+            "예: LCID가 유효 소성 변형률 vs 항복응력인데, 변형이 커브 끝점 이상 "
+            "진행되면 항복응력이 외삽값으로 계산되어 비현실적 결과 발생."
+        ),
+        recommendation=(
+            "1. 커브 정의 범위 확장 — 시뮬레이션의 최대 예상 변수 범위까지 "
+            "커브 데이터 포인트를 추가. 특히 충격 해석에서 변형률 속도 범위 확인\n"
+            "2. OFFA/OFFO 설정 — *DEFINE_CURVE의 오프셋 파라미터 검토\n"
+            "3. EXTRAP 옵션 — 일부 재료 모델에서 외삽 방법(선형/일정값)을 "
+            "제어할 수 있으므로 재료 카드 매뉴얼 참조\n"
+            "4. 외삽 영역 확인 — d3hsp의 경고 메시지에서 커브 ID와 "
+            "외삽이 발생한 변수값을 확인하여 현실적인 범위인지 판단"
+        ),
+    ),
+    21329: ErrorInfo(
+        code=21329,
+        severity=Severity.WARNING,
+        title="Curve discretization error — too few data points",
+        description=(
+            "커브(*DEFINE_CURVE)의 데이터 포인트가 너무 적어 "
+            "정확한 보간이 어렵습니다. "
+            "LS-DYNA는 커브를 선형 보간(linear interpolation)으로 처리하는데, "
+            "비선형 거동(예: 지수함수, S-곡선 형태의 응력-변형률)을 "
+            "소수의 데이터 포인트로 표현하면 보간 오차가 누적됩니다. "
+            "이 이산화 오차는 응력 계산의 정확도를 떨어뜨리고, "
+            "특히 재료 거동의 변곡점 근처에서 오차가 커집니다."
+        ),
+        recommendation=(
+            "1. 데이터 포인트 추가 — 커브의 곡률이 큰 영역에 데이터를 추가. "
+            "일반적으로 50~100개 포인트가 적절하며, 변곡점 근처는 촘촘히 배치\n"
+            "2. 커브 정확도 검증 — 보간된 커브를 플롯하여 원래 재료 데이터와 "
+            "비교하고, 최대 오차가 1% 이내인지 확인\n"
+            "3. 자동 이산화 도구 — 재료 공급업체의 FEA 입력 파일에서 "
+            "충분한 포인트가 있는 커브 데이터를 요청"
+        ),
+    ),
+
+    # ===== Material Parameter Warnings (20xxx) =====
+    20268: ErrorInfo(
+        code=20268,
+        severity=Severity.WARNING,
+        title="Material parameter outside recommended range",
+        description=(
+            "재료 파라미터가 해당 재료 모델의 권장 범위를 벗어났습니다. "
+            "LS-DYNA의 재료 모델은 특정 파라미터 범위를 가정하여 개발되었으며, "
+            "범위를 벗어나면 구성 방정식이 비물리적 결과를 반환할 수 있습니다. "
+            "예: Poisson 비율 ν ≥ 0.5(명시적 해석에서 체적 보존 문제), "
+            "밀도 = 0, 음의 탄성계수 등. "
+            "단위 시스템 불일치로 인한 파라미터 스케일 오류가 흔한 원인입니다."
+        ),
+        recommendation=(
+            "1. 재료 물성 단위 검증 — 프로젝트의 단위 시스템(m-kg-s, mm-ton-s, mm-g-ms 등)을 "
+            "확인하고 모든 재료 파라미터가 동일한 단위계를 사용하는지 검토\n"
+            "2. 경고 메시지의 파라미터 ID 확인 — d3hsp에서 어떤 파라미터가 "
+            "범위를 벗어났는지 확인 후 LS-DYNA 매뉴얼의 유효 범위와 비교\n"
+            "3. 재료 데이터 검증 — 실험 측정값 또는 문헌 데이터와 비교하여 "
+            "물성값이 합리적인지 확인"
+        ),
+    ),
+    20282: ErrorInfo(
+        code=20282,
+        severity=Severity.WARNING,
+        title="Material density is too low or zero",
+        description=(
+            "재료 밀도(density)가 매우 낮거나 0에 가깝습니다. "
+            "명시적 시간 적분에서 timestep dt = TSSFAC × L/c = TSSFAC × L × √(ρ/E)이므로, "
+            "밀도 ρ가 0에 가까우면 dt → 0이 되어 계산이 불가능해집니다. "
+            "또한 접촉에서 노드 질량 m = ρ × V/n에 따라 관성이 결정되는데, "
+            "질량이 0에 가까우면 작은 접촉력에도 무한한 가속도가 발생합니다. "
+            "원인: 단위 오류(예: SI 단위계 밀도 7850 kg/m³를 mm-ton-s 단위 "
+            "7.85E-9 ton/mm³로 변환하지 않고 입력)."
+        ),
+        recommendation=(
+            "1. 단위 변환 확인 — 프로젝트 단위 시스템에 맞게 밀도를 변환: "
+            "  mm-ton-s: 강철 = 7.85E-9 ton/mm³\n"
+            "  mm-kg-ms: 강철 = 7.85E-3 kg/mm³\n"
+            "  m-kg-s:   강철 = 7850 kg/m³\n"
+            "2. RO(density) 값 직접 확인 — *MAT 카드의 RO 파라미터가 "
+            "0이 아닌 합리적인 값인지 확인\n"
+            "3. *MAT_ELASTIC 또는 *MAT_RIGID의 경우 강체 파트는 "
+            "CMO+CON1+CON2로 질량을 직접 지정하는 방법도 있음"
+        ),
+    ),
+    20546: ErrorInfo(
+        code=20546,
+        severity=Severity.WARNING,
+        title="Material model convergence warning",
+        description=(
+            "재료 모델의 응력 업데이트(stress update) 알고리즘이 수렴 문제를 겪고 있습니다. "
+            "탄-소성 재료에서 응력은 return mapping algorithm으로 계산되는데, "
+            "변형률 증분 Δε이 너무 크거나 항복면(yield surface)의 곡률이 크면 "
+            "반복 계산이 지정된 횟수(NITER) 내에 수렴하지 못합니다. "
+            "이는 주로 rate-dependent 재료(Cowper-Symonds, Johnson-Cook)나 "
+            "손상 모델(GISSMO)에서 타임스텝이 클 때 발생합니다."
+        ),
+        recommendation=(
+            "1. TSSFAC 감소 — 타임스텝을 줄이면 Δε 증분이 작아져 "
+            "return mapping 수렴이 개선됨\n"
+            "2. 재료 모델 파라미터 검토 — 항복면의 곡률이 큰 영역(변형률 경화 지수, "
+            "변형률 속도 파라미터)의 파라미터가 물리적으로 합리적인지 확인\n"
+            "3. NITER 증가 — 일부 재료 모델에서 최대 반복 횟수를 늘릴 수 있음 "
+            "(재료 카드의 NIT 또는 NITER 파라미터 참조)"
+        ),
+    ),
+
+    # ===== Initialization Warnings (30xxx) =====
+    30062: ErrorInfo(
+        code=30062,
+        severity=Severity.WARNING,
+        title="Part or section definition inconsistency",
+        description=(
+            "파트(*PART)와 섹션(*SECTION) 정의 간에 불일치가 발생했습니다. "
+            "예: *SECTION_SOLID에서 ELFORM=2(fully integrated S/R solid)로 "
+            "설정했지만 해당 파트의 요소가 이 formulation을 지원하지 않는 경우, "
+            "또는 *SECTION_SHELL에서 NIP(두께 방향 적분점 수)가 재료 모델의 "
+            "요구사항과 맞지 않는 경우 발생합니다. "
+            "LS-DYNA는 불일치를 감지하면 기본값으로 대체할 수 있으며, "
+            "이때 설계 의도와 다른 요소 공식이 사용될 수 있습니다."
+        ),
+        recommendation=(
+            "1. *SECTION 정의와 실제 요소 타입 확인 — 솔리드 요소 파트에 "
+            "shell section이 할당되어 있거나 그 반대인 경우 수정\n"
+            "2. ELFORM 지원 여부 확인 — 사용하려는 ELFORM이 해당 요소 타입에서 "
+            "지원되는지 LS-DYNA 매뉴얼 확인\n"
+            "3. d3hsp 경고 메시지 확인 — 어떤 파트 ID에서 문제가 발생했는지 "
+            "상세 내용을 d3hsp에서 확인"
+        ),
+    ),
+    30128: ErrorInfo(
+        code=30128,
+        severity=Severity.WARNING,
+        title="ALE mesh initialization warning",
+        description=(
+            "ALE(Arbitrary Lagrangian-Eulerian) 메시 초기화 중 경고가 발생했습니다. "
+            "ALE 해석에서는 유체/기체 영역이 고정된 Euler 메시에서 계산되며, "
+            "구조물과의 FSI(Fluid-Structure Interaction) 경계면 설정이 중요합니다. "
+            "경고 원인: (1) ALE 메시가 Lagrange 구조물 메시와 충분히 겹치지 않음, "
+            "(2) *ALE_MULTI-MATERIAL_GROUP 정의 오류, "
+            "(3) ALE 요소의 초기 void fraction 설정 문제."
+        ),
+        recommendation=(
+            "1. ALE 메시 범위 확인 — ALE 메시가 시뮬레이션 전 구간에서 "
+            "Lagrange 구조물이 이동하는 영역을 모두 포함하는지 확인\n"
+            "2. *CONSTRAINED_LAGRANGE_IN_SOLID 검토 — FSI 커플링 카드의 "
+            "파라미터(NQUAD, CTYPE)가 올바르게 설정되어 있는지 확인\n"
+            "3. 초기 void fraction — *INITIAL_VOLUME_FRACTION_GEOMETRY로 "
+            "각 ALE 그룹의 초기 체적 비율이 올바르게 설정되어 있는지 확인"
+        ),
+    ),
+    30131: ErrorInfo(
+        code=30131,
+        severity=Severity.WARNING,
+        title="Constrained nodeset initialization warning",
+        description=(
+            "구속 노드셋(*CONSTRAINED_NODESET) 초기화 중 경고가 발생했습니다. "
+            "이 경고는 구속 정의에서 (1) 중복 노드(같은 노드가 여러 구속에 포함), "
+            "(2) 존재하지 않는 노드 ID 참조, (3) 자유도(DOF) 충돌(같은 "
+            "자유도가 여러 구속에 의해 이중 구속)이 발생했을 때 나타납니다."
+        ),
+        recommendation=(
+            "1. 노드셋 중복 확인 — 여러 *CONSTRAINED_* 정의에 동일한 노드가 "
+            "중복 포함되지 않는지 확인\n"
+            "2. 노드 ID 유효성 검증 — *SET_NODE에서 참조하는 모든 노드 ID가 "
+            "모델에 실제로 존재하는지 확인\n"
+            "3. DOF 충돌 제거 — 같은 노드의 같은 자유도에 multiple constraint가 "
+            "적용되지 않도록 구속 정의 검토"
+        ),
+    ),
+    30455: ErrorInfo(
+        code=30455,
+        severity=Severity.WARNING,
+        title="Contact segment not found during initialization",
+        description=(
+            "접촉 정의 초기화 중 slave 또는 master segment를 찾을 수 없었습니다. "
+            "*CONTACT 카드에서 참조하는 세그먼트 세트(SSID/MSID)에 해당하는 "
+            "면 요소가 없거나, part set 정의에 문제가 있을 때 발생합니다. "
+            "이 접촉 정의는 초기화에 실패하여 비활성 상태이며, "
+            "해당 파트 간 접촉이 감지되지 않습니다."
+        ),
+        recommendation=(
+            "1. SSTYP/MSTYP 확인 — slave/master 타입 코드가 올바른지 확인 "
+            "(0=세그먼트 세트, 1=쉘 요소 세트, 2=파트 세트, 3=파트 ID)\n"
+            "2. SSID/MSID 유효성 — 참조하는 set ID가 *SET_PART, *SET_SEGMENT 등에 "
+            "실제로 정의되어 있는지 확인\n"
+            "3. 파트 요소 타입 — shell 파트만 surface contact의 master가 될 수 있으며, "
+            "solid 파트는 face 기반 세그먼트 세트를 별도 정의해야 함"
+        ),
+    ),
+
+    # ===== Implicit Solver Warnings (60xxx) =====
+    60121: ErrorInfo(
+        code=60121,
+        severity=Severity.WARNING,
+        title="Implicit solver convergence is slow",
+        description=(
+            "암시적(implicit) 솔버의 Newton-Raphson 반복이 수렴하지만 느립니다. "
+            "암시적 해석에서 잔류력(residual) R = F_ext - F_int가 수렴 기준 이하로 "
+            "줄어드는 데 많은 반복이 필요하다는 의미입니다. "
+            "수렴이 느린 원인: (1) 하중 증분이 너무 커서 비선형 곡률이 강함, "
+            "(2) 접촉 상태 변화(이중 접촉 반복), "
+            "(3) 재료 비선형성(항복면 근처), "
+            "(4) 좌굴 근처의 기하 비선형."
+        ),
+        recommendation=(
+            "1. 하중 증분 감소 — *CONTROL_IMPLICIT_SOLUTION에서 DT0를 줄여 "
+            "각 스텝의 비선형도를 낮춤\n"
+            "2. 선접촉 알고리즘 개선 — *CONTROL_IMPLICIT_SOLUTION의 "
+            "CONVERG 기준과 NLPRINT 설정 검토\n"
+            "3. 자동 타임스텝 제어 — *CONTROL_IMPLICIT_AUTO 사용으로 "
+            "수렴이 어려울 때 자동으로 스텝 크기 감소\n"
+            "4. 선형화 기법 검토 — 수치 접선 강성(KFAIL) 사용을 고려하여 "
+            "수렴 안정성 향상"
+        ),
+    ),
+
+    # ===== Contact/Interface Errors (30xxx) =====
+    30099: ErrorInfo(
+        code=30099,
+        severity=Severity.CRITICAL,
+        title="Contact pair definition error",
+        description=(
+            "접촉 쌍(contact pair) 정의에 오류가 있어 초기화에 실패했습니다. "
+            "이 에러는 *CONTACT 카드에서 (1) 존재하지 않는 파트/세트 ID 참조, "
+            "(2) 같은 slave와 master에 대해 충돌하는 접촉 옵션이 중복 정의, "
+            "(3) 특정 접촉 타입에서 지원되지 않는 파라미터 조합, "
+            "(4) 대규모 모델에서 segment 수가 내부 한계를 초과할 때 발생합니다. "
+            "에러가 발생한 접촉은 완전히 비활성화되므로 해당 파트 간 "
+            "충돌이 전혀 감지되지 않아 비물리적 결과가 발생합니다."
+        ),
+        recommendation=(
+            "1. 접촉 카드의 ID 참조 검증 — *CONTACT에서 참조하는 모든 "
+            "SSID, MSID가 유효한 파트/세트/세그먼트 ID인지 확인\n"
+            "2. 중복 접촉 정의 제거 — 동일한 파트 쌍에 여러 접촉이 정의된 경우 "
+            "하나로 통합하거나 충돌 방지 옵션 확인\n"
+            "3. 접촉 타입 호환성 — 사용하는 접촉 타입이 요소 타입(solid/shell/beam)과 "
+            "호환되는지 LS-DYNA 매뉴얼에서 확인\n"
+            "4. d3hsp 에러 상세 확인 — 에러 발생 직후 라인에서 어떤 접촉 ID가 "
+            "문제인지 특정하여 해당 *CONTACT 카드 검토"
+        ),
+    ),
+
+    # ===== Curve/Table Errors (21xxx) =====
+    21302: ErrorInfo(
+        code=21302,
+        severity=Severity.CRITICAL,
+        title="Curve ID not found or invalid",
+        description=(
+            "재료 또는 경계조건 카드에서 참조하는 커브 ID(*DEFINE_CURVE)를 "
+            "찾을 수 없거나 유효하지 않습니다. "
+            "LS-DYNA는 커브를 찾지 못하면 해당 물리량(하중, 응력, 속도 등)을 "
+            "0 또는 기본값으로 처리합니다. 이는 하중 조건이 완전히 제거된 것과 동일하며, "
+            "예상 외의 결과를 초래합니다. "
+            "원인: (1) LCID 번호 오타, (2) *DEFINE_CURVE 카드 누락, "
+            "(3) include 파일 참조 오류."
+        ),
+        recommendation=(
+            "1. LCID 번호 확인 — 재료/하중 카드의 LCID 값이 *DEFINE_CURVE에 "
+            "정의된 ID와 정확히 일치하는지 확인\n"
+            "2. *DEFINE_CURVE 누락 확인 — 입력 파일에 해당 ID의 커브가 "
+            "실제로 정의되어 있는지 grep/텍스트 검색으로 확인\n"
+            "3. Include 파일 경로 확인 — 커브가 별도 파일에 있다면 "
+            "*INCLUDE 카드의 파일 경로가 올바른지 확인\n"
+            "4. ID 충돌 확인 — 같은 ID를 두 곳에서 다르게 정의한 경우 "
+            "LS-DYNA는 마지막 정의를 사용하므로 ID 일관성 점검"
+        ),
+    ),
+
+    # ===== Material Errors (20xxx) =====
+    20018: ErrorInfo(
+        code=20018,
+        severity=Severity.CRITICAL,
+        title="Material model initialization failed",
+        description=(
+            "재료 모델 초기화에 실패했습니다. "
+            "이 에러는 재료 파라미터가 특정 재료 모델의 내부 요구사항을 만족하지 못할 때 발생합니다. "
+            "예: *MAT_ELASTIC에서 E=0(탄성계수 0은 무한 유연체를 의미, 수치 불가), "
+            "*MAT_PIECEWISE_LINEAR_PLASTICITY에서 항복응력 커브 ID가 잘못됨, "
+            "*MAT_MOONEY-RIVLIN_RUBBER에서 C10+C01 ≤ 0(음의 초기 전단 강성). "
+            "초기화에 실패한 파트는 올바른 강성 행렬 없이 계산되어 즉시 수치 불안정을 유발합니다."
+        ),
+        recommendation=(
+            "1. d3hsp 에러 상세 확인 — 어떤 재료 ID(MID)와 파라미터가 문제인지 "
+            "에러 메시지에서 확인\n"
+            "2. 재료 파라미터 물성 검증 — E, G, ν, σ_y, ρ가 모두 양수이고 "
+            "물리적 범위에 있는지 확인 (예: ν < 0.5 for explicit)\n"
+            "3. 커브 ID 참조 — 항복 커브, 손상 커브 등이 올바른 LCID를 참조하고 "
+            "해당 커브가 정의되어 있는지 확인\n"
+            "4. 재료 타입 호환성 — 해당 *MAT 타입이 요소 타입(solid/shell/beam)과 "
+            "호환되는지 LS-DYNA 매뉴얼 확인"
+        ),
+    ),
+    20216: ErrorInfo(
+        code=20216,
+        severity=Severity.CRITICAL,
+        title="Material parameter physically invalid",
+        description=(
+            "재료 파라미터가 물리적으로 불가능한 값을 가집니다. "
+            "음의 탄성계수(E < 0), 포아송 비율 ν ≥ 0.5(명시적 해석에서 "
+            "체적 변형률이 발산), 음의 밀도, 또는 열역학적 불가능한 "
+            "상태방정식 파라미터 조합이 해당됩니다. "
+            "이러한 파라미터로는 물리적으로 유효한 강성 행렬을 구성할 수 없으므로 "
+            "시뮬레이션이 즉시 종료됩니다."
+        ),
+        recommendation=(
+            "1. 단위 시스템 점검 — 가장 흔한 원인은 단위 변환 오류. "
+            "프로젝트 전체의 단위계를 통일하고 각 재료 물성값을 "
+            "해당 단위에 맞게 변환했는지 확인\n"
+            "2. 포아송 비율 확인 — 명시적 해석에서 ν = 0.5는 비압축성을 의미하며, "
+            "수치적으로 처리 불가. 고무류는 0.495~0.499 사용\n"
+            "3. 재료 카드 문서 비교 — LS-DYNA 매뉴얼에서 각 파라미터의 유효 범위와 "
+            "부호 규약을 확인하고 재료 데이터 시트와 대조"
+        ),
+    ),
+
+    # ===== Element Errors (10xxx) =====
+    10133: ErrorInfo(
+        code=10133,
+        severity=Severity.CRITICAL,
+        title="Solid element connectivity error",
+        description=(
+            "Solid 요소의 노드 연결 정보(connectivity)에 오류가 있습니다. "
+            "요소의 노드 수가 요소 타입과 맞지 않거나, 노드 ID가 모델에 없거나, "
+            "요소 노드들이 동일 좌표를 가져 체적이 0인 경우 발생합니다. "
+            "연결 오류가 있는 요소는 강성 행렬을 계산할 수 없어 "
+            "시뮬레이션 시작 시점에 에러가 발생합니다."
+        ),
+        recommendation=(
+            "1. 메시 품질 검사 — 후처리기에서 연결 오류가 있는 요소를 검색하고 "
+            "해당 요소의 노드 순서 확인\n"
+            "2. 중복 노드 제거 — Merge/Equivalence 기능으로 공유면의 노드가 "
+            "하나의 노드로 병합되어 있는지 확인\n"
+            "3. 요소 타입 확인 — *ELEMENT_SOLID에서 8노드 hex, 4노드 tet, "
+            "6노드 penta 등 노드 수가 올바른지 확인"
+        ),
+    ),
+    10246: ErrorInfo(
+        code=10246,
+        severity=Severity.CRITICAL,
+        title="Solid element excessive distortion",
+        description=(
+            "Solid 요소가 허용 한계를 초과하는 왜곡(distortion)을 보입니다. "
+            "Jacobian det(J)이 초기값 대비 특정 비율(EDGMIN 설정)보다 작아졌을 때 발생합니다. "
+            "extreme distortion에서는 shape function이 더 이상 유효하지 않아 "
+            "응력 계산 결과를 신뢰할 수 없으며, 계속 진행하면 negative volume이나 "
+            "NaN이 발생합니다."
+        ),
+        recommendation=(
+            "1. 요소 침식 추가 — *MAT_ADD_EROSION으로 과도 변형 전에 요소 제거\n"
+            "2. ERODE=1 활성화 — *CONTROL_TIMESTEP에서 dt < TSMIN인 요소 자동 삭제\n"
+            "3. 메시 리파인먼트 — 과도 변형 영역을 더 세밀하게 메싱하여 "
+            "변형이 분산되도록 유도\n"
+            "4. 고차 요소 사용 검토 — 4노드 tet에서 10노드 tet(ELFORM=10, 13)으로 "
+            "전환하면 큰 변형에서 더 안정적"
+        ),
+    ),
+    10305: ErrorInfo(
+        code=10305,
+        severity=Severity.CRITICAL,
+        title="Zero-volume solid element detected",
+        description=(
+            "체적이 0에 가까운 Solid 요소가 감지되었습니다. "
+            "초기 메시 생성 오류(노드가 동일 위치에 중복)나 "
+            "매우 심한 압축에 의해 요소 체적이 0으로 수렴할 때 발생합니다. "
+            "체적이 0이면 밀도 ρ_current = m/V → ∞가 되어 "
+            "응력 계산(p = EOS(V/V0, e))이 불가능해집니다."
+        ),
+        recommendation=(
+            "1. 초기 메시 검사 — 메시 생성 직후 zero-volume 요소 검색. "
+            "후처리기의 'Check Mesh' 또는 'Element Quality' 기능 활용\n"
+            "2. 중복 노드 병합 — 같은 좌표에 있는 노드를 merge하여 "
+            "체적이 있는 유효한 요소로 수정\n"
+            "3. 침식 설정 추가 — *MAT_ADD_EROSION의 MNEPS(음의 최소 소성 변형률) 또는 "
+            "MXEPS로 과도 압축 요소 자동 제거"
+        ),
+    ),
+
+    # ===== SPG Errors (11xxx) =====
+    11507: ErrorInfo(
+        code=11507,
+        severity=Severity.CRITICAL,
+        title="SPG particle stretch parameter error",
+        description=(
+            "SPG(Smoothed Particle Galerkin) 입자의 신장(stretch) 파라미터가 "
+            "유효 범위를 벗어났습니다. "
+            "SPG는 메시 없이 Galerkin 방법을 입자 기반으로 구현한 방법으로, "
+            "각 입자의 변형을 stretch tensor F로 추적합니다. "
+            "det(F) ≤ 0이 되면(물리적으로 불가능한 부피 반전) SPG 계산이 불가능해집니다. "
+            "과도한 인장 파괴, 충격 단편화, 또는 초기 파라미터 설정 오류에서 발생합니다."
+        ),
+        recommendation=(
+            "1. SPG 파라미터 검토 — *SECTION_SPG의 SPHKERN, IRANK 등 "
+            "SPG 제어 파라미터가 올바르게 설정되어 있는지 확인\n"
+            "2. 파괴 기준 추가 — *MAT_ADD_EROSION으로 과도 변형 입자 제거. "
+            "SPG에서는 stretch가 특정 임계값을 초과하면 입자를 분리\n"
+            "3. 초기 입자 배치 검증 — 입자 간격과 영향 반경(Kernel radius)이 "
+            "적절하게 설정되어 있는지 확인"
+        ),
+    ),
+
+    # ===== Implicit Solver Errors (60xxx) =====
+    60004: ErrorInfo(
+        code=60004,
+        severity=Severity.CRITICAL,
+        title="Implicit solver: stiffness matrix is singular",
+        description=(
+            "암시적 솔버의 전역 강성 행렬 [K]가 특이(singular)하여 "
+            "선형 방정식 [K]{u} = {F}의 고유한 해가 존재하지 않습니다. "
+            "det[K] = 0인 경우는: (1) 자유 운동(mechanism)이 존재하여 "
+            "구조물이 구속 없이 이동 가능한 방향이 있음, "
+            "(2) 경계조건이 부족하여 강체 운동이 허용됨, "
+            "(3) 국부적 메커니즘(unstable element connectivity), "
+            "(4) 좌굴 하중 도달 시 [K_T] = 0. "
+            "명시적 해석에서는 문제가 없던 모델도 암시적 해석에서는 "
+            "경계조건이 더 엄격하게 요구됩니다."
+        ),
+        recommendation=(
+            "1. 경계조건 충분성 확인 — 모든 강체 운동(6 DOF: 3 평행이동 + 3 회전)이 "
+            "구속되어 있는지 확인. 대칭 조건이라면 적절한 SPC 추가\n"
+            "2. 연결 오류 탐색 — 메시에서 unconnected node나 isolated element가 "
+            "없는지 검사\n"
+            "3. 좌굴 하중 확인 — 압축 지배 문제에서 좌굴이 발생하면 [K_T]가 "
+            "0이 됨. 초기 불완전형(imperfection)을 추가하거나 "
+            "아크 길이 법(arc-length method) 사용\n"
+            "4. 하중 증분 감소 — 첫 번째 증분에서 발생하면 초기 강성 문제이므로 "
+            "DT0를 줄이고 NSOLVR(솔버 타입) 변경 시도"
+        ),
+    ),
+    60303: ErrorInfo(
+        code=60303,
+        severity=Severity.CRITICAL,
+        title="Implicit solver: line search failed",
+        description=(
+            "암시적 솔버의 선 탐색(line search) 알고리즘이 실패했습니다. "
+            "Newton-Raphson 반복에서 ΔU_n이 계산되면, line search는 "
+            "α × ΔU_n 방향으로 에너지 내적 g(α) = R(U+α×ΔU)·ΔU = 0이 되는 "
+            "최적 스텝 크기 α를 찾습니다. "
+            "g(α) = 0을 만족하는 α를 (0, 1] 내에서 찾지 못하면 라인 서치 실패이며, "
+            "이는 현재 방향 ΔU_n이 해로 수렴하는 방향이 아님을 의미합니다. "
+            "하중 증분이 너무 크거나, 강성 행렬이 비정확하거나, "
+            "접촉 상태가 반복적으로 변할 때 발생합니다."
+        ),
+        recommendation=(
+            "1. 하중 증분 대폭 감소 — *CONTROL_IMPLICIT_SOLUTION의 DT0를 "
+            "현재의 1/5~1/10으로 줄임\n"
+            "2. *CONTROL_IMPLICIT_AUTO 사용 — 자동 타임스텝 제어를 활성화하면 "
+            "수렴 실패 시 자동으로 스텝 크기 감소\n"
+            "3. 접촉 안정화 — 접촉 타입을 AUTOMATIC으로 변경하고 SOFT=1/2 시도. "
+            "접촉 상태 진동이 원인인 경우 stabilization coefficient 추가\n"
+            "4. NSOLVR=12(BFGS) 시도 — 수치 접선 강성 대신 BFGS 업데이트를 "
+            "사용하면 일부 비선형 문제에서 더 강건한 수렴"
+        ),
+    ),
+    60315: ErrorInfo(
+        code=60315,
+        severity=Severity.CRITICAL,
+        title="Implicit solver: Newton-Raphson diverged",
+        description=(
+            "암시적 솔버의 Newton-Raphson 반복이 발산(diverge)했습니다. "
+            "각 반복에서 잔류력 |R_n| = |F_ext - F_int|가 수렴 기준 "
+            "ε_r = RTOL × |F_ext|보다 감소하지 않고 오히려 증가했습니다. "
+            "발산 원인: (1) 하중 증분이 너무 커 강성 행렬이 해 근방에서 "
+            "크게 달라짐(강한 비선형), (2) 접촉 상태가 반복마다 역전되는 chattering, "
+            "(3) 좌굴 또는 스냅-스루(snap-through) 근처의 불안정 경로, "
+            "(4) 강성 행렬 계산 오류(재료 접선 강성의 부정확성)."
+        ),
+        recommendation=(
+            "1. 하중 증분 크게 감소 — DTMIN까지 DT0를 줄여도 발산하면 "
+            "모델의 근본적인 불안정성(좌굴, 메커니즘)을 의심\n"
+            "2. 호 길이 법(Arc-length method) 도입 — *CONTROL_IMPLICIT_SOLUTION에서 "
+            "NSOLVR=6~8로 설정하면 snap-through를 추적할 수 있음\n"
+            "3. 초기 불완전형 추가 — 좌굴이 원인이면 모드 형태의 "
+            "기하학적 불완전형을 추가하여 경로 선택을 유도\n"
+            "4. 명시적 해석으로 전환 검토 — 대변형/대회전이 지배적이면 "
+            "명시적 해석이 더 적합할 수 있음"
+        ),
+    ),
+
+    # ===== SPH/Particle Errors (70xxx) =====
+    70021: ErrorInfo(
+        code=70021,
+        severity=Severity.CRITICAL,
+        title="SPH particle interaction error",
+        description=(
+            "SPH(Smoothed Particle Hydrodynamics) 입자 간 상호작용 계산에서 "
+            "오류가 발생했습니다. "
+            "SPH에서 물리량 A(x_i) = Σ_j m_j/ρ_j × A_j × W(|x_i-x_j|, h)로 계산되는데, "
+            "이웃 입자 수가 극히 적거나(h가 너무 작음), 입자가 분리되어 "
+            "smoothing length h 내에 이웃이 없으면 계산이 불안정해집니다. "
+            "또한 입자 밀도가 0에 접근하거나 압력 계산에서 발산이 발생할 수 있습니다."
+        ),
+        recommendation=(
+            "1. Smoothing length 검토 — *SECTION_SPH의 CSLH(smoothing length 계수)를 "
+            "기본값(1.2~1.5) 범위로 조정. 너무 작으면 이웃 부족, 너무 크면 과도한 평활화\n"
+            "2. 입자 간격 균일화 — 초기 입자 배치를 규칙적인 격자 형태로 구성하고 "
+            "국부적인 밀집/희박 영역 제거\n"
+            "3. Renormalization — SPH의 커널 보정(renormalized SPH, RSPH)을 사용하면 "
+            "경계 근처에서의 계산 정확도가 향상됨\n"
+            "4. SPG로 전환 검토 — 고체 재료의 파단 해석에는 SPH보다 SPG가 "
+            "더 안정적일 수 있음"
+        ),
+    ),
+
     # ===== License / System =====
     90001: ErrorInfo(
         code=90001,

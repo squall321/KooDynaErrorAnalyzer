@@ -37,6 +37,7 @@ venv/bin/pyinstaller --onefile \
     --hidden-import=koodyna.parsers.matsum \
     --hidden-import=koodyna.parsers.element_mapper \
     --hidden-import=koodyna.parsers.slurm \
+    --hidden-import=koodyna.scanner \
     --hidden-import=koodyna.analysis \
     --hidden-import=koodyna.analysis.energy \
     --hidden-import=koodyna.analysis.timestep \

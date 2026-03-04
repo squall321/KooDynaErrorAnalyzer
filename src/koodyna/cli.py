@@ -228,8 +228,44 @@ def main():
         action="version",
         version=f"%(prog)s {__version__}",
     )
+    parser.add_argument(
+        "--scan",
+        type=Path,
+        default=None,
+        metavar="BASE_DIR",
+        help="Scan BASE_DIR recursively for d3plot directories and update the index",
+    )
+    parser.add_argument(
+        "--index",
+        type=Path,
+        default=None,
+        metavar="INDEX_PATH",
+        help="Index file path (default: ~/.koodyna/index.json)",
+    )
+    parser.add_argument(
+        "--list-index",
+        action="store_true",
+        help="Print the contents of the result index",
+    )
 
     args = parser.parse_args()
+
+    # --scan mode
+    if args.scan is not None:
+        from koodyna.scanner import run_batch_scan, DEFAULT_INDEX_PATH
+        index_path = args.index or DEFAULT_INDEX_PATH
+        if not args.scan.is_dir():
+            print(f"Error: '{args.scan}' is not a directory", file=sys.stderr)
+            sys.exit(1)
+        run_batch_scan(args.scan, index_path=index_path, verbose=args.verbose)
+        return
+
+    # --list-index mode
+    if args.list_index:
+        from koodyna.scanner import print_index, DEFAULT_INDEX_PATH
+        index_path = args.index or DEFAULT_INDEX_PATH
+        print_index(index_path)
+        return
 
     # GUI mode: no arguments provided
     if args.result_dir is None:

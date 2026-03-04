@@ -42,7 +42,7 @@ $HiddenImports = @(
     "koodyna.parsers.profile", "koodyna.parsers.messag",
     "koodyna.parsers.nodout", "koodyna.parsers.bndout",
     "koodyna.parsers.matsum", "koodyna.parsers.element_mapper",
-    "koodyna.parsers.slurm",
+    "koodyna.parsers.slurm", "koodyna.scanner",
     "koodyna.analysis", "koodyna.analysis.energy",
     "koodyna.analysis.timestep", "koodyna.analysis.warnings",
     "koodyna.analysis.contact", "koodyna.analysis.performance",
