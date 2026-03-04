@@ -17,32 +17,45 @@ def _diagnose_contact_dt(
     if contact_dt_limit <= 0:
         return findings
 
-    # 접촉 안정성 dt 상한 경고
     active = [s for s in interface_surface_timesteps if s.is_active]
-    # 가장 작은 서프스 타임스텝
-    if active:
-        bottleneck = min(active, key=lambda s: s.surface_timestep)
-        findings.append(Finding(
-            severity=Severity.WARNING,
-            category="contact",
-            title=f"접촉 안정성 dt 상한: {contact_dt_limit:.3E}",
-            description=(
-                f"LS-DYNA 권장: dt ≤ {contact_dt_limit:.3E}. "
-                f"가장 작은 서프스 dt = {bottleneck.surface_timestep:.3E} "
-                f"(인터페이스 {bottleneck.interface_id}, {bottleneck.surface}, 파트 {bottleneck.part_id}). "
-                f"활성 서프스 {len(active)}개 중 제어 인터페이스가 확인됨. "
-                f"Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 "
-                f"k = (fs × K × A²) / V로 계산되며, "
-                f"이 강성이 높을수록 접촉 안정성 dt가 작아집니다. "
-                f"접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다."
-            ),
-            recommendation=(
-                "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n"
-                "2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n"
-                "3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n"
-                "4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
-            ),
-        ))
+    if not active:
+        return findings
+
+    bottleneck = min(active, key=lambda s: s.surface_timestep)
+
+    # Only escalate to WARNING when the simulation dt is actually exceeding
+    # the contact stability limit. When min_dt <= contact_dt_limit, the run
+    # is within the safe zone — show as INFO only.
+    if min_dt > 0 and min_dt > contact_dt_limit:
+        severity = Severity.WARNING
+        extra = (f"현재 최소 요소 dt({min_dt:.3E})가 권장 접촉 dt 상한({contact_dt_limit:.3E})을 "
+                 f"초과합니다 — 접촉 불안정 위험이 있습니다. ")
+    else:
+        severity = Severity.INFO
+        extra = ""
+
+    findings.append(Finding(
+        severity=severity,
+        category="contact",
+        title=f"접촉 안정성 dt 상한: {contact_dt_limit:.3E}",
+        description=(
+            f"LS-DYNA 권장: dt ≤ {contact_dt_limit:.3E}. "
+            f"{extra}"
+            f"가장 작은 서프스 dt = {bottleneck.surface_timestep:.3E} "
+            f"(인터페이스 {bottleneck.interface_id}, {bottleneck.surface}, 파트 {bottleneck.part_id}). "
+            f"활성 서프스 {len(active)}개 중 제어 인터페이스가 확인됨. "
+            f"Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 "
+            f"k = (fs × K × A²) / V로 계산되며, "
+            f"이 강성이 높을수록 접촉 안정성 dt가 작아집니다. "
+            f"접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다."
+        ),
+        recommendation=(
+            "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n"
+            "2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n"
+            "3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n"
+            "4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
+        ),
+    ))
     return findings
 
 

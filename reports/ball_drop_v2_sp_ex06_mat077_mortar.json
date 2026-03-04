@@ -4121,15 +4121,7 @@
       0.952533,
       1.00356
     ],
-    "findings": [
-      {
-        "severity": "WARNING",
-        "category": "energy",
-        "title": "High sliding interface energy",
-        "description": "Max sliding interface / total energy ratio: 24.4%. This may indicate contact instability or excessive penetration.",
-        "recommendation": "Check contact definitions for excessive penetration. Consider increasing penalty stiffness (SLSFAC in *CONTROL_CONTACT) or using soft constraint (SOFT=1)."
-      }
-    ]
+    "findings": []
   },
   "timestep": {
     "smallest_timesteps": [],
@@ -4734,13 +4726,6 @@
     },
     {
       "severity": "WARNING",
-      "category": "energy",
-      "title": "High sliding interface energy",
-      "description": "Max sliding interface / total energy ratio: 24.4%. This may indicate contact instability or excessive penetration.",
-      "recommendation": "Check contact definitions for excessive penetration. Consider increasing penalty stiffness (SLSFAC in *CONTROL_CONTACT) or using soft constraint (SOFT=1)."
-    },
-    {
-      "severity": "WARNING",
       "category": "performance",
       "title": "MPP load imbalance: 51.4%",
       "description": "CPU ratio range: [0.7430, 1.2570]. Slowest: proc #1 (node002), Fastest: proc #0 (node002).",
@@ -4752,13 +4737,6 @@
       "title": "Excessive contact sliding energy (189.0%)",
       "description": "Contact sliding 에너지가 내부 에너지의 189.0%입니다 (Slide=1.473E+03, IE=7.791E+02). 접촉 슬라이딩 에너지는 E_slide = Σ(F_friction × δ_slide)로 계산되며, 접촉면에서 마찰력에 의해 소산되는 에너지입니다. Slide/IE > 30%이면 에너지 균형에서 접촉 거동이 과도한 비중을 차지하며, 이는 마찰 계수가 비현실적으로 높거나, penalty contact에서 비정상적 슬라이딩이 발생하거나, 과도한 관통 후 반발로 인한 것입니다. 접촉 에너지는 내부 에너지(변형 에너지)로 전환되어야 하는 에너지가 마찰 소산으로 손실되는 것이므로, 구조물의 변형 응답이 과소평가됩니다.",
       "recommendation": "1. 마찰 계수(FS) 확인 — *CONTACT의 FS(정마찰), FD(동마찰)가 재료 쌍에 적합한지 검증. 일반적으로 금속-금속: 0.1~0.3, 고무-금속: 0.5~0.8\n2. Contact penalty 설정 검토 — penalty stiffness가 너무 높으면 관통-반발 사이클에서 과도한 에너지가 접촉면에 집중. SLSFAC < 0.1 또는 SOFT=1 사용\n3. 초기 관통 제거 — 관통된 노드가 penalty force에 의해 튕겨나가면서 마찰 에너지가 비정상적으로 증가합니다\n4. Contact type 재검토 — sliding contact 대신 tied contact가 적합한 인터페이스는 *CONTACT_TIED_...로 변경"
-    },
-    {
-      "severity": "WARNING",
-      "category": "contact",
-      "title": "접촉 안정성 dt 상한: 9.729E-08",
-      "description": "LS-DYNA 권장: dt ≤ 9.729E-08. 가장 작은 서프스 dt = 9.729E-08 (인터페이스 1, surfa, 파트 3). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.",
-      "recommendation": "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
     },
     {
       "severity": "WARNING",
@@ -4787,6 +4765,13 @@
       "title": "ASCII database is the primary cost (50.0%)",
       "description": "ASCII database: 7.0s (50.0% of clock time). CPU: 0.0s (1.0%).",
       "recommendation": ""
+    },
+    {
+      "severity": "INFO",
+      "category": "contact",
+      "title": "접촉 안정성 dt 상한: 9.729E-08",
+      "description": "LS-DYNA 권장: dt ≤ 9.729E-08. 가장 작은 서프스 dt = 9.729E-08 (인터페이스 1, surfa, 파트 3). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.",
+      "recommendation": "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
     }
   ],
   "keyword_counts": {

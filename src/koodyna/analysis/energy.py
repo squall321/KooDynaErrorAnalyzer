@@ -5,7 +5,7 @@ from koodyna.models import EnergySnapshot, EnergyAnalysis, Finding, Severity
 # Thresholds
 HOURGLASS_RATIO_WARN = 0.10     # 10% of internal energy
 HOURGLASS_RATIO_CRIT = 0.50     # 50% of internal energy
-SLIDING_RATIO_WARN = 0.05       # 5% of total energy
+SLIDING_RATIO_WARN = 0.15       # 15% of total energy (raised from 5% to reduce noise)
 ENERGY_RATIO_WARN = 0.05        # 5% deviation from 1.0
 ENERGY_RATIO_CRIT = 0.10        # 10% deviation from 1.0
 ENERGY_GROWTH_WARN = 0.05       # 5% increase over initial
@@ -73,7 +73,9 @@ def analyze_energy(snapshots: list[EnergySnapshot]) -> EnergyAnalysis:
             if ratio > max_slide_ratio:
                 max_slide_ratio = ratio
 
-    if max_slide_ratio > SLIDING_RATIO_WARN:
+    # Only warn if positive sliding is high AND no negative sliding (negative is already CRITICAL elsewhere)
+    has_negative_sliding = any(s.sliding_interface < 0 for s in snapshots)
+    if max_slide_ratio > SLIDING_RATIO_WARN and not has_negative_sliding:
         findings.append(Finding(
             severity=Severity.WARNING,
             category="energy",

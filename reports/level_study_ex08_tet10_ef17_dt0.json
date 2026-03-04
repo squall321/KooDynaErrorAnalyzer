@@ -2079,7 +2079,7 @@
       "recommendation": "Check contact definitions for excessive penetration. Consider increasing penalty stiffness (SLSFAC in *CONTROL_CONTACT) or using soft constraint (SOFT=1)."
     },
     {
-      "severity": "WARNING",
+      "severity": "INFO",
       "category": "contact",
       "title": "접촉 안정성 dt 상한: 4.749E-08",
       "description": "LS-DYNA 권장: dt ≤ 4.749E-08. 가장 작은 서프스 dt = 4.749E-08 (인터페이스 1, surfa, 파트 2). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.",

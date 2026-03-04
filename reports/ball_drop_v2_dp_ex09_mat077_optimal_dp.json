@@ -3257,13 +3257,6 @@
     },
     {
       "severity": "WARNING",
-      "category": "contact",
-      "title": "접촉 안정성 dt 상한: 9.729E-08",
-      "description": "LS-DYNA 권장: dt ≤ 9.729E-08. 가장 작은 서프스 dt = 9.729E-08 (인터페이스 1, surfa, 파트 3). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.",
-      "recommendation": "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
-    },
-    {
-      "severity": "WARNING",
       "category": "performance",
       "title": "접촉 계산 시간 높음 (49.4%)",
       "description": "Contact algorithm이 전체 CPU의 49.4%를 소비합니다. 접촉이 지배적인 시뮬레이션(다물체 충돌, 성형 등)에서는 30~40%가 일반적이나, 최적화 여지가 있습니다.",
@@ -3296,6 +3289,13 @@
       "title": "ASCII database is the primary cost (29.1%)",
       "description": "ASCII database: 2.4s (29.1% of clock time). CPU: 0.0s (1.0%).",
       "recommendation": ""
+    },
+    {
+      "severity": "INFO",
+      "category": "contact",
+      "title": "접촉 안정성 dt 상한: 9.729E-08",
+      "description": "LS-DYNA 권장: dt ≤ 9.729E-08. 가장 작은 서프스 dt = 9.729E-08 (인터페이스 1, surfa, 파트 3). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.",
+      "recommendation": "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
     }
   ],
   "keyword_counts": {

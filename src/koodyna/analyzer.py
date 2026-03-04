@@ -28,6 +28,29 @@ from koodyna.analysis.numerical_instability import (
     diagnose_slurm_failures,
 )
 from koodyna.parsers.slurm import find_and_parse_slurm
+from koodyna.models import Finding, Severity
+
+
+def _deduplicate_findings(findings: list[Finding]) -> list[Finding]:
+    """Remove lower-priority findings that are made redundant by higher-priority ones.
+
+    Rules:
+    - "High sliding interface energy" (WARNING) is suppressed when a CRITICAL
+      finding for negative or excessive sliding energy already exists.
+    """
+    titles = {f.title for f in findings}
+    has_critical_sliding = any(
+        ("Negative sliding" in t or "Excessive contact sliding" in t)
+        for t in titles
+        if any(f.severity == Severity.CRITICAL and f.title == t for f in findings)
+    )
+
+    result: list[Finding] = []
+    for f in findings:
+        if f.title == "High sliding interface energy" and has_critical_sliding:
+            continue  # suppressed — more severe sliding finding already present
+        result.append(f)
+    return result
 
 
 class Analyzer:
@@ -328,7 +351,7 @@ class Analyzer:
             smallest_timesteps=timestep_analysis.smallest_timesteps,
             parts=report.parts,
         )
-        report.findings = all_findings
+        report.findings = _deduplicate_findings(all_findings)
 
         return report
 
