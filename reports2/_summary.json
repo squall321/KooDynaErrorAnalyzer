@@ -1,15 +1,15 @@
 [
   {
     "category": "Hourglass_CRITICAL",
-    "case": "alt_ale/ex01_ale_f500",
-    "termination": "INCOMPLETE",
-    "crit": 8,
-    "warn": 2,
-    "top_finding": "해석 미완료 (출력 불완전)"
+    "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
+    "termination": "ERROR",
+    "crit": 9,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
   },
   {
     "category": "Hourglass_CRITICAL",
-    "case": "alt_ale/ex02_ale_f1000",
+    "case": "alt_ale/ex01_ale_f500",
     "termination": "INCOMPLETE",
     "crit": 8,
     "warn": 2,
@@ -113,15 +113,15 @@
   },
   {
     "category": "Negative_Volume_40509",
-    "case": "results/ball_drop_v2_dp_ex09_mat077_optimal_dp",
+    "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
     "termination": "ERROR",
-    "crit": 4,
-    "warn": 3,
+    "crit": 9,
+    "warn": 4,
     "top_finding": "해석 에러 종료"
   },
   {
     "category": "Negative_Volume_40509",
-    "case": "results/ball_drop_v2_sp_ex06_mat077_mortar",
+    "case": "results/ball_drop_v2_dp_ex09_mat077_optimal_dp",
     "termination": "ERROR",
     "crit": 4,
     "warn": 3,
@@ -160,19 +160,35 @@
     "top_finding": "Hourglass energy critically high"
   },
   {
+    "category": "Warning_40533",
+    "case": "2.Display3ptBendingPeridynamics/3ptBending_1_00000001",
+    "termination": "INCOMPLETE",
+    "crit": 2,
+    "warn": 1,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "Warning_40533",
+    "case": "5.SimulationModify/DynamicRelaxation",
+    "termination": "NORMAL",
+    "crit": 2,
+    "warn": 4,
+    "top_finding": "Hourglass energy critically high"
+  },
+  {
+    "category": "Warning_40538",
+    "case": "5.SimulationModify/DynamicRelaxation",
+    "termination": "NORMAL",
+    "crit": 2,
+    "warn": 4,
+    "top_finding": "Hourglass energy critically high"
+  },
+  {
     "category": "Warning_40538",
     "case": "DisplayImpactImplicit/3ptBending_1_00000001",
     "termination": "INCOMPLETE",
     "crit": 2,
     "warn": 3,
-    "top_finding": "해석 미완료 (출력 불완전)"
-  },
-  {
-    "category": "Warning_40538",
-    "case": "DisplayImpactShell/3ptBending_1_00000001",
-    "termination": "INCOMPLETE",
-    "crit": 2,
-    "warn": 1,
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
@@ -286,6 +302,14 @@
     "crit": 6,
     "warn": 2,
     "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "타임스텝_붕괴",
+    "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
+    "termination": "ERROR",
+    "crit": 9,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
   },
   {
     "category": "타임스텝_붕괴",

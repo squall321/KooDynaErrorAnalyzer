@@ -1,13 +1,17 @@
 """
 배치 분석 완료 후 실행:
-1. reports2/ 폴더에 다양한 에러 타입 대표 케이스 복사
+1. reports2/ 폴더에 다양한 에러 타입 대표 케이스 HTML 생성
 2. FEATURE_STATUS_REPORT.docx 최종 업데이트
 """
 
 import json
+import sys
 import shutil
 from pathlib import Path
 from collections import defaultdict
+
+# koodyna package path
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 
 REPORTS_DIR = Path("/data/koodyna_reports")
@@ -116,19 +120,87 @@ def _crit_count(r):
 
 # ── 3. reports2 폴더 구성 ─────────────────────────────────────────────────────
 
+def _build_source_dir_map(index_path: Path) -> dict[tuple[str, str], Path]:
+    """인덱스에서 (study_type, case_name) → 소스 디렉터리 매핑 구성."""
+    mapping: dict[tuple[str, str], Path] = {}
+    if not index_path.exists():
+        return mapping
+    try:
+        index = json.loads(index_path.read_text())
+        dirs = index.get("directories", {})
+    except Exception:
+        return mapping
+
+    for path_str, entry in dirs.items():
+        if entry.get("status") not in ("analyzed", "failed"):
+            continue
+        src = Path(path_str)
+        key = (entry.get("study_type", ""), src.name)
+        # Prefer non-backup paths: keep first non-backup, otherwise any
+        existing = mapping.get(key)
+        if existing is None:
+            mapping[key] = src
+        elif "/backup/" in str(existing) and "/backup/" not in str(src):
+            mapping[key] = src
+    return mapping
+
+
 def build_reports2(selected: dict[str, list[dict]], reports2_dir: Path):
+    from koodyna.analyzer import Analyzer
+    from koodyna.report.html_report import write_html_report
+
     reports2_dir.mkdir(exist_ok=True)
 
-    summary = []  # (category, case_name, study_type, crit, warn, findings_summary)
+    # Clean up old files in reports2/
+    for old in reports2_dir.glob("*.json"):
+        if old.name != "_summary.json":
+            old.unlink()
+    for old in reports2_dir.glob("*.html"):
+        old.unlink()
+
+    # Build source dir mapping from index
+    index_path = Path.home() / ".koodyna" / "index.json"
+    src_map = _build_source_dir_map(index_path)
+
+    # Local results/ directory (for cases analyzed locally)
+    local_results = Path(__file__).parent / "results"
+
+    summary = []
 
     for category, cases in sorted(selected.items()):
         for case in cases:
-            src = Path(case["_path"])
             study = case["_study_type"]
             case_name = case["_case"]
-            dest_name = f"{category}__{study}__{case_name}.json"
+            dest_name = f"{category}__{study}__{case_name}.html"
             dest = reports2_dir / dest_name
-            shutil.copy2(src, dest)
+
+            # Find source result directory
+            source_dir: Path | None = None
+
+            if study == "results":
+                # Local results/ folder or its subdirectory
+                sub = local_results / case_name
+                if sub.exists() and (sub / "d3hsp").exists():
+                    source_dir = sub
+                elif local_results.exists() and (local_results / "d3hsp").exists():
+                    # root results/ itself (e.g. results_normal)
+                    source_dir = local_results
+            else:
+                source_dir = src_map.get((study, case_name))
+
+            if source_dir is None or not source_dir.exists():
+                print(f"  [SKIP] {category}/{study}/{case_name}: 소스 디렉터리 없음")
+                # Fall back: copy the JSON as-is with .html extension omitted, skip
+                continue
+
+            try:
+                analyzer = Analyzer(source_dir, verbose=False)
+                report = analyzer.run()
+                write_html_report(report, dest)
+                print(f"  [OK] {category} → {dest_name}")
+            except Exception as e:
+                print(f"  [FAIL] {category}/{case_name}: {e}")
+                continue
 
             crits = [f for f in _findings(case) if f.get("severity") == "CRITICAL"]
             warns = [f for f in _findings(case) if f.get("severity") == "WARNING"]
