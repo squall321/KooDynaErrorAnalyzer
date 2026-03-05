@@ -82,4 +82,7 @@ git commit -m "배치 분석 완료 후 최종 업데이트 (${ANALYZED}개 분�
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
+echo "=== git push ==="
+git push origin main
+
 echo "=== 완료 ==="
