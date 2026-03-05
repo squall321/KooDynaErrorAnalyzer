@@ -1,0 +1,1024 @@
+{
+  "header": {
+    "version": "mpp s R16",
+    "revision": "R16.1.1-20-g0c90cad538",
+    "date": "02/18/2026",
+    "time": "07:24:37",
+    "platform": "OpenMPI 4.0.5 x86-64",
+    "os_level": "Linux 3.10.0 uom",
+    "compiler": "AOCC-4.2.0 avx2",
+    "hostname": "node002",
+    "precision": "Single precision (I4R4)",
+    "input_file": "ex06_tet4_ef60_dt0.k",
+    "licensee": "Samsung Electronics Co Ltd -- 1127",
+    "num_procs": 2
+  },
+  "model_size": {
+    "num_materials": 3,
+    "num_nodes": 1413,
+    "num_solid_elements": 4128,
+    "num_shell_elements": 0,
+    "num_beam_elements": 0,
+    "num_thick_shell_elements": 0,
+    "num_sph_particles": 0,
+    "num_contacts": 2,
+    "num_spc_nodes": 0,
+    "num_parts": 3
+  },
+  "termination": {
+    "status": "ERROR",
+    "target_time": 0.02,
+    "actual_time": 0.00014162,
+    "total_cycles": 3501,
+    "total_cpu_seconds": 1.0,
+    "elapsed_seconds": 2.0,
+    "cpu_per_zone_cycle_ns": 68.349,
+    "clock_per_zone_cycle_ns": 90.673,
+    "start_datetime": "02/18/2026 07:24:37",
+    "end_datetime": "02/18/2026 07:24:39",
+    "error_code": null,
+    "error_message": null
+  },
+  "warnings": [
+    {
+      "code": 40455,
+      "count": 1,
+      "message": "NaN detected on processor # 0",
+      "severity": "CRITICAL",
+      "recommendation": "1. NaN 발생 프로세서의 도메인 확인 — 해당 프로세서가 담당하는 요소/노드 영역에서 극심한 변형이나 접촉 불안정 확인\n2. Timestep scale factor(TSSFAC) 감소 — 0.9 → 0.67로 줄여 각 스텝의 변형량을 제한. 특히 대변형 해석에서 효과적\n3. Negative volume 경고(40509) 확인 — NaN의 전조 증상인 negative volume이 선행했는지 d3hsp/mes 파일에서 확인\n4. 재료 물성 검증 — 밀도, 탄성계수가 0이 아닌지 확인. 단위 시스템(mm-ton-s vs m-kg-s) 통일 여부 점검\n5. 요소 침식(*MAT_ADD_EROSION) 추가 — 과도 변형 요소를 NaN 발생 전에 자동 제거",
+      "affected_interfaces": [],
+      "sample_details": []
+    },
+    {
+      "code": 40456,
+      "count": 1,
+      "message": "NaN detected.",
+      "severity": "CRITICAL",
+      "recommendation": "1. glstat 에너지 이력 분석 — NaN 직전 사이클에서 kinetic energy 급증, energy ratio 발산, 또는 sliding interface energy 이상 여부 확인\n2. mes 파일에서 Error 40455 확인 — 어느 프로세서에서 NaN이 먼저 발생했는지 추적하여 문제 영역 특정\n3. Negative volume 경고(40509) 추적 — NaN 발생 전에 negative volume이 축적되었다면 해당 요소에 침식 기준 추가\n4. 접촉 설정 검토 — 접촉 관통이 에너지 불안정을 유발했다면 penalty scale factor(SLSFAC) 조정 또는 soft constraint(SOFT=1) 사용\n5. TSSFAC 감소 + ERODE 활성화 — dt를 줄이고 과도 왜곡 요소를 자동 제거하여 NaN 전파 방지",
+      "affected_interfaces": [],
+      "sample_details": []
+    }
+  ],
+  "energy": {
+    "snapshots": [
+      {
+        "cycle": 1,
+        "time": 0.0,
+        "timestep": 1.95993e-07,
+        "kinetic": 0.0,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 0.0,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 4e-20,
+        "energy_ratio": 1.0,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 5974,
+        "controlling_part": 2,
+        "time_per_zone_ns": 0
+      },
+      {
+        "cycle": 103,
+        "time": 1.99913e-05,
+        "timestep": 1.95993e-07,
+        "kinetic": 0.0022657,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 0.00231057,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 0.0022657,
+        "energy_ratio": 0.980583,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          -9.12671
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2163,
+        "controlling_part": 2,
+        "time_per_zone_ns": 45
+      },
+      {
+        "cycle": 205,
+        "time": 3.99826e-05,
+        "timestep": 1.95993e-07,
+        "kinetic": 0.0366111,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 0.0369718,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 0.0366111,
+        "energy_ratio": 0.990244,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          -36.6876
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2163,
+        "controlling_part": 2,
+        "time_per_zone_ns": 42
+      },
+      {
+        "cycle": 307,
+        "time": 5.99739e-05,
+        "timestep": 1.95993e-07,
+        "kinetic": 0.185953,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 0.187172,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 0.185953,
+        "energy_ratio": 0.993485,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          -82.6825
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2163,
+        "controlling_part": 2,
+        "time_per_zone_ns": 42
+      },
+      {
+        "cycle": 409,
+        "time": 7.99652e-05,
+        "timestep": 1.95993e-07,
+        "kinetic": 0.588666,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 0.591559,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 0.588666,
+        "energy_ratio": 0.99511,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          -147.112
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2163,
+        "controlling_part": 2,
+        "time_per_zone_ns": 42
+      },
+      {
+        "cycle": 511,
+        "time": 9.99565e-05,
+        "timestep": 1.95993e-07,
+        "kinetic": 1.43859,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 1.44424,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 1.43859,
+        "energy_ratio": 0.996086,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          -229.975
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2163,
+        "controlling_part": 2,
+        "time_per_zone_ns": 42
+      },
+      {
+        "cycle": 613,
+        "time": 0.000119948,
+        "timestep": 1.95993e-07,
+        "kinetic": 2.98501,
+        "internal": 4e-20,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": 0.0,
+        "external_work": 2.99478,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 2.98501,
+        "energy_ratio": 0.996737,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          0.0,
+          0.0,
+          -331.272
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2163,
+        "controlling_part": 2,
+        "time_per_zone_ns": 41
+      },
+      {
+        "cycle": 945,
+        "time": 0.000139998,
+        "timestep": 9.67954e-09,
+        "kinetic": 178.383,
+        "internal": 1222.9,
+        "spring_damper": 2e-20,
+        "hourglass": 0.0,
+        "system_damping": 0.0,
+        "sliding_interface": -1215.22,
+        "external_work": 5.39606,
+        "eroded_kinetic": 0.0,
+        "eroded_internal": 0.0,
+        "eroded_hourglass": 0.0,
+        "total": 186.068,
+        "energy_ratio": 34.4822,
+        "energy_ratio_no_eroded": 1.0,
+        "has_nan": false,
+        "global_velocity": [
+          -9.71951,
+          1.89708,
+          -388.86
+        ],
+        "controlling_element_type": "solid",
+        "controlling_element": 2497,
+        "controlling_part": 2,
+        "time_per_zone_ns": 41
+      }
+    ],
+    "initial_total_energy": 4e-20,
+    "final_total_energy": 186.068,
+    "max_hourglass_ratio": 0.0,
+    "max_sliding_ratio": 6.531053163359632,
+    "energy_ratio_range": [
+      0.980583,
+      34.4822
+    ],
+    "findings": [
+      {
+        "severity": "CRITICAL",
+        "category": "energy",
+        "title": "Energy balance severely violated",
+        "description": "Energy ratio range: [0.980583, 34.482200]. Deviation > 10% from 1.0 indicates numerical instability or energy source/sink.",
+        "recommendation": "Check for contact energy growth, mass scaling effects, or improperly defined loads. Enable energy output (*CONTROL_ENERGY) to identify the source."
+      },
+      {
+        "severity": "CRITICAL",
+        "category": "energy",
+        "title": "Total energy is increasing (divergence)",
+        "description": "Total energy grew from 4.0000E-20 to 1.8607E+02 (465170000000000049807360.0% increase). This strongly suggests numerical instability.",
+        "recommendation": "Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions."
+      }
+    ]
+  },
+  "timestep": {
+    "smallest_timesteps": [],
+    "controlling_parts": {
+      "2": 8
+    },
+    "initial_dt": 1.95993e-07,
+    "final_dt": 9.67954e-09,
+    "min_dt": 9.67954e-09,
+    "dt_scale_factor": 0.67,
+    "dt2ms": 0.0,
+    "tsmin": 0.0,
+    "findings": [
+      {
+        "severity": "CRITICAL",
+        "category": "timestep",
+        "title": "Severe timestep drop detected",
+        "description": "Timestep dropped to 4.9% of initial value (from 1.9599E-07 to 9.6795E-09). This indicates severe element distortion.",
+        "recommendation": "Check the controlling elements for excessive deformation. Consider adding erosion criteria (*MAT_ADD_EROSION) or improving mesh quality in the problem region."
+      }
+    ]
+  },
+  "parts": [
+    {
+      "part_id": 1,
+      "name": "Bottom_Plate_Rigid",
+      "section_id": 1,
+      "material_id": 1,
+      "material_type": 20,
+      "material_type_name": "Rigid",
+      "eos_type": 0,
+      "hourglass_type": 5,
+      "density": 2.7e-09,
+      "youngs_modulus": 70000.0,
+      "poisson_ratio": 0.33,
+      "hourglass_coefficient": 0.1,
+      "solid_formulation": 0,
+      "section_title": "Hex8_BotPlate",
+      "material_title": "Bottom_Plate"
+    },
+    {
+      "part_id": 2,
+      "name": "Rubber_Tet4_EF60_DT0",
+      "section_id": 2,
+      "material_id": 2,
+      "material_type": 27,
+      "material_type_name": "Type 27",
+      "eos_type": 0,
+      "hourglass_type": 5,
+      "density": 1.1e-09,
+      "youngs_modulus": 0.0,
+      "poisson_ratio": 0.0,
+      "hourglass_coefficient": 0.1,
+      "solid_formulation": 60,
+      "section_title": "Tet_ELFORM60_Rubber",
+      "material_title": "Soft_Rubber_MooneyRivlin"
+    },
+    {
+      "part_id": 3,
+      "name": "Top_Plate_Rigid",
+      "section_id": 3,
+      "material_id": 3,
+      "material_type": 20,
+      "material_type_name": "Rigid",
+      "eos_type": 0,
+      "hourglass_type": 5,
+      "density": 2.7e-09,
+      "youngs_modulus": 70000.0,
+      "poisson_ratio": 0.33,
+      "hourglass_coefficient": 0.1,
+      "solid_formulation": 0,
+      "section_title": "Hex8_TopPlate",
+      "material_title": "Top_Plate"
+    }
+  ],
+  "performance": [
+    {
+      "component": "Keyword Processing",
+      "cpu_seconds": 0.091736,
+      "cpu_percent": 7.51,
+      "clock_seconds": 0.14915,
+      "clock_percent": 5.69
+    },
+    {
+      "component": "KW Reading",
+      "cpu_seconds": 0.0055222,
+      "cpu_percent": 0.45,
+      "clock_seconds": 0.013605,
+      "clock_percent": 0.52
+    },
+    {
+      "component": "KW Writing",
+      "cpu_seconds": 0.0011462,
+      "cpu_percent": 0.09,
+      "clock_seconds": 0.0089665,
+      "clock_percent": 0.34
+    },
+    {
+      "component": "MPP Decomposition",
+      "cpu_seconds": 0.17486,
+      "cpu_percent": 14.31,
+      "clock_seconds": 0.62366,
+      "clock_percent": 23.78
+    },
+    {
+      "component": "Init Proc",
+      "cpu_seconds": 0.056522,
+      "cpu_percent": 4.63,
+      "clock_seconds": 0.11158,
+      "clock_percent": 4.25
+    },
+    {
+      "component": "Decomposition",
+      "cpu_seconds": 0.021616,
+      "cpu_percent": 1.77,
+      "clock_seconds": 0.042124,
+      "clock_percent": 1.61
+    },
+    {
+      "component": "Translation",
+      "cpu_seconds": 0.096628,
+      "cpu_percent": 7.91,
+      "clock_seconds": 0.46985,
+      "clock_percent": 17.91
+    },
+    {
+      "component": "Initialization",
+      "cpu_seconds": 0.18812,
+      "cpu_percent": 15.4,
+      "clock_seconds": 0.5397,
+      "clock_percent": 20.58
+    },
+    {
+      "component": "Init Proc Phase 1",
+      "cpu_seconds": 0.019655,
+      "cpu_percent": 1.61,
+      "clock_seconds": 0.028621,
+      "clock_percent": 1.09
+    },
+    {
+      "component": "Init Proc Phase 2",
+      "cpu_seconds": 0.10565,
+      "cpu_percent": 8.65,
+      "clock_seconds": 0.28409,
+      "clock_percent": 10.83
+    },
+    {
+      "component": "Init solver",
+      "cpu_seconds": 0.00056558,
+      "cpu_percent": 0.05,
+      "clock_seconds": 0.00608,
+      "clock_percent": 0.23
+    },
+    {
+      "component": "Element processing",
+      "cpu_seconds": 0.32976,
+      "cpu_percent": 26.99,
+      "clock_seconds": 0.35025,
+      "clock_percent": 13.35
+    },
+    {
+      "component": "Solids",
+      "cpu_seconds": 0.32631,
+      "cpu_percent": 26.71,
+      "clock_seconds": 0.34064,
+      "clock_percent": 12.99
+    },
+    {
+      "component": "E Other",
+      "cpu_seconds": 0.0023525,
+      "cpu_percent": 0.19,
+      "clock_seconds": 0.007583,
+      "clock_percent": 0.29
+    },
+    {
+      "component": "Binary databases",
+      "cpu_seconds": 0.01853,
+      "cpu_percent": 1.52,
+      "clock_seconds": 0.040386,
+      "clock_percent": 1.54
+    },
+    {
+      "component": "ASCII database",
+      "cpu_seconds": 0.0040425,
+      "cpu_percent": 0.33,
+      "clock_seconds": 0.34916,
+      "clock_percent": 13.31
+    },
+    {
+      "component": "Contact algorithm",
+      "cpu_seconds": 0.21219,
+      "cpu_percent": 17.37,
+      "clock_seconds": 0.22094,
+      "clock_percent": 8.42
+    },
+    {
+      "component": "Rigid Bodies",
+      "cpu_seconds": 0.01271,
+      "cpu_percent": 1.04,
+      "clock_seconds": 0.014847,
+      "clock_percent": 0.57
+    },
+    {
+      "component": "Mass Scaling",
+      "cpu_seconds": 0.00076426,
+      "cpu_percent": 0.06,
+      "clock_seconds": 0.000758,
+      "clock_percent": 0.03
+    },
+    {
+      "component": "Force gather",
+      "cpu_seconds": 0.0061846,
+      "cpu_percent": 0.51,
+      "clock_seconds": 0.0065695,
+      "clock_percent": 0.25
+    },
+    {
+      "component": "Kinematic Update",
+      "cpu_seconds": 0.0014815,
+      "cpu_percent": 0.12,
+      "clock_seconds": 0.001504,
+      "clock_percent": 0.06
+    },
+    {
+      "component": "Update nodes",
+      "cpu_seconds": 0.0021114,
+      "cpu_percent": 0.17,
+      "clock_seconds": 0.0020995,
+      "clock_percent": 0.08
+    },
+    {
+      "component": "Time step size",
+      "cpu_seconds": 0.0021238,
+      "cpu_percent": 0.17,
+      "clock_seconds": 0.002701,
+      "clock_percent": 0.1
+    },
+    {
+      "component": "Time step Sharing",
+      "cpu_seconds": 0.010057,
+      "cpu_percent": 0.82,
+      "clock_seconds": 0.01001,
+      "clock_percent": 0.38
+    },
+    {
+      "component": "Group force file",
+      "cpu_seconds": 0.00050106,
+      "cpu_percent": 0.04,
+      "clock_seconds": 0.000503,
+      "clock_percent": 0.02
+    },
+    {
+      "component": "Others",
+      "cpu_seconds": 0.0028524,
+      "cpu_percent": 0.23,
+      "clock_seconds": 0.006338,
+      "clock_percent": 0.24
+    },
+    {
+      "component": "Force Sharing",
+      "cpu_seconds": 0.010167,
+      "cpu_percent": 0.83,
+      "clock_seconds": 0.010097,
+      "clock_percent": 0.38
+    },
+    {
+      "component": "Misc. 1",
+      "cpu_seconds": 0.05769,
+      "cpu_percent": 4.72,
+      "clock_seconds": 0.182,
+      "clock_percent": 6.94
+    },
+    {
+      "component": "Scale Masses",
+      "cpu_seconds": 0.00047411,
+      "cpu_percent": 0.04,
+      "clock_seconds": 0.0004855,
+      "clock_percent": 0.02
+    },
+    {
+      "component": "Force Constraints",
+      "cpu_seconds": 0.00049653,
+      "cpu_percent": 0.04,
+      "clock_seconds": 0.0004955,
+      "clock_percent": 0.02
+    },
+    {
+      "component": "Force to Accel",
+      "cpu_seconds": 0.0029942,
+      "cpu_percent": 0.25,
+      "clock_seconds": 0.0030105,
+      "clock_percent": 0.11
+    },
+    {
+      "component": "Misc. 2",
+      "cpu_seconds": 0.0045907,
+      "cpu_percent": 0.38,
+      "clock_seconds": 0.004733,
+      "clock_percent": 0.18
+    },
+    {
+      "component": "Geometry Update",
+      "cpu_seconds": 0.0023831,
+      "cpu_percent": 0.2,
+      "clock_seconds": 0.002324,
+      "clock_percent": 0.09
+    },
+    {
+      "component": "Misc. 3",
+      "cpu_seconds": 0.031244,
+      "cpu_percent": 2.56,
+      "clock_seconds": 0.031693,
+      "clock_percent": 1.21
+    },
+    {
+      "component": "Sense Switch Share",
+      "cpu_seconds": 0.061205,
+      "cpu_percent": 5.01,
+      "clock_seconds": 0.061202,
+      "clock_percent": 2.33
+    },
+    {
+      "component": "Misc. 4",
+      "cpu_seconds": 0.0088671,
+      "cpu_percent": 0.73,
+      "clock_seconds": 0.019478,
+      "clock_percent": 0.74
+    },
+    {
+      "component": "Timestep Init",
+      "cpu_seconds": 0.0013841,
+      "cpu_percent": 0.11,
+      "clock_seconds": 0.005057,
+      "clock_percent": 0.19
+    },
+    {
+      "component": "Apply Loads",
+      "cpu_seconds": 0.0015754,
+      "cpu_percent": 0.13,
+      "clock_seconds": 0.0074855,
+      "clock_percent": 0.29
+    },
+    {
+      "component": "Compute exwork",
+      "cpu_seconds": 0.0040839,
+      "cpu_percent": 0.33,
+      "clock_seconds": 0.005005,
+      "clock_percent": 0.19
+    }
+  ],
+  "contact_timing": [
+    {
+      "interface_id": 1,
+      "cpu_seconds": 0.10419,
+      "cpu_percent": 8.53,
+      "clock_seconds": 0.1103,
+      "clock_percent": 4.21
+    },
+    {
+      "interface_id": 2,
+      "cpu_seconds": 0.088785,
+      "cpu_percent": 7.27,
+      "clock_seconds": 0.089663,
+      "clock_percent": 3.42
+    }
+  ],
+  "mpp_timing": [
+    {
+      "processor_id": 0,
+      "hostname": "node002",
+      "cpu_ratio": 0.72653,
+      "cpu_seconds": 0.89
+    },
+    {
+      "processor_id": 1,
+      "hostname": "node002",
+      "cpu_ratio": 1.27347,
+      "cpu_seconds": 1.56
+    }
+  ],
+  "load_profile_abs": [
+    {
+      "processor_id": 0,
+      "solids": 0.337754011,
+      "shells": 0.0,
+      "tshells": 0.0,
+      "beams": 0.0,
+      "sph": 0.0,
+      "e_other": 0.00763100013,
+      "force_shr": 0.00832299981,
+      "tstep_shr": 0.012201,
+      "swtch_shr": 0.00207499997,
+      "matrl_shr": 0.0,
+      "elmnt_shr": 0.0,
+      "time_step": 0.00279700011,
+      "contact": 0.221037999,
+      "rigid_bdy": 0.0162339993,
+      "others": 0.0064389999
+    },
+    {
+      "processor_id": 1,
+      "solids": 0.343524992,
+      "shells": 0.0,
+      "tshells": 0.0,
+      "beams": 0.0,
+      "sph": 0.0,
+      "e_other": 0.00753499987,
+      "force_shr": 0.0118720001,
+      "tstep_shr": 0.0078189997,
+      "swtch_shr": 0.120329,
+      "matrl_shr": 0.0,
+      "elmnt_shr": 0.0,
+      "time_step": 0.00260500005,
+      "contact": 0.220836997,
+      "rigid_bdy": 0.0134589998,
+      "others": 0.00623700023
+    }
+  ],
+  "load_profile_pct": [
+    {
+      "processor_id": 0,
+      "solids": 12.8770084,
+      "shells": 0.0,
+      "tshells": 0.0,
+      "beams": 0.0,
+      "sph": 0.0,
+      "e_other": 0.29093498,
+      "force_shr": 0.317317754,
+      "tstep_shr": 0.465168089,
+      "swtch_shr": 0.0791102126,
+      "matrl_shr": 0.0,
+      "elmnt_shr": 0.0,
+      "time_step": 0.106636763,
+      "contact": 8.42716312,
+      "rigid_bdy": 0.618927836,
+      "others": 0.245489478
+    },
+    {
+      "processor_id": 1,
+      "solids": 13.0970297,
+      "shells": 0.0,
+      "tshells": 0.0,
+      "beams": 0.0,
+      "sph": 0.0,
+      "e_other": 0.287274927,
+      "force_shr": 0.452624798,
+      "tstep_shr": 0.298102528,
+      "swtch_shr": 4.58759165,
+      "matrl_shr": 0.0,
+      "elmnt_shr": 0.0,
+      "time_step": 0.0993166864,
+      "contact": 8.41950035,
+      "rigid_bdy": 0.513129771,
+      "others": 0.237788156
+    }
+  ],
+  "contact_definitions": [
+    {
+      "order": 1,
+      "contact_id": 1,
+      "type_code": "a 3",
+      "type_number": 3,
+      "type_prefix": "a",
+      "title": "Rubber-BotPlate"
+    },
+    {
+      "order": 2,
+      "contact_id": 2,
+      "type_code": "a 3",
+      "type_number": 3,
+      "type_prefix": "a",
+      "title": "TopPlate-Rubber"
+    }
+  ],
+  "cont_profile_abs": [],
+  "cont_profile_pct": [],
+  "interface_warning_counts": {},
+  "initial_penetrations": {},
+  "memory_per_rank": [
+    2180978,
+    2150299
+  ],
+  "scaling_projections": [
+    {
+      "target_cores": 2,
+      "est_elapsed_seconds": 3.9647815,
+      "est_speedup": 0.5044414175156942,
+      "est_efficiency": 50.44414175156942,
+      "est_sharing_pct": 2.0507813608391783
+    },
+    {
+      "target_cores": 32,
+      "est_elapsed_seconds": 2.935562171875,
+      "est_speedup": 0.6813005083529066,
+      "est_efficiency": 4.258128177205666,
+      "est_sharing_pct": 11.079172606733295
+    },
+    {
+      "target_cores": 64,
+      "est_elapsed_seconds": 3.027841123109476,
+      "est_speedup": 0.6605366393683422,
+      "est_efficiency": 2.064176998026069,
+      "est_sharing_pct": 15.19079580039595
+    },
+    {
+      "target_cores": 128,
+      "est_elapsed_seconds": 3.1971408554687497,
+      "est_speedup": 0.6255589260570034,
+      "est_efficiency": 0.9774358219640678,
+      "est_sharing_pct": 20.345428287507552
+    },
+    {
+      "target_cores": 256,
+      "est_elapsed_seconds": 3.455965627078327,
+      "est_speedup": 0.5787094594719102,
+      "est_efficiency": 0.4521167652124298,
+      "est_sharing_pct": 26.617924586294006
+    }
+  ],
+  "interface_surface_timesteps": [
+    {
+      "interface_id": 1,
+      "surface": "surfa",
+      "type_code": "a 3",
+      "surface_timestep": 3.358e-08,
+      "controlling_node_id": 3079,
+      "part_id": 2,
+      "is_active": true
+    },
+    {
+      "interface_id": 1,
+      "surface": "surfb",
+      "type_code": "a 3",
+      "surface_timestep": 2.801e-07,
+      "controlling_node_id": 1,
+      "part_id": 1,
+      "is_active": true
+    },
+    {
+      "interface_id": 2,
+      "surface": "surfa",
+      "type_code": "a 3",
+      "surface_timestep": 2.801e-07,
+      "controlling_node_id": 10001,
+      "part_id": 3,
+      "is_active": true
+    },
+    {
+      "interface_id": 2,
+      "surface": "surfb",
+      "type_code": "a 3",
+      "surface_timestep": 3.358e-08,
+      "controlling_node_id": 3079,
+      "part_id": 2,
+      "is_active": true
+    }
+  ],
+  "contact_dt_limit": 3.358e-08,
+  "decomp_metrics": {
+    "min_cost": 0.0,
+    "max_cost": 0.0,
+    "std_deviation": 0.0,
+    "decomp_memory": 0,
+    "dynamic_memory": 0
+  },
+  "mass_properties": [],
+  "status": {
+    "cpu_per_zone_ns": 252,
+    "avg_cpu_per_zone_ns": 252,
+    "avg_clock_per_zone_ns": 3140,
+    "est_total_cpu_sec": 106,
+    "est_cpu_remain_sec": 106,
+    "est_total_clock_sec": 1323,
+    "est_clock_remain_sec": 1322
+  },
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "category": "termination",
+      "title": "해석 에러 종료",
+      "description": "시뮬레이션이 비정상 종료되었습니다. 도달 시간: 1.4162E-04, 목표 시간: 2.0000E-02. LS-DYNA는 복구 불가능한 수치적 오류(negative volume, NaN, 메모리 부족 등)를 감지하면 즉시 종료합니다.",
+      "recommendation": "1. d3hsp/mes 파일에서 에러 코드와 위치(요소/노드 번호) 확인\n2. 가장 흔한 원인: negative volume(요소 반전), NaN velocity(발산)\n3. 해당 위치의 메시/경계조건/접촉 설정 검토\n4. *MAT_ADD_EROSION으로 파손 요소 자동 제거 고려"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "energy",
+      "title": "Energy balance severely violated",
+      "description": "Energy ratio range: [0.980583, 34.482200]. Deviation > 10% from 1.0 indicates numerical instability or energy source/sink.",
+      "recommendation": "Check for contact energy growth, mass scaling effects, or improperly defined loads. Enable energy output (*CONTROL_ENERGY) to identify the source."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "energy",
+      "title": "Total energy is increasing (divergence)",
+      "description": "Total energy grew from 4.0000E-20 to 1.8607E+02 (465170000000000049807360.0% increase). This strongly suggests numerical instability.",
+      "recommendation": "Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "timestep",
+      "title": "Severe timestep drop detected",
+      "description": "Timestep dropped to 4.9% of initial value (from 1.9599E-07 to 9.6795E-09). This indicates severe element distortion.",
+      "recommendation": "Check the controlling elements for excessive deformation. Consider adding erosion criteria (*MAT_ADD_EROSION) or improving mesh quality in the problem region."
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "error",
+      "title": "Error 40455: NaN detected on processor",
+      "description": "1 occurrence(s). 프로세서에서 NaN(Not a Number)이 검출되었습니다. LS-DYNA의 명시적 시간 적분에서 v(t+dt) = v(t) + (F/m)×dt를 계산할 때, 힘 F가 무한대이거나 질량 m이 0이면 NaN이 발생합니다. NaN은 IEEE 754 부동소수점 연산에서 0/0, ∞-∞, 0×∞ 등의 결과이며, 한 번 발생하면 모든 후속 계산으로 전파됩니다(NaN + x = NaN). MPP 환경에서는 특정 프로세서에서 먼저 발생하여 MPI 통신을 통해 다른 프로세서로 전파됩니다. Error 40455는 프로세서별 NaN 감지로, Error 40456(전역 NaN 감지)의 전조입니다.",
+      "recommendation": "1. NaN 발생 프로세서의 도메인 확인 — 해당 프로세서가 담당하는 요소/노드 영역에서 극심한 변형이나 접촉 불안정 확인\n2. Timestep scale factor(TSSFAC) 감소 — 0.9 → 0.67로 줄여 각 스텝의 변형량을 제한. 특히 대변형 해석에서 효과적\n3. Negative volume 경고(40509) 확인 — NaN의 전조 증상인 negative volume이 선행했는지 d3hsp/mes 파일에서 확인\n4. 재료 물성 검증 — 밀도, 탄성계수가 0이 아닌지 확인. 단위 시스템(mm-ton-s vs m-kg-s) 통일 여부 점검\n5. 요소 침식(*MAT_ADD_EROSION) 추가 — 과도 변형 요소를 NaN 발생 전에 자동 제거"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "error",
+      "title": "Error 40456: NaN detected (global)",
+      "description": "1 occurrence(s). 전역적으로 NaN(Not a Number)이 검출되어 시뮬레이션이 종료됩니다. Error 40456은 Error 40455(프로세서별 NaN)가 전역으로 전파된 후 최종적으로 감지되는 에러입니다. 이 시점에서는 이미 수치 해가 완전히 발산했으며, 복구가 불가능합니다. NaN의 근본 원인은 대부분 (1) negative volume 요소, (2) 과도한 접촉 관통, (3) 재료 모델의 비물리적 파라미터, (4) 과도한 mass scaling 중 하나입니다. glstat에서 NaN이 나타나는 시점 직전의 에너지 변화를 분석하면 원인을 추적할 수 있습니다.",
+      "recommendation": "1. glstat 에너지 이력 분석 — NaN 직전 사이클에서 kinetic energy 급증, energy ratio 발산, 또는 sliding interface energy 이상 여부 확인\n2. mes 파일에서 Error 40455 확인 — 어느 프로세서에서 NaN이 먼저 발생했는지 추적하여 문제 영역 특정\n3. Negative volume 경고(40509) 추적 — NaN 발생 전에 negative volume이 축적되었다면 해당 요소에 침식 기준 추가\n4. 접촉 설정 검토 — 접촉 관통이 에너지 불안정을 유발했다면 penalty scale factor(SLSFAC) 조정 또는 soft constraint(SOFT=1) 사용\n5. TSSFAC 감소 + ERODE 활성화 — dt를 줄이고 과도 왜곡 요소를 자동 제거하여 NaN 전파 방지"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "numerical_instability",
+      "title": "Negative sliding interface energy (-1.215E+03)",
+      "description": "Cycle 945 (t=1.400E-04s)에서 sliding interface energy = -1.215E+03입니다. 접촉 슬라이딩 에너지 E_slide = Σ(F_contact × δ_slide)는 마찰에 의한 에너지 소산이므로 항상 양수(≥0)여야 합니다. 음의 접촉 에너지는 penalty contact에서 비정상적인 에너지 생성을 의미하며, 접촉면에서 인공적으로 에너지가 시스템에 주입되고 있습니다. 이는 주로 penalty stiffness가 과도하여 관통-반발 사이클에서 접촉력이 오버슈팅하거나, tied contact에서 풀린 노드가 비정상적인 penalty force를 받을 때 발생합니다. 음의 접촉 에너지는 energy ratio를 1.0 이상으로 증가시켜 에너지 비보존을 유발하며, 시뮬레이션 결과의 신뢰성을 손상시킵니다.",
+      "recommendation": "1. Penalty stiffness 감소 — SLSFAC를 0.05~0.1로 설정하여 접촉력의 오버슈팅 방지. k_contact = fs × K × A²/V에서 fs(SLSFAC)를 줄이면 관통 시 반발력이 완화됨\n2. SOFT=1 (segment-based contact) 사용 — 양측 표면의 강성을 고려하여 균형 잡힌 접촉력 적용. SOFT=2(pinball)도 고려\n3. Contact type 변경 — AUTOMATIC_SURFACE_TO_SURFACE 대신 MORTAR contact 사용 검토. Mortar은 에너지 보존이 우수\n4. 초기 관통 제거 — 초기 관통이 있으면 첫 스텝에서 과도한 penalty force → 반발 → 음의 에너지 생성 사이클 유발\n5. Contact damping(VDC) 추가 — VDC=20~40으로 접촉면 진동을 감쇠하여 에너지 생성 방지"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "slurm_failure",
+      "title": "LS-DYNA exit code 3",
+      "description": "LS-DYNA가 exit code 3로 종료되었습니다. Slurm job 21656. Exit code 3은 LS-DYNA의 표준 에러 종료(error termination)로, d3hsp 파일에 기록된 에러 메시지에 의해 시뮬레이션이 중단된 것입니다. 일반적인 원인: negative volume(Error 40509), NaN detected(Error 40456), constraint matrix singular(Error 30358) 등. d3hsp의 termination 섹션과 에러/경고 카운트를 통해 정확한 원인을 파악할 수 있습니다.",
+      "recommendation": "1. d3hsp 파일의 'E r r o r' 메시지 확인 — 에러 코드별 대응\n2. 이 도구의 다른 진단 결과 참조 — 에너지 불안정, timestep 붕괴, 경고 패턴 등이 종료 원인을 설명합니다"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "energy",
+      "title": "에너지 비율 폭주 (ratio = 34.48)",
+      "description": "에너지 비율이 34.48로 상승했습니다. 에너지 비율(E_total/E_initial)은 이상적으로 1.0이어야 하며, 1.05를 초과하면 에너지가 인위적으로 생성되고 있음을 의미합니다. 4.0 이상은 NaN 발산이나 제약조건 행렬 특이성(Error 30358)의 전조이며, 곧 시뮬레이션이 발산할 가능성이 높습니다.",
+      "recommendation": "1. *CONSTRAINED_* 정의 점검 (과도하게 구속된 노드 → 에너지 주입)\n2. Contact interface에서 초기 관통(initial penetration) 제거\n3. Penalty stiffness 감소 (SLSFAC) → 접촉 에너지 주입 감소\n4. 'shooting nodes' 확인 (비정상 고속 노드 → 에너지 폭주 원인)"
+    },
+    {
+      "severity": "WARNING",
+      "category": "performance",
+      "title": "MPP load imbalance: 54.7%",
+      "description": "CPU ratio range: [0.7265, 1.2735]. Slowest: proc #1 (node002), Fastest: proc #0 (node002).",
+      "recommendation": "도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요."
+    },
+    {
+      "severity": "INFO",
+      "category": "contact",
+      "title": "Interface 1 dominates contact cost",
+      "description": "Interface 1 (Type 0) uses 0.11s (55% of contact time). Total contact interfaces: 2.",
+      "recommendation": "Review Interface 1 for optimization. Consider bucket sort options or reducing segment count."
+    },
+    {
+      "severity": "INFO",
+      "category": "contact",
+      "title": "접촉 안정성 dt 상한: 3.358E-08",
+      "description": "LS-DYNA 권장: dt ≤ 3.358E-08. 가장 작은 서프스 dt = 3.358E-08 (인터페이스 1, surfa, 파트 2). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.",
+      "recommendation": "1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑\n2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절\n3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인\n4. 접촉면 메시 크기가 과도하게 작지 않은지 확인"
+    }
+  ],
+  "keyword_counts": {
+    "CONTACT_option": 2,
+    "CONTROL_BULK_VISCOSITY": 1,
+    "CONTROL_CONTACT": 1,
+    "CONTROL_ENERGY": 1,
+    "CONTROL_HOURGLASS": 1,
+    "CONTROL_SOLID": 1,
+    "CONTROL_TERMINATION": 1,
+    "CONTROL_TIMESTEP": 1,
+    "DATABASE_GLSTAT": 1,
+    "DATABASE_MATSUM": 1,
+    "DATABASE_NODOUT": 1,
+    "DATABASE_RBDOUT": 1,
+    "DATABASE_RCFORC": 1,
+    "DATABASE_SLEOUT": 1,
+    "DATABASE_SPCFORC": 1,
+    "DATABASE_BINARY_D3PLOT": 1,
+    "DATABASE_EXTENT_BINARY": 1,
+    "DATABASE_HISTORY_NODE_option": 3,
+    "DEFINE_CURVE": 1,
+    "ELEMENT_SOLID": 4128,
+    "LOAD_NODE": 1,
+    "MAT_option": 3,
+    "NODE": 1413,
+    "PART_option card": 3,
+    "SECTION_option": 3,
+    "SET_NODE_option": 3,
+    "SET_PART": 1,
+    "TITLE": 1
+  },
+  "slurm_info": {
+    "job_id": "21656",
+    "exit_code": 3,
+    "signal": -1,
+    "has_segfault": false,
+    "has_mpi_error": false,
+    "has_mpi_abort": false,
+    "error_messages": [],
+    "stack_trace": [],
+    "node_name": "",
+    "err_file": "slurm_21656.err"
+  },
+  "files_found": [
+    "d3hsp",
+    "glstat",
+    "status.out",
+    "load_profile.csv",
+    "mes[0000-0001]",
+    "slurm_21656.err"
+  ]
+}

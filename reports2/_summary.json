@@ -1,0 +1,298 @@
+[
+  {
+    "category": "Hourglass_CRITICAL",
+    "case": "alt_ale/ex01_ale_f500",
+    "termination": "INCOMPLETE",
+    "crit": 8,
+    "warn": 2,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "Hourglass_CRITICAL",
+    "case": "alt_ale/ex02_ale_f1000",
+    "termination": "INCOMPLETE",
+    "crit": 8,
+    "warn": 2,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "Hourglass_WARNING",
+    "case": "results/results_normal",
+    "termination": "NORMAL",
+    "crit": 2,
+    "warn": 8,
+    "top_finding": "Hourglass energy dominance (26.8%)"
+  },
+  {
+    "category": "KE_폭발",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 2,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "KE_폭발",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "MPI_통신_에러",
+    "case": "results/level_study_ex08_tet10_ef17_dt0",
+    "termination": "INCOMPLETE",
+    "crit": 4,
+    "warn": 1,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "MPP_불균형_CRITICAL",
+    "case": "alt_tet_elform60/ex03_ef60_f2000",
+    "termination": "ERROR",
+    "crit": 5,
+    "warn": 0,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "MPP_불균형_CRITICAL",
+    "case": "results/ball_drop_v4_ex12_pronyC_vflag1",
+    "termination": "ERROR",
+    "crit": 4,
+    "warn": 0,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "MPP_불균형_WARNING",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 2,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "MPP_불균형_WARNING",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "NaN_감지_40455",
+    "case": "results/level_study_ex06_tet4_ef60_dt0",
+    "termination": "ERROR",
+    "crit": 9,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "NaN_감지_40455",
+    "case": "results/ball_drop_v2_dp_ex16_mat077_fine_optimal_dp",
+    "termination": "ERROR",
+    "crit": 6,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "NaN_에너지_glstat",
+    "case": "alt_spg/ex02_sph_f1000",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 2,
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "NaN_에너지_glstat",
+    "case": "alt_spg/ex04_sph_f5000",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 2,
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "Negative_Volume_40509",
+    "case": "results/ball_drop_v2_dp_ex09_mat077_optimal_dp",
+    "termination": "ERROR",
+    "crit": 4,
+    "warn": 3,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "Negative_Volume_40509",
+    "case": "results/ball_drop_v2_sp_ex06_mat077_mortar",
+    "termination": "ERROR",
+    "crit": 4,
+    "warn": 3,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "Segfault_Signal11",
+    "case": "alt_sph/ex03_sph_f2000",
+    "termination": "INCOMPLETE",
+    "crit": 7,
+    "warn": 2,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "Segfault_Signal11",
+    "case": "alt_sph/ex01_sph_f500",
+    "termination": "INCOMPLETE",
+    "crit": 5,
+    "warn": 2,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "Tied_Contact_50135",
+    "case": "output/Run_20260210_022052_e4ac3e",
+    "termination": "NORMAL",
+    "crit": 4,
+    "warn": 5,
+    "top_finding": "Hourglass energy critically high"
+  },
+  {
+    "category": "Tied_Contact_50135",
+    "case": "output/Run_20260210_023157_5b9f6b",
+    "termination": "NORMAL",
+    "crit": 4,
+    "warn": 5,
+    "top_finding": "Hourglass energy critically high"
+  },
+  {
+    "category": "Warning_40538",
+    "case": "DisplayImpactImplicit/3ptBending_1_00000001",
+    "termination": "INCOMPLETE",
+    "crit": 2,
+    "warn": 3,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "Warning_40538",
+    "case": "DisplayImpactShell/3ptBending_1_00000001",
+    "termination": "INCOMPLETE",
+    "crit": 2,
+    "warn": 1,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "에너지_발산",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 2,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에너지_발산",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에너지_비율_폭주",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 2,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에너지_비율_폭주",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에러_종료_exit3",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 2,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에러_종료_exit3",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "음수_Sliding",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 2,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "음수_Sliding",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "접촉_계산_과다",
+    "case": "output/Run_20260210_045925_6d2fe3",
+    "termination": "NORMAL",
+    "crit": 4,
+    "warn": 7,
+    "top_finding": "Hourglass energy critically high"
+  },
+  {
+    "category": "접촉_계산_과다",
+    "case": "results/ball_drop_v2_dp_ex09_mat077_optimal_dp",
+    "termination": "ERROR",
+    "crit": 4,
+    "warn": 3,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "접촉_에너지_과다",
+    "case": "alt_tet_elform15/ex06_ef15_f5000_mortar",
+    "termination": "NORMAL",
+    "crit": 5,
+    "warn": 2,
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "접촉_에너지_과다",
+    "case": "alt_tet_elform15/ex04_ef15_f5000",
+    "termination": "NORMAL",
+    "crit": 4,
+    "warn": 2,
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "정상_종료",
+    "case": "alt_spg/ex02_sph_f1000",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 2,
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "정상_종료",
+    "case": "alt_spg/ex04_sph_f5000",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 2,
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "타임스텝_붕괴",
+    "case": "results/level_study_ex06_tet4_ef60_dt0",
+    "termination": "ERROR",
+    "crit": 9,
+    "warn": 1,
+    "top_finding": "해석 에러 종료"
+  }
+]
