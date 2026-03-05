@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LS-DYNA 해석 분석 리포트 — ex08_tet10_ef17_dt0.k</title>
+<style>:root {
+  --bg: #1a1b26;
+  --bg2: #24283b;
+  --bg3: #292e42;
+  --fg: #c0caf5;
+  --fg-dim: #565f89;
+  --red: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --cyan: #7dcfff;
+  --blue: #7aa2f7;
+  --magenta: #bb9af7;
+  --border: #3b4261;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 22px;
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 16px;
+  color: var(--cyan);
+  margin: 28px 0 12px 0;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+}
+.header-panel {
+  background: var(--bg2);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.header-panel .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.header-panel .label { color: var(--fg-dim); font-size: 12px; }
+.header-panel .value { color: var(--fg); font-size: 14px; font-weight: 500; }
+.status-normal { color: var(--green); font-weight: 700; }
+.status-error { color: var(--red); font-weight: 700; }
+.status-incomplete { color: var(--yellow); font-weight: 700; }
+.term-panel {
+  background: var(--bg2);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.term-panel .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 8px; }
+.term-panel .item { }
+.term-panel .label { color: var(--fg-dim); font-size: 12px; }
+.term-panel .value { font-size: 14px; }
+.findings-summary {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 12px 16px; background: var(--bg2); border-radius: 6px;
+}
+.findings-summary .badge {
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.badge-critical { background: rgba(247,118,142,0.15); color: var(--red); }
+.badge-warning { background: rgba(224,175,104,0.15); color: var(--yellow); }
+.badge-info { background: rgba(122,162,247,0.15); color: var(--blue); }
+.finding {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border-left: 3px solid var(--border);
+}
+.finding.critical { border-left-color: var(--red); }
+.finding.warning { border-left-color: var(--yellow); }
+.finding.info { border-left-color: var(--blue); }
+.finding .tag {
+  font-size: 11px; font-weight: 700; padding: 2px 6px;
+  border-radius: 3px; margin-right: 8px; display: inline-block;
+}
+.finding .tag.critical { background: rgba(247,118,142,0.2); color: var(--red); }
+.finding .tag.warning { background: rgba(224,175,104,0.2); color: var(--yellow); }
+.finding .tag.info { background: rgba(122,162,247,0.2); color: var(--blue); }
+.finding .title { font-weight: 600; }
+.finding .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+.finding .rec { color: var(--green); font-size: 13px; margin-top: 4px; font-style: italic; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--cyan);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+thead th.r { text-align: right; }
+thead th.c { text-align: center; }
+tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--bg3);
+}
+tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.c { text-align: center; }
+tbody td.id { color: var(--cyan); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+tbody tr:hover { background: var(--bg3); }
+.warn-high { color: var(--yellow); font-weight: 600; }
+.eff-bad { color: var(--red); font-weight: 600; }
+.eff-mid { color: var(--yellow); font-weight: 600; }
+.bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
+.note { color: var(--fg-dim); font-size: 12px; margin-top: 4px; margin-bottom: 12px; }
+.model-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.model-card {
+  background: var(--bg2); border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.model-card .num { font-size: 20px; font-weight: 700; color: var(--fg); }
+.model-card .lbl { font-size: 11px; color: var(--fg-dim); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; }
+</style>
+</head><body>
+<h1>LS-DYNA 해석 분석 리포트</h1>
+<div class="header-panel">
+<div class="row">
+<div><div class="label">버전</div><div class="value">mpp s R16 (R16.1.1-20-g0c90cad538)</div></div>
+<div><div class="label">일시</div><div class="value">02/18/2026 08:31:14</div></div>
+<div><div class="label">호스트</div><div class="value">node002</div></div>
+<div><div class="label">입력 파일</div><div class="value">ex08_tet10_ef17_dt0.k</div></div>
+<div><div class="label">정밀도</div><div class="value">Single precision (I4R4)</div></div>
+<div><div class="label">플랫폼</div><div class="value">OpenMPI 4.0.5 x86-64</div></div>
+<div><div class="label">MPI 프로세서</div><div class="value">2개</div></div>
+<div><div class="label">라이선스</div><div class="value">Samsung Electronics Co Ltd -- 1127</div></div>
+</div></div>
+<h2>모델 요약</h2>
+<div class="model-grid">
+<div class="model-card"><div class="num">9,161</div><div class="lbl">노드</div></div>
+<div class="model-card"><div class="num">4,128</div><div class="lbl">솔리드 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">쉘 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">빔 요소</div></div>
+<div class="model-card"><div class="num">3</div><div class="lbl">파트</div></div>
+<div class="model-card"><div class="num">3</div><div class="lbl">재료</div></div>
+<div class="model-card"><div class="num">2</div><div class="lbl">접촉</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">SPC 노드</div></div>
+</div>
+<h2>종료 상태</h2>
+<div class="term-panel">
+<span class="status-incomplete">미완료 (출력 중단)</span>
+<div class="row">
+<div class="item"><div class="label">목표 시간</div><div class="value">0.0200</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">0</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">0</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">0초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">0초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">0.0 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">0.0 ns</div></div>
+</div>
+</div>
+<h2>진단 결과</h2>
+<div class="findings-summary">
+<span class="badge badge-critical">심각 4</span>
+<span class="badge badge-warning">경고 1</span>
+<span class="badge badge-info">정보 1</span>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">해석 미완료 (출력 불완전)</span>
+<div class="desc">정상 종료 또는 에러 종료 표시가 발견되지 않았습니다. 출력 파일이 불완전하며, 시뮬레이션이 외부에서 강제 종료되었거나 클린 종료 없이 크래시된 것으로 보입니다. 일반적 원인: HPC walltime 초과, OOM(Out Of Memory) kill, 라이선스 만료, 파일시스템 오류.</div>
+<div class="rec">→ 1. 시스템 로그에서 OOM kill 또는 walltime 초과 확인
+2. mes0000 파일의 마지막 줄에서 진행 상태 확인
+3. 코어 덤프(core dump) 또는 signal 파일 확인
+4. HPC의 경우 walltime 증가 또는 restart 파일 활용</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Total energy is increasing (divergence)</span>
+<div class="desc">Total energy grew from 4.0000E-20 to 1.3386E+03 (3346424999999999794216960.0% increase). This strongly suggests numerical instability.</div>
+<div class="rec">→ Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Kinetic energy explosion (100x in 2.000E-04s)</span>
+<div class="desc">운동 에너지가 2.000E-04초 동안 10497배 증가했습니다 (KE: 2.296E-03 → 2.410E+01). 운동 에너지 KE = Σ(½mv²)가 급격히 증가한다는 것은 일부 노드의 속도가 발산(velocity divergence)했다는 의미입니다. 명시적 적분에서 v(t+dt) = v(t) + (F/m)×dt로 업데이트하는데, F가 비정상적으로 크면(contact spike, constraint conflict) 한 스텝에서 속도가 급증하고, 이 노드가 인접 요소를 왜곡시켜 추가적인 penalty force를 생성하는 양성 피드백 루프가 형성됩니다. 100배 이상의 KE 증가는 시뮬레이션이 발산 단계에 진입했음을 나타내며, 이후 NaN 또는 negative volume 에러로 이어집니다.</div>
+<div class="rec">→ 1. 발산 시점(t=1.999E-05s) 전후의 변형 확인 — 애니메이션에서 비정상적으로 빠르게 움직이는 노드/파트 식별
+2. Constraint 정의 점검 — *CONSTRAINED_EXTRA_NODES, *CONSTRAINED_RIGID_BODIES 등에서 과잉 구속 확인. 같은 노드에 여러 구속이 적용되면 내부적으로 상반되는 힘이 생성
+3. 접촉 초기 관통 제거 — 관통된 노드에 과도한 penalty force가 집중되어 속도 발산의 주요 원인. *CONTROL_CONTACT의 PENOPT 설정
+4. Penalty stiffness 감소 — SLSFAC &lt; 0.1로 설정하여 접촉력 크기를 완화. SOFT=1(segment-based) 사용 권장</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">MPI communication error</span>
+<div class="desc">MPI 통신 오류가 발생했습니다: Error in MPI_Allreduce; MPI_ERR_TRUNCATE: message truncated. Slurm job 21658, 노드: node002. MPI(Message Passing Interface) 오류는 MPP(Massively Parallel Processing) 실행에서 프로세서 간 통신이 실패한 것입니다. MPI_ERR_TRUNCATE는 수신 버퍼보다 큰 메시지가 도착했을 때 발생하며, 이는 도메인 분해 경계에서 데이터 크기 불일치를 의미합니다. MPI_Allreduce에서 발생하면 전체 프로세서의 글로벌 합산(에너지, 질량 등) 연산이 실패한 것으로, 한 프로세서에서 비정상적으로 큰 값이나 NaN이 발생하여 통신 데이터 크기가 예상과 달라진 것이 원인입니다.</div>
+<div class="rec">→ 1. 프로세서 수 줄이기 — MPP에서 프로세서 수가 많으면 도메인 경계면이 증가하여 통신 부하와 오류 확률 증가. 예: -np 4 → -np 2로 줄여서 테스트
+2. 메모리 증가 — memory= 파라미터를 2배로 증가시켜 MPI 버퍼 부족 방지
+3. 도메인 분해 재검토 — *CONTROL_MPP_DECOMPOSITION 또는 MPP 도메인 분해 설정에서 프로세서별 부하 균형 확인
+4. 입력 파일에서 수치 불안정 원인 제거 — MPI 오류는 종종 한 프로세서에서 발생한 수치 발산(NaN, overflow)이 통신 오류로 나타난 것. 위의 접촉/요소 설정 권장사항 적용</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">High sliding interface energy</span>
+<div class="desc">Max sliding interface / total energy ratio: 21.0%. This may indicate contact instability or excessive penetration.</div>
+<div class="rec">→ Check contact definitions for excessive penetration. Consider increasing penalty stiffness (SLSFAC in *CONTROL_CONTACT) or using soft constraint (SOFT=1).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">접촉 안정성 dt 상한: 4.749E-08</span>
+<div class="desc">LS-DYNA 권장: dt ≤ 4.749E-08. 가장 작은 서프스 dt = 4.749E-08 (인터페이스 1, surfa, 파트 2). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.</div>
+<div class="rec">→ 1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑
+2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절
+3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인
+4. 접촉면 메시 크기가 과도하게 작지 않은지 확인</div>
+</div>
+<h2>접촉 인터페이스 요약</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Auto S2S</td>
+<td>Rubber-BotPlate</td><td class="r"></td>
+<td class="r mono"></td><td class="r"></td></tr>
+<tr><td class="id">2</td><td>Auto S2S</td>
+<td>TopPlate-Rubber</td><td class="r"></td>
+<td class="r mono"></td><td class="r"></td></tr>
+</tbody></table>
+<h2>에너지 수지</h2>
+<table><thead><tr>
+<th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
+</tr></thead><tbody>
+<tr><td>운동 에너지</td><td class="r mono">0</td><td class="r mono">116.0220</td></tr>
+<tr><td>내부 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">1042.9700</td></tr>
+<tr><td>Hourglass 에너지</td><td class="r mono">0</td><td class="r mono">0</td></tr>
+<tr><td>슬라이딩 인터페이스</td><td class="r mono">0</td><td class="r mono">179.5770</td></tr>
+<tr><td>총 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">1338.5700</td></tr>
+<tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">0.9997</td></tr>
+<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">0.0%</td></tr>
+</tbody></table>
+<h2>타임스텝 제어 타임라인</h2>
+<table><thead><tr>
+<th class="r">사이클</th><th>시간 구간</th><th class="r">파트</th>
+<th class="r">요소</th><th>타입</th><th class="r">최소 dt</th><th class="r">스냅</th>
+</tr></thead><tbody>
+<tr><td class="r">1–1</td>
+<td class="mono">0.0000E+00 – 0.0000E+00</td>
+<td class="id">2</td><td class="r">5974</td>
+<td>solid</td><td class="r mono">6.5331E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">307–1,837</td>
+<td class="mono">1.9991E-05 – 1.1995E-04</td>
+<td class="id">2</td><td class="r">2163</td>
+<td>solid</td><td class="r mono">6.5331E-08</td>
+<td class="r">6</td></tr>
+<tr><td class="r">2,143–2,143</td>
+<td class="mono">1.3994E-04 – 1.3994E-04</td>
+<td class="id">2</td><td class="r">5048</td>
+<td>solid</td><td class="r mono">6.5236E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,452–2,452</td>
+<td class="mono">1.6000E-04 – 1.6000E-04</td>
+<td class="id">2</td><td class="r">5454</td>
+<td>solid</td><td class="r mono">6.4667E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,761–2,761</td>
+<td class="mono">1.7995E-04 – 1.7995E-04</td>
+<td class="id">2</td><td class="r">5502</td>
+<td>solid</td><td class="r mono">6.4413E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,072–3,072</td>
+<td class="mono">1.9995E-04 – 1.9995E-04</td>
+<td class="id">2</td><td class="r">5557</td>
+<td>solid</td><td class="r mono">6.4267E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,384–3,384</td>
+<td class="mono">2.1997E-04 – 2.1997E-04</td>
+<td class="id">2</td><td class="r">5941</td>
+<td>solid</td><td class="r mono">6.3988E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,697–3,697</td>
+<td class="mono">2.3996E-04 – 2.3996E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">6.3638E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,011–4,011</td>
+<td class="mono">2.5998E-04 – 2.5998E-04</td>
+<td class="id">2</td><td class="r">5891</td>
+<td>solid</td><td class="r mono">6.3760E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,326–4,326</td>
+<td class="mono">2.8000E-04 – 2.8000E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">6.3360E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,642–4,642</td>
+<td class="mono">2.9994E-04 – 2.9994E-04</td>
+<td class="id">2</td><td class="r">5946</td>
+<td>solid</td><td class="r mono">6.3142E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,960–4,960</td>
+<td class="mono">3.1996E-04 – 3.1996E-04</td>
+<td class="id">2</td><td class="r">5502</td>
+<td>solid</td><td class="r mono">6.2851E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,279–5,279</td>
+<td class="mono">3.3994E-04 – 3.3994E-04</td>
+<td class="id">2</td><td class="r">2593</td>
+<td>solid</td><td class="r mono">6.2445E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,604–5,604</td>
+<td class="mono">3.5995E-04 – 3.5995E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">6.1197E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,931–6,260</td>
+<td class="mono">3.7998E-04 – 3.9995E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">6.0046E-08</td>
+<td class="r">2</td></tr>
+<tr><td class="r">6,597–6,597</td>
+<td class="mono">4.2000E-04 – 4.2000E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">5.9206E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,939–6,939</td>
+<td class="mono">4.3997E-04 – 4.3997E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">5.7628E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,287–7,642</td>
+<td class="mono">4.5999E-04 – 4.7998E-04</td>
+<td class="id">2</td><td class="r">5502</td>
+<td>solid</td><td class="r mono">5.5443E-08</td>
+<td class="r">2</td></tr>
+<tr><td class="r">8,006–8,006</td>
+<td class="mono">4.9996E-04 – 4.9996E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">5.3971E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,378–8,378</td>
+<td class="mono">5.1997E-04 – 5.1997E-04</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">5.3596E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,758–8,758</td>
+<td class="mono">5.3995E-04 – 5.3995E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">5.1671E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,150–9,961</td>
+<td class="mono">5.5996E-04 – 5.9998E-04</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">4.8056E-08</td>
+<td class="r">3</td></tr>
+<tr><td class="r">10,380–10,380</td>
+<td class="mono">6.1998E-04 – 6.1998E-04</td>
+<td class="id">2</td><td class="r">2093</td>
+<td>solid</td><td class="r mono">4.8769E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">10,806–10,806</td>
+<td class="mono">6.3996E-04 – 6.3996E-04</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">4.6318E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,239–11,239</td>
+<td class="mono">6.5996E-04 – 6.5996E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">4.5497E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,681–11,681</td>
+<td class="mono">6.7996E-04 – 6.7996E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">4.5794E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,130–12,130</td>
+<td class="mono">6.9997E-04 – 6.9997E-04</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">4.4261E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,579–12,579</td>
+<td class="mono">7.1997E-04 – 7.1997E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">4.4378E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,030–13,030</td>
+<td class="mono">7.3997E-04 – 7.3997E-04</td>
+<td class="id">2</td><td class="r">2409</td>
+<td>solid</td><td class="r mono">4.4398E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,489–13,952</td>
+<td class="mono">7.5999E-04 – 7.7998E-04</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">4.2928E-08</td>
+<td class="r">2</td></tr>
+<tr><td class="r">14,415–14,415</td>
+<td class="mono">7.9996E-04 – 7.9996E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">4.3225E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">14,877–14,877</td>
+<td class="mono">8.1999E-04 – 8.1999E-04</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">4.3428E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,337–15,795</td>
+<td class="mono">8.3999E-04 – 8.5996E-04</td>
+<td class="id">2</td><td class="r">2454</td>
+<td>solid</td><td class="r mono">4.3405E-08</td>
+<td class="r">2</td></tr>
+<tr><td class="r">16,248–16,248</td>
+<td class="mono">8.7998E-04 – 8.7998E-04</td>
+<td class="id">2</td><td class="r">2409</td>
+<td>solid</td><td class="r mono">4.4560E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,695–16,695</td>
+<td class="mono">8.9998E-04 – 8.9998E-04</td>
+<td class="id">2</td><td class="r">2143</td>
+<td>solid</td><td class="r mono">4.4915E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,138–17,138</td>
+<td class="mono">9.1997E-04 – 9.1997E-04</td>
+<td class="id">2</td><td class="r">5886</td>
+<td>solid</td><td class="r mono">4.5359E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,577–17,577</td>
+<td class="mono">9.3997E-04 – 9.3997E-04</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">4.5696E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,013–18,013</td>
+<td class="mono">9.5996E-04 – 9.5996E-04</td>
+<td class="id">2</td><td class="r">5502</td>
+<td>solid</td><td class="r mono">4.5926E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,446–18,875</td>
+<td class="mono">9.8000E-04 – 9.9997E-04</td>
+<td class="id">2</td><td class="r">5886</td>
+<td>solid</td><td class="r mono">4.6423E-08</td>
+<td class="r">2</td></tr>
+<tr><td class="r">19,303–19,303</td>
+<td class="mono">1.0200E-03 – 1.0200E-03</td>
+<td class="id">2</td><td class="r">2414</td>
+<td>solid</td><td class="r mono">4.7622E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">19,727–19,727</td>
+<td class="mono">1.0400E-03 – 1.0400E-03</td>
+<td class="id">2</td><td class="r">5612</td>
+<td>solid</td><td class="r mono">4.7160E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,149–20,149</td>
+<td class="mono">1.0600E-03 – 1.0600E-03</td>
+<td class="id">2</td><td class="r">2138</td>
+<td>solid</td><td class="r mono">4.7665E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,568–20,568</td>
+<td class="mono">1.0800E-03 – 1.0800E-03</td>
+<td class="id">2</td><td class="r">5612</td>
+<td>solid</td><td class="r mono">4.7716E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,985–20,985</td>
+<td class="mono">1.1000E-03 – 1.1000E-03</td>
+<td class="id">2</td><td class="r">5886</td>
+<td>solid</td><td class="r mono">4.7892E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,403–21,403</td>
+<td class="mono">1.1200E-03 – 1.1200E-03</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">4.7769E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,822–21,822</td>
+<td class="mono">1.1400E-03 – 1.1400E-03</td>
+<td class="id">2</td><td class="r">5612</td>
+<td>solid</td><td class="r mono">4.7901E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,241–22,241</td>
+<td class="mono">1.1600E-03 – 1.1600E-03</td>
+<td class="id">2</td><td class="r">5886</td>
+<td>solid</td><td class="r mono">4.7597E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,663–22,663</td>
+<td class="mono">1.1800E-03 – 1.1800E-03</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">4.6451E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,093–23,093</td>
+<td class="mono">1.2000E-03 – 1.2000E-03</td>
+<td class="id">2</td><td class="r">5502</td>
+<td>solid</td><td class="r mono">4.5914E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,528–23,528</td>
+<td class="mono">1.2200E-03 – 1.2200E-03</td>
+<td class="id">2</td><td class="r">5996</td>
+<td>solid</td><td class="r mono">4.5374E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,969–23,969</td>
+<td class="mono">1.2400E-03 – 1.2400E-03</td>
+<td class="id">2</td><td class="r">2364</td>
+<td>solid</td><td class="r mono">4.5695E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,417–24,417</td>
+<td class="mono">1.2600E-03 – 1.2600E-03</td>
+<td class="id">2</td><td class="r">5502</td>
+<td>solid</td><td class="r mono">4.3883E-08</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,879–24,879</td>
+<td class="mono">1.2800E-03 – 1.2800E-03</td>
+<td class="id">2</td><td class="r">2048</td>
+<td>solid</td><td class="r mono">4.2576E-08</td>
+<td class="r">1</td></tr>
+</tbody></table>
+<div class="note">메모리 (최대 d-words): 최소=3,374,803 최대=3,426,271 (~26 MB) 평균=3,400,537 | 피크 랭크: #0</div>
+<h2>접촉 서프스 타임스텝</h2>
+<div class="warn">접촉 안정성 dt 상한: 4.749E-08 — 이 값을 초과하면 접촉 불안정 발생 가능</div>
+<table><thead><tr>
+<th class="r">인터페이스</th><th class="c">서프스</th><th>타입</th>
+<th class="r">서프스 dt</th><th class="r">제어 노드</th><th class="r">파트 ID</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td class="c">surfa</td>
+<td>a 3</td>
+<td class="r mono critical">4.749E-08</td>
+<td class="r">2979</td><td class="r">2</td></tr>
+<tr><td class="id">2</td><td class="c">surfb</td>
+<td>a 3</td>
+<td class="r mono critical">4.749E-08</td>
+<td class="r">2979</td><td class="r">2</td></tr>
+<tr><td class="id">1</td><td class="c">surfb</td>
+<td>a 3</td>
+<td class="r mono">2.801E-07</td>
+<td class="r">1</td><td class="r">1</td></tr>
+<tr><td class="id">2</td><td class="c">surfa</td>
+<td>a 3</td>
+<td class="r mono">2.801E-07</td>
+<td class="r">10001</td><td class="r">3</td></tr>
+</tbody></table>
+<h2>파트 정의</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>
+<th class="r">밀도</th><th class="r">탄성계수 (E)</th><th class="r">포아송비 (ν)</th><th class="c">ELFORM</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Bottom_Plate_Rigid</td>
+<td class="c">20</td><td>Rigid</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c"></td></tr>
+<tr><td class="id">2</td><td>Rubber_Tet10_EF17_DT0</td>
+<td class="c">27</td><td>Type 27</td>
+<td class="r mono">1.1000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c">17</td></tr>
+<tr><td class="id">3</td><td>Top_Plate_Rigid</td>
+<td class="c">20</td><td>Rigid</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c"></td></tr>
+</tbody></table>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, mes[0000-0001], slurm_21658.err</div>
+</body></html>

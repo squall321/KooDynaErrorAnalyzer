@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LS-DYNA 해석 분석 리포트 — ex05_ef60_f2000_mortar.k</title>
+<style>:root {
+  --bg: #1a1b26;
+  --bg2: #24283b;
+  --bg3: #292e42;
+  --fg: #c0caf5;
+  --fg-dim: #565f89;
+  --red: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --cyan: #7dcfff;
+  --blue: #7aa2f7;
+  --magenta: #bb9af7;
+  --border: #3b4261;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 22px;
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 16px;
+  color: var(--cyan);
+  margin: 28px 0 12px 0;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+}
+.header-panel {
+  background: var(--bg2);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.header-panel .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.header-panel .label { color: var(--fg-dim); font-size: 12px; }
+.header-panel .value { color: var(--fg); font-size: 14px; font-weight: 500; }
+.status-normal { color: var(--green); font-weight: 700; }
+.status-error { color: var(--red); font-weight: 700; }
+.status-incomplete { color: var(--yellow); font-weight: 700; }
+.term-panel {
+  background: var(--bg2);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.term-panel .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 8px; }
+.term-panel .item { }
+.term-panel .label { color: var(--fg-dim); font-size: 12px; }
+.term-panel .value { font-size: 14px; }
+.findings-summary {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 12px 16px; background: var(--bg2); border-radius: 6px;
+}
+.findings-summary .badge {
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.badge-critical { background: rgba(247,118,142,0.15); color: var(--red); }
+.badge-warning { background: rgba(224,175,104,0.15); color: var(--yellow); }
+.badge-info { background: rgba(122,162,247,0.15); color: var(--blue); }
+.finding {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border-left: 3px solid var(--border);
+}
+.finding.critical { border-left-color: var(--red); }
+.finding.warning { border-left-color: var(--yellow); }
+.finding.info { border-left-color: var(--blue); }
+.finding .tag {
+  font-size: 11px; font-weight: 700; padding: 2px 6px;
+  border-radius: 3px; margin-right: 8px; display: inline-block;
+}
+.finding .tag.critical { background: rgba(247,118,142,0.2); color: var(--red); }
+.finding .tag.warning { background: rgba(224,175,104,0.2); color: var(--yellow); }
+.finding .tag.info { background: rgba(122,162,247,0.2); color: var(--blue); }
+.finding .title { font-weight: 600; }
+.finding .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+.finding .rec { color: var(--green); font-size: 13px; margin-top: 4px; font-style: italic; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--cyan);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+thead th.r { text-align: right; }
+thead th.c { text-align: center; }
+tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--bg3);
+}
+tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.c { text-align: center; }
+tbody td.id { color: var(--cyan); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+tbody tr:hover { background: var(--bg3); }
+.warn-high { color: var(--yellow); font-weight: 600; }
+.eff-bad { color: var(--red); font-weight: 600; }
+.eff-mid { color: var(--yellow); font-weight: 600; }
+.bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
+.note { color: var(--fg-dim); font-size: 12px; margin-top: 4px; margin-bottom: 12px; }
+.model-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.model-card {
+  background: var(--bg2); border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.model-card .num { font-size: 20px; font-weight: 700; color: var(--fg); }
+.model-card .lbl { font-size: 11px; color: var(--fg-dim); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; }
+</style>
+</head><body>
+<h1>LS-DYNA 해석 분석 리포트</h1>
+<div class="header-panel">
+<div class="row">
+<div><div class="label">버전</div><div class="value">mpp s R16 (R16.1.1-20-g0c90cad538)</div></div>
+<div><div class="label">일시</div><div class="value">02/16/2026 13:52:30</div></div>
+<div><div class="label">호스트</div><div class="value">node001</div></div>
+<div><div class="label">입력 파일</div><div class="value">ex05_ef60_f2000_mortar.k</div></div>
+<div><div class="label">정밀도</div><div class="value">Single precision (I4R4)</div></div>
+<div><div class="label">플랫폼</div><div class="value">OpenMPI 4.0.5 x86-64</div></div>
+<div><div class="label">MPI 프로세서</div><div class="value">2개</div></div>
+<div><div class="label">라이선스</div><div class="value">Samsung Electronics Co Ltd -- 1127</div></div>
+</div></div>
+<h2>모델 요약</h2>
+<div class="model-grid">
+<div class="model-card"><div class="num">1,413</div><div class="lbl">노드</div></div>
+<div class="model-card"><div class="num">4,128</div><div class="lbl">솔리드 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">쉘 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">빔 요소</div></div>
+<div class="model-card"><div class="num">3</div><div class="lbl">파트</div></div>
+<div class="model-card"><div class="num">3</div><div class="lbl">재료</div></div>
+<div class="model-card"><div class="num">2</div><div class="lbl">접촉</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">SPC 노드</div></div>
+</div>
+<h2>종료 상태</h2>
+<div class="term-panel">
+<span class="status-error">오류 종료</span>
+<div class="row">
+<div class="item"><div class="label">목표 시간</div><div class="value">0.0200</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">0.0012</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">4,837</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">9초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">14초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">460.0 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">630.6 ns</div></div>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="item"><div class="label">시작</div><div class="value">02/16/2026 13:52:30</div></div>
+<div class="item"><div class="label">종료</div><div class="value">02/16/2026 13:52:44</div></div>
+</div>
+</div>
+<h2>진단 결과</h2>
+<div class="findings-summary">
+<span class="badge badge-critical">심각 10</span>
+<span class="badge badge-warning">경고 2</span>
+<span class="badge badge-info">정보 4</span>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">해석 에러 종료</span>
+<div class="desc">시뮬레이션이 비정상 종료되었습니다. 도달 시간: 1.2092E-03, 목표 시간: 2.0000E-02. LS-DYNA는 복구 불가능한 수치적 오류(negative volume, NaN, 메모리 부족 등)를 감지하면 즉시 종료합니다.</div>
+<div class="rec">→ 1. d3hsp/mes 파일에서 에러 코드와 위치(요소/노드 번호) 확인
+2. 가장 흔한 원인: negative volume(요소 반전), NaN velocity(발산)
+3. 해당 위치의 메시/경계조건/접촉 설정 검토
+4. *MAT_ADD_EROSION으로 파손 요소 자동 제거 고려</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Energy balance severely violated</span>
+<div class="desc">Energy ratio range: [0.549247, 10.541700]. Deviation &gt; 10% from 1.0 indicates numerical instability or energy source/sink.</div>
+<div class="rec">→ Check for contact energy growth, mass scaling effects, or improperly defined loads. Enable energy output (*CONTROL_ENERGY) to identify the source.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Total energy is increasing (divergence)</span>
+<div class="desc">Total energy grew from 4.0000E-20 to 1.8349E+04 (45873250000000004491575296.0% increase). This strongly suggests numerical instability.</div>
+<div class="rec">→ Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Error 40024: Code 40024</span>
+<div class="desc">1 occurrence(s). Warning/Error code 40024 (not in built-in database).</div>
+<div class="rec">→ Consult LS-DYNA documentation or LSTC support resources for details on code 40024.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Kinetic energy explosion (100x in 2.003E-04s)</span>
+<div class="desc">운동 에너지가 2.003E-04초 동안 15276배 증가했습니다 (KE: 2.146E-03 → 3.278E+01). 운동 에너지 KE = Σ(½mv²)가 급격히 증가한다는 것은 일부 노드의 속도가 발산(velocity divergence)했다는 의미입니다. 명시적 적분에서 v(t+dt) = v(t) + (F/m)×dt로 업데이트하는데, F가 비정상적으로 크면(contact spike, constraint conflict) 한 스텝에서 속도가 급증하고, 이 노드가 인접 요소를 왜곡시켜 추가적인 penalty force를 생성하는 양성 피드백 루프가 형성됩니다. 100배 이상의 KE 증가는 시뮬레이션이 발산 단계에 진입했음을 나타내며, 이후 NaN 또는 negative volume 에러로 이어집니다.</div>
+<div class="rec">→ 1. 발산 시점(t=1.975E-05s) 전후의 변형 확인 — 애니메이션에서 비정상적으로 빠르게 움직이는 노드/파트 식별
+2. Constraint 정의 점검 — *CONSTRAINED_EXTRA_NODES, *CONSTRAINED_RIGID_BODIES 등에서 과잉 구속 확인. 같은 노드에 여러 구속이 적용되면 내부적으로 상반되는 힘이 생성
+3. 접촉 초기 관통 제거 — 관통된 노드에 과도한 penalty force가 집중되어 속도 발산의 주요 원인. *CONTROL_CONTACT의 PENOPT 설정
+4. Penalty stiffness 감소 — SLSFAC &lt; 0.1로 설정하여 접촉력 크기를 완화. SOFT=1(segment-based) 사용 권장</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Contact energy spike (50x in 1.997E-04s)</span>
+<div class="desc">Contact sliding 에너지가 1.997E-04초 동안 91배 급증했습니다 (6.114E-01 → 5.583E+01). 접촉 에너지의 급격한 증가는 다수의 노드가 동시에 접촉면을 심하게 관통한 후 penalty force에 의해 반발되는 과정에서 발생합니다. Penalty method에서 접촉력 F = k × g (g=관통깊이)이므로, 관통이 깊어지면 힘이 급격히 증가하고, 이 힘에 의한 슬라이딩이 에너지를 급증시킵니다. 이는 곧 요소 왜곡과 timestep 감소로 이어져 시뮬레이션 불안정의 전조 증상입니다.</div>
+<div class="rec">→ 1. 시간 4.200E-04s 전후의 접촉 관통 확인 — 후처리기에서 접촉 관통 깊이(penetration depth) 시각화
+2. Penalty factor 감소 — SLSFAC 값을 줄여 관통 시 반발력을 완화하고, SOFT=1(segment-based) 사용으로 양면 강성을 고려한 균형 잡힌 접촉력 적용
+3. Contact stiffness 재조정 — *CONTACT의 SFS/SFM (slave/master scale factor)로 접촉면별 강성 조절</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Negative sliding interface energy (-1.612E+04)</span>
+<div class="desc">Cycle 4800 (t=1.200E-03s)에서 sliding interface energy = -1.612E+04입니다. 접촉 슬라이딩 에너지 E_slide = Σ(F_contact × δ_slide)는 마찰에 의한 에너지 소산이므로 항상 양수(≥0)여야 합니다. 음의 접촉 에너지는 penalty contact에서 비정상적인 에너지 생성을 의미하며, 접촉면에서 인공적으로 에너지가 시스템에 주입되고 있습니다. 이는 주로 penalty stiffness가 과도하여 관통-반발 사이클에서 접촉력이 오버슈팅하거나, tied contact에서 풀린 노드가 비정상적인 penalty force를 받을 때 발생합니다. 음의 접촉 에너지는 energy ratio를 1.0 이상으로 증가시켜 에너지 비보존을 유발하며, 시뮬레이션 결과의 신뢰성을 손상시킵니다.</div>
+<div class="rec">→ 1. Penalty stiffness 감소 — SLSFAC를 0.05~0.1로 설정하여 접촉력의 오버슈팅 방지. k_contact = fs × K × A²/V에서 fs(SLSFAC)를 줄이면 관통 시 반발력이 완화됨
+2. SOFT=1 (segment-based contact) 사용 — 양측 표면의 강성을 고려하여 균형 잡힌 접촉력 적용. SOFT=2(pinball)도 고려
+3. Contact type 변경 — AUTOMATIC_SURFACE_TO_SURFACE 대신 MORTAR contact 사용 검토. Mortar은 에너지 보존이 우수
+4. 초기 관통 제거 — 초기 관통이 있으면 첫 스텝에서 과도한 penalty force → 반발 → 음의 에너지 생성 사이클 유발
+5. Contact damping(VDC) 추가 — VDC=20~40으로 접촉면 진동을 감쇠하여 에너지 생성 방지</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">LS-DYNA exit code 3</span>
+<div class="desc">LS-DYNA가 exit code 3로 종료되었습니다. Slurm job 21355. Exit code 3은 LS-DYNA의 표준 에러 종료(error termination)로, d3hsp 파일에 기록된 에러 메시지에 의해 시뮬레이션이 중단된 것입니다. 일반적인 원인: negative volume(Error 40509), NaN detected(Error 40456), constraint matrix singular(Error 30358) 등. d3hsp의 termination 섹션과 에러/경고 카운트를 통해 정확한 원인을 파악할 수 있습니다.</div>
+<div class="rec">→ 1. d3hsp 파일의 &#x27;E r r o r&#x27; 메시지 확인 — 에러 코드별 대응
+2. 이 도구의 다른 진단 결과 참조 — 에너지 불안정, timestep 붕괴, 경고 패턴 등이 종료 원인을 설명합니다</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">에너지 비율 폭주 (ratio = 10.54)</span>
+<div class="desc">에너지 비율이 10.54로 상승했습니다. 에너지 비율(E_total/E_initial)은 이상적으로 1.0이어야 하며, 1.05를 초과하면 에너지가 인위적으로 생성되고 있음을 의미합니다. 4.0 이상은 NaN 발산이나 제약조건 행렬 특이성(Error 30358)의 전조이며, 곧 시뮬레이션이 발산할 가능성이 높습니다.</div>
+<div class="rec">→ 1. *CONSTRAINED_* 정의 점검 (과도하게 구속된 노드 → 에너지 주입)
+2. Contact interface에서 초기 관통(initial penetration) 제거
+3. Penalty stiffness 감소 (SLSFAC) → 접촉 에너지 주입 감소
+4. &#x27;shooting nodes&#x27; 확인 (비정상 고속 노드 → 에너지 폭주 원인)</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">접촉 계산 시간 과다 (77.1%)</span>
+<div class="desc">Contact algorithm이 전체 CPU의 77.1%를 소비합니다 (7.28초). 접촉 계산은 (1) bucket sort로 후보 쌍 탐색 O(N), (2) 관통 검출(penetration check), (3) penalty force 계산으로 구성됩니다. Single Surface 접촉은 모든 요소 쌍을 탐색하므로 비용이 높고, 세그먼트 수가 많을수록 계산량이 급증합니다.</div>
+<div class="rec">→ 1. 불필요한 접촉 인터페이스 제거 (접촉하지 않는 파트 쌍)
+2. Single Surface를 구체적인 Surface-to-Surface로 분리
+3. BSORT 파라미터 조정 (bucket sort 빈도, 기본=10사이클마다)
+4. SOFT=2 (segment-based) 사용 시 더 효율적일 수 있음
+5. Contact thickness(SHLTHK) 과다 설정 확인 → 검색 범위 증가</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Contact dominates computation time (52%)</span>
+<div class="desc">Contact algorithm uses 7.2s (51.7% of total clock time). This is above the 40% threshold.</div>
+<div class="rec">→ Consider using MPP groupable contacts where possible. Reduce contact search frequency (NSBCS in *CONTROL_CONTACT). Check if some contacts can be removed or simplified.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">MPP load imbalance: 16.2%</span>
+<div class="desc">CPU ratio range: [0.9190, 1.0810]. Slowest: proc #1 (node001), Fastest: proc #0 (node001).</div>
+<div class="rec">→ 도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Mass scaling is active</span>
+<div class="desc">DT2MS = -5.0000E-07. Mass is being added to maintain the target timestep size.</div>
+<div class="rec">→ Verify that added mass is acceptable (&lt;5% of total mass). Check *DATABASE_GLSTAT for mass increase percentage.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Interface 2 dominates contact cost</span>
+<div class="desc">Interface 2 (Type 0) uses 3.85s (53% of contact time). Total contact interfaces: 2.</div>
+<div class="rec">→ Review Interface 2 for optimization. Consider bucket sort options or reducing segment count.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Contact algorithm is the primary cost (50.2%)</span>
+<div class="desc">Contact algorithm: 7.3s (50.2% of clock time). CPU: 7.3s (77.1%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">접촉 안정성 dt 상한: 3.358E-08</span>
+<div class="desc">LS-DYNA 권장: dt ≤ 3.358E-08. 가장 작은 서프스 dt = 3.358E-08 (인터페이스 1, surfa, 파트 2). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.</div>
+<div class="rec">→ 1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑
+2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절
+3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인
+4. 접촉면 메시 크기가 과도하게 작지 않은지 확인</div>
+</div>
+<h2>경고/오류 요약</h2>
+<table><thead><tr>
+<th class="r">코드</th><th class="r">횟수</th><th class="c">심각도</th><th>설명</th><th>인터페이스</th>
+</tr></thead><tbody>
+<tr><td class="r id">40024</td><td class="r">1</td>
+<td class="c"><span class="tag critical">심각</span></td>
+<td>Warning/Error code 40024 (not in built-in database).</td><td></td></tr>
+</tbody></table>
+<h2>접촉 인터페이스 요약</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Auto S2S</td>
+<td>Rubber-BotPlate</td><td class="r"></td>
+<td class="r mono">3.3996</td><td class="r">23.43</td></tr>
+<tr><td class="id">2</td><td>Auto S2S</td>
+<td>TopPlate-Rubber</td><td class="r"></td>
+<td class="r mono">3.8451</td><td class="r">26.50</td></tr>
+</tbody></table>
+<h2>에너지 수지</h2>
+<table><thead><tr>
+<th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
+</tr></thead><tbody>
+<tr><td>운동 에너지</td><td class="r mono">0</td><td class="r mono">30114.8000</td></tr>
+<tr><td>내부 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">4354.4400</td></tr>
+<tr><td>Hourglass 에너지</td><td class="r mono">0</td><td class="r mono">0</td></tr>
+<tr><td>슬라이딩 인터페이스</td><td class="r mono">0</td><td class="r mono">-16120.0000</td></tr>
+<tr><td>총 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">18349.3000</td></tr>
+<tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">10.5417</td></tr>
+<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">0.0%</td></tr>
+</tbody></table>
+<h2>성능 프로파일링</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">CPU (s)</th><th class="r">CPU %</th>
+<th class="r">Clock (s)</th><th class="r">Clock %</th><th style="min-width:150px">비율</th>
+</tr></thead><tbody>
+<tr><td>Keyword Processing</td>
+<td class="r mono">0.10</td><td class="r">1.0</td>
+<td class="r mono">0.17</td><td class="r">1.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Reading</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Writing</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>MPP Decomposition</td>
+<td class="r mono">0.18</td><td class="r">1.9</td>
+<td class="r mono">1.12</td><td class="r">7.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:15%"></div></div></td></tr>
+<tr><td>Init Proc</td>
+<td class="r mono">0.06</td><td class="r">0.7</td>
+<td class="r mono">0.12</td><td class="r">0.8</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Decomposition</td>
+<td class="r mono">0.02</td><td class="r">0.2</td>
+<td class="r mono">0.04</td><td class="r">0.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Translation</td>
+<td class="r mono">0.09</td><td class="r">1.0</td>
+<td class="r mono">0.96</td><td class="r">6.6</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:13%"></div></div></td></tr>
+<tr><td>Initialization</td>
+<td class="r mono">0.26</td><td class="r">2.8</td>
+<td class="r mono">0.63</td><td class="r">4.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:8%"></div></div></td></tr>
+<tr><td>Init Proc Phase 1</td>
+<td class="r mono">0.04</td><td class="r">0.4</td>
+<td class="r mono">0.05</td><td class="r">0.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc Phase 2</td>
+<td class="r mono">0.15</td><td class="r">1.6</td>
+<td class="r mono">0.34</td><td class="r">2.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:4%"></div></div></td></tr>
+<tr><td>Mortar Contact</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init solver</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Element processing</td>
+<td class="r mono">0.69</td><td class="r">7.3</td>
+<td class="r mono">0.71</td><td class="r">4.9</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:9%"></div></div></td></tr>
+<tr><td>Solids</td>
+<td class="r mono">0.68</td><td class="r">7.2</td>
+<td class="r mono">0.69</td><td class="r">4.8</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:9%"></div></div></td></tr>
+<tr><td>E Other</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Binary databases</td>
+<td class="r mono">0.05</td><td class="r">0.6</td>
+<td class="r mono">0.08</td><td class="r">0.6</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>ASCII database</td>
+<td class="r mono">0.03</td><td class="r">0.3</td>
+<td class="r mono">3.29</td><td class="r">22.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:45%"></div></div></td></tr>
+<tr><td>Contact algorithm</td>
+<td class="r mono">7.28</td><td class="r">77.1</td>
+<td class="r mono">7.28</td><td class="r">50.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:100%"></div></div></td></tr>
+<tr><td>Rigid Bodies</td>
+<td class="r mono">0.03</td><td class="r">0.3</td>
+<td class="r mono">0.03</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Mass Scaling</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force gather</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Kinematic Update</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Update nodes</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step size</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step Sharing</td>
+<td class="r mono">0.07</td><td class="r">0.8</td>
+<td class="r mono">0.07</td><td class="r">0.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Group force file</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Others</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Sharing</td>
+<td class="r mono">0.03</td><td class="r">0.3</td>
+<td class="r mono">0.03</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 1</td>
+<td class="r mono">0.05</td><td class="r">0.5</td>
+<td class="r mono">0.09</td><td class="r">0.6</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Scale Masses</td>
+<td class="r mono">0.02</td><td class="r">0.2</td>
+<td class="r mono">0.02</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Constraints</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force to Accel</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 2</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Geometry Update</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 3</td>
+<td class="r mono">0.26</td><td class="r">2.8</td>
+<td class="r mono">0.57</td><td class="r">4.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:7%"></div></div></td></tr>
+<tr><td>Sense Switch Share</td>
+<td class="r mono">0.36</td><td class="r">3.9</td>
+<td class="r mono">0.36</td><td class="r">2.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:5%"></div></div></td></tr>
+<tr><td>Misc. 4</td>
+<td class="r mono">0.02</td><td class="r">0.2</td>
+<td class="r mono">0.03</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Timestep Init</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Apply Loads</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Compute exwork</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+</tbody></table>
+<h2>부하 프로파일 요약 (2개 프로세서)</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">최소 %</th><th class="r">최대 %</th><th class="r">평균 %</th><th class="r">편차</th>
+</tr></thead><tbody>
+<tr><td>솔리드</td><td class="r">4.8</td><td class="r">4.8</td>
+<td class="r">4.8</td><td class="r">0.0</td></tr>
+<tr><td>접촉</td><td class="r">50.2</td><td class="r">50.2</td>
+<td class="r">50.2</td><td class="r">0.0</td></tr>
+<tr><td>Force 공유</td><td class="r">0.2</td><td class="r">0.2</td>
+<td class="r">0.2</td><td class="r">0.0</td></tr>
+<tr><td>Timestep 공유</td><td class="r">0.3</td><td class="r">0.7</td>
+<td class="r">0.5</td><td class="r">0.5</td></tr>
+<tr><td>Switch 공유</td><td class="r">0.0</td><td class="r">5.0</td>
+<td class="r">2.5</td><td class="r">4.9</td></tr>
+<tr><td>바이너리 DB</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+<tr><td>강체</td><td class="r">0.2</td><td class="r">0.2</td>
+<td class="r">0.2</td><td class="r">0.0</td></tr>
+<tr><td>기타</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+</tbody></table>
+<h2>MPI 스케일링 예측</h2>
+<table><thead><tr>
+<th class="r">코어 수</th><th class="r">예상 시간 (s)</th><th class="r">속도향상</th><th class="r">효율</th><th class="r">통신 비율</th>
+</tr></thead><tbody>
+<tr><td class="r">2 (현재)</td><td class="r">17</td>
+<td class="r">0.8x</td><td class="r">83%</td>
+<td class="r">3%</td></tr>
+<tr><td class="r">32</td><td class="r">9</td>
+<td class="r">1.5x</td><td class="r" class="eff-bad">9%</td>
+<td class="r">20%</td></tr>
+<tr><td class="r">64</td><td class="r">10</td>
+<td class="r">1.4x</td><td class="r" class="eff-bad">4%</td>
+<td class="r">27%</td></tr>
+<tr><td class="r">128</td><td class="r">11</td>
+<td class="r">1.3x</td><td class="r" class="eff-bad">2%</td>
+<td class="r">35%</td></tr>
+<tr><td class="r">256</td><td class="r">12</td>
+<td class="r">1.1x</td><td class="r" class="eff-bad">1%</td>
+<td class="r">43%</td></tr>
+</tbody></table>
+<h2>접촉 인터페이스 타이밍 (상위 10)</h2>
+<table><thead><tr>
+<th class="r">인터페이스 ID</th><th>제목</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
+</tr></thead><tbody>
+<tr><td class="id">2</td><td>TopPlate-Rubber</td>
+<td class="r mono">3.8451</td><td class="r">26.50</td></tr>
+<tr><td class="id">1</td><td>Rubber-BotPlate</td>
+<td class="r mono">3.3996</td><td class="r">23.43</td></tr>
+</tbody></table>
+<h2>MPP 부하 균형</h2>
+<table><thead><tr>
+<th class="r">프로세서</th><th>호스트명</th><th class="r">CPU/평균</th><th class="r">CPU (s)</th>
+</tr></thead><tbody>
+<tr><td class="id">0</td><td>node001</td>
+<td class="r" class="eff-mid">0.91900</td><td class="r">8.68</td></tr>
+<tr><td class="id">1</td><td>node001</td>
+<td class="r" class="eff-bad">1.08100</td><td class="r">10.21</td></tr>
+</tbody></table>
+<div class="note">메모리 (최대 d-words): 최소=2,150,299 최대=2,180,985 (~17 MB) 평균=2,165,642 | 피크 랭크: #0</div>
+<h2>접촉 서프스 타임스텝</h2>
+<div class="warn">접촉 안정성 dt 상한: 3.358E-08 — 이 값을 초과하면 접촉 불안정 발생 가능</div>
+<table><thead><tr>
+<th class="r">인터페이스</th><th class="c">서프스</th><th>타입</th>
+<th class="r">서프스 dt</th><th class="r">제어 노드</th><th class="r">파트 ID</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td class="c">surfa</td>
+<td>a 3</td>
+<td class="r mono critical">3.358E-08</td>
+<td class="r">3079</td><td class="r">2</td></tr>
+<tr><td class="id">2</td><td class="c">surfb</td>
+<td>a 3</td>
+<td class="r mono critical">3.358E-08</td>
+<td class="r">3079</td><td class="r">2</td></tr>
+<tr><td class="id">1</td><td class="c">surfb</td>
+<td>a 3</td>
+<td class="r mono">2.801E-07</td>
+<td class="r">1</td><td class="r">1</td></tr>
+<tr><td class="id">2</td><td class="c">surfa</td>
+<td>a 3</td>
+<td class="r mono">2.801E-07</td>
+<td class="r">10001</td><td class="r">3</td></tr>
+</tbody></table>
+<h2>파트 정의</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>
+<th class="r">밀도</th><th class="r">탄성계수 (E)</th><th class="r">포아송비 (ν)</th><th class="c">ELFORM</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Bottom_Plate_Rigid</td>
+<td class="c">20</td><td>Rigid</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c"></td></tr>
+<tr><td class="id">2</td><td>Rubber_Block</td>
+<td class="c">27</td><td>Type 27</td>
+<td class="r mono">1.1000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c">60</td></tr>
+<tr><td class="id">3</td><td>Top_Plate_Rigid</td>
+<td class="c">20</td><td>Rigid</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c"></td></tr>
+</tbody></table>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, load_profile.csv, mes[0000-0001], slurm_21355.err</div>
+</body></html>

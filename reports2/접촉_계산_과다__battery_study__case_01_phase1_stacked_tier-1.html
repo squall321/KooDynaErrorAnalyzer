@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LS-DYNA 해석 분석 리포트 — 01_main_phase1_stacked_tier-1.k</title>
+<style>:root {
+  --bg: #1a1b26;
+  --bg2: #24283b;
+  --bg3: #292e42;
+  --fg: #c0caf5;
+  --fg-dim: #565f89;
+  --red: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --cyan: #7dcfff;
+  --blue: #7aa2f7;
+  --magenta: #bb9af7;
+  --border: #3b4261;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 22px;
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 16px;
+  color: var(--cyan);
+  margin: 28px 0 12px 0;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+}
+.header-panel {
+  background: var(--bg2);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.header-panel .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.header-panel .label { color: var(--fg-dim); font-size: 12px; }
+.header-panel .value { color: var(--fg); font-size: 14px; font-weight: 500; }
+.status-normal { color: var(--green); font-weight: 700; }
+.status-error { color: var(--red); font-weight: 700; }
+.status-incomplete { color: var(--yellow); font-weight: 700; }
+.term-panel {
+  background: var(--bg2);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.term-panel .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 8px; }
+.term-panel .item { }
+.term-panel .label { color: var(--fg-dim); font-size: 12px; }
+.term-panel .value { font-size: 14px; }
+.findings-summary {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 12px 16px; background: var(--bg2); border-radius: 6px;
+}
+.findings-summary .badge {
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.badge-critical { background: rgba(247,118,142,0.15); color: var(--red); }
+.badge-warning { background: rgba(224,175,104,0.15); color: var(--yellow); }
+.badge-info { background: rgba(122,162,247,0.15); color: var(--blue); }
+.finding {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border-left: 3px solid var(--border);
+}
+.finding.critical { border-left-color: var(--red); }
+.finding.warning { border-left-color: var(--yellow); }
+.finding.info { border-left-color: var(--blue); }
+.finding .tag {
+  font-size: 11px; font-weight: 700; padding: 2px 6px;
+  border-radius: 3px; margin-right: 8px; display: inline-block;
+}
+.finding .tag.critical { background: rgba(247,118,142,0.2); color: var(--red); }
+.finding .tag.warning { background: rgba(224,175,104,0.2); color: var(--yellow); }
+.finding .tag.info { background: rgba(122,162,247,0.2); color: var(--blue); }
+.finding .title { font-weight: 600; }
+.finding .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+.finding .rec { color: var(--green); font-size: 13px; margin-top: 4px; font-style: italic; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--cyan);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+thead th.r { text-align: right; }
+thead th.c { text-align: center; }
+tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--bg3);
+}
+tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.c { text-align: center; }
+tbody td.id { color: var(--cyan); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+tbody tr:hover { background: var(--bg3); }
+.warn-high { color: var(--yellow); font-weight: 600; }
+.eff-bad { color: var(--red); font-weight: 600; }
+.eff-mid { color: var(--yellow); font-weight: 600; }
+.bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
+.note { color: var(--fg-dim); font-size: 12px; margin-top: 4px; margin-bottom: 12px; }
+.model-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.model-card {
+  background: var(--bg2); border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.model-card .num { font-size: 20px; font-weight: 700; color: var(--fg); }
+.model-card .lbl { font-size: 11px; color: var(--fg-dim); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; }
+</style>
+</head><body>
+<h1>LS-DYNA 해석 분석 리포트</h1>
+<div class="header-panel">
+<div class="row">
+<div><div class="label">버전</div><div class="value">mpp s R16 (R16.1.1-20-g0c90cad538)</div></div>
+<div><div class="label">일시</div><div class="value">03/01/2026 00:11:57</div></div>
+<div><div class="label">호스트</div><div class="value">node001</div></div>
+<div><div class="label">입력 파일</div><div class="value">01_main_phase1_stacked_tier-1.k</div></div>
+<div><div class="label">정밀도</div><div class="value">Single precision (I4R4)</div></div>
+<div><div class="label">플랫폼</div><div class="value">OpenMPI 4.0.5 x86-64</div></div>
+<div><div class="label">MPI 프로세서</div><div class="value">2개</div></div>
+<div><div class="label">라이선스</div><div class="value">Samsung Electronics Co Ltd -- 1127</div></div>
+</div></div>
+<h2>모델 요약</h2>
+<div class="model-grid">
+<div class="model-card"><div class="num">20,178</div><div class="lbl">노드</div></div>
+<div class="model-card"><div class="num">1,161</div><div class="lbl">솔리드 요소</div></div>
+<div class="model-card"><div class="num">7,370</div><div class="lbl">쉘 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">빔 요소</div></div>
+<div class="model-card"><div class="num">32</div><div class="lbl">파트</div></div>
+<div class="model-card"><div class="num">32</div><div class="lbl">재료</div></div>
+<div class="model-card"><div class="num">2</div><div class="lbl">접촉</div></div>
+<div class="model-card"><div class="num">84</div><div class="lbl">SPC 노드</div></div>
+</div>
+<h2>종료 상태</h2>
+<div class="term-panel">
+<span class="status-normal">정상 종료</span>
+<div class="row">
+<div class="item"><div class="label">목표 시간</div><div class="value">0.0050</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">0.0050</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">88,384</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">293초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">295초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">250.2 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">251.6 ns</div></div>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="item"><div class="label">시작</div><div class="value">03/01/2026 00:11:57</div></div>
+<div class="item"><div class="label">종료</div><div class="value">03/01/2026 00:16:52</div></div>
+</div>
+</div>
+<h2>진단 결과</h2>
+<div class="findings-summary">
+<span class="badge badge-critical">심각 5</span>
+<span class="badge badge-warning">경고 5</span>
+<span class="badge badge-info">정보 7</span>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Hourglass energy critically high</span>
+<div class="desc">Max hourglass/internal energy ratio: 767.3% at t=3.9942E-05. This indicates severe zero-energy mode deformation.</div>
+<div class="rec">→ Increase hourglass control stiffness (IHQ/QH in *CONTROL_HOURGLASS). Consider switching to fully integrated elements (ELFORM=2 for solids, ELFORM=16 for shells). Check for single-point-constrained elements.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Energy balance severely violated</span>
+<div class="desc">Energy ratio range: [0.487424, 1.104730]. Deviation &gt; 10% from 1.0 indicates numerical instability or energy source/sink.</div>
+<div class="rec">→ Check for contact energy growth, mass scaling effects, or improperly defined loads. Enable energy output (*CONTROL_ENERGY) to identify the source.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Total energy is increasing (divergence)</span>
+<div class="desc">Total energy grew from 5.1428E+01 to 5.6399E+01 (9.7% increase). This strongly suggests numerical instability.</div>
+<div class="rec">→ Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Negative sliding interface energy (-6.289E+02)</span>
+<div class="desc">Cycle 412 (t=3.994E-05s)에서 sliding interface energy = -6.289E+02입니다. 접촉 슬라이딩 에너지 E_slide = Σ(F_contact × δ_slide)는 마찰에 의한 에너지 소산이므로 항상 양수(≥0)여야 합니다. 음의 접촉 에너지는 penalty contact에서 비정상적인 에너지 생성을 의미하며, 접촉면에서 인공적으로 에너지가 시스템에 주입되고 있습니다. 이는 주로 penalty stiffness가 과도하여 관통-반발 사이클에서 접촉력이 오버슈팅하거나, tied contact에서 풀린 노드가 비정상적인 penalty force를 받을 때 발생합니다. 음의 접촉 에너지는 energy ratio를 1.0 이상으로 증가시켜 에너지 비보존을 유발하며, 시뮬레이션 결과의 신뢰성을 손상시킵니다.</div>
+<div class="rec">→ 1. Penalty stiffness 감소 — SLSFAC를 0.05~0.1로 설정하여 접촉력의 오버슈팅 방지. k_contact = fs × K × A²/V에서 fs(SLSFAC)를 줄이면 관통 시 반발력이 완화됨
+2. SOFT=1 (segment-based contact) 사용 — 양측 표면의 강성을 고려하여 균형 잡힌 접촉력 적용. SOFT=2(pinball)도 고려
+3. Contact type 변경 — AUTOMATIC_SURFACE_TO_SURFACE 대신 MORTAR contact 사용 검토. Mortar은 에너지 보존이 우수
+4. 초기 관통 제거 — 초기 관통이 있으면 첫 스텝에서 과도한 penalty force → 반발 → 음의 에너지 생성 사이클 유발
+5. Contact damping(VDC) 추가 — VDC=20~40으로 접촉면 진동을 감쇠하여 에너지 생성 방지</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">MPI_ABORT — process terminated</span>
+<div class="desc">MPI_ABORT가 호출되어 모든 MPI 프로세스가 종료되었습니다. Slurm job 26. MPI_ABORT는 한 프로세스에서 복구 불가능한 오류가 발생하여 전체 병렬 실행을 강제 종료시킨 것입니다. 이는 주로 LS-DYNA 내부 에러 처리에서 호출되며, d3hsp 파일의 에러 메시지에서 구체적인 원인을 확인할 수 있습니다.</div>
+<div class="rec">→ 1. d3hsp 파일의 에러/경고 메시지 확인 — MPI_ABORT 전에 발생한 LS-DYNA 에러가 실제 원인
+2. SMP(공유 메모리 병렬) 모드로 테스트 — MPI 관련 문제를 배제하기 위해 단일 프로세서 또는 SMP로 실행 테스트</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">12 warnings detected (3 codes)</span>
+<div class="desc">Warning codes: 30210(10x), 30128(1x), 30131(1x)</div>
+<div class="rec">→ Review individual warning codes for details. Common tied contact warnings can often be resolved by improving mesh compatibility between contact surfaces.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Contact dominates computation time (45%)</span>
+<div class="desc">Contact algorithm uses 132.1s (44.8% of total clock time). This is above the 40% threshold.</div>
+<div class="rec">→ Consider using MPP groupable contacts where possible. Reduce contact search frequency (NSBCS in *CONTROL_CONTACT). Check if some contacts can be removed or simplified.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Part 1042: timestep bottleneck (92%)</span>
+<div class="desc">파트 1042가 100개의 최소 timestep 중 92개를 차지합니다 (92%). 최소 dt = 9.865E-08. 이 파트의 메시가 시뮬레이션 속도를 제한하고 있습니다.</div>
+<div class="rec">→ 파트 1042의 메시를 조정하세요:
+1. 매우 작은 요소를 제거하거나 coarsen
+2. Mass scaling (DT2MS) 적용 고려
+3. 요소 품질(aspect ratio, warpage) 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">접촉 계산 시간 높음 (46.3%)</span>
+<div class="desc">Contact algorithm이 전체 CPU의 46.3%를 소비합니다. 접촉이 지배적인 시뮬레이션(다물체 충돌, 성형 등)에서는 30~40%가 일반적이나, 최적화 여지가 있습니다.</div>
+<div class="rec">→ 1. 접촉 인터페이스 범위 축소 (불필요한 파트 제외)
+2. Bucket sort 빈도 최적화 (*CONTACT의 BSORT)
+3. Contact type 최적화 (AUTOMATIC_SINGLE_SURFACE → S2S 분리)</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">파트 1042 (NMC_Cathode_UC04_TShell)가 timestep 지배 (92%)</span>
+<div class="desc">파트 1042 (NMC_Cathode_UC04_TShell)가 가장 작은 timestep의 92%를 차지합니다 (92/100개). 최소 dt=9.865E-08. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<div class="rec">→ 1. 파트 1042의 메시에서 가장 작은 요소 확인 및 재생성
+2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
+3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
+4. Mass scaling 적용: *CONTROL_TIMESTEP에서 DT2MS 설정
+   (주의: 추가 질량이 원래 질량의 5% 미만이어야 결과 신뢰)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Part 1042 dominates timestep control</span>
+<div class="desc">Part 1042 controls 92/100 of the 100 smallest timesteps (92%). Smallest dt: 8.3506E-08.</div>
+<div class="rec">→ Review mesh quality in Part 1042. Coarsening very small elements or applying mass scaling (DT2MS in *CONTROL_TIMESTEP) could improve performance.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Interface 2 dominates contact cost</span>
+<div class="desc">Interface 2 (Automatic Single Surface) uses 128.71s (97% of contact time). Total contact interfaces: 2.</div>
+<div class="rec">→ Review Interface 2 for optimization. Consider bucket sort options or reducing segment count.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Element processing is the primary cost (49.7%)</span>
+<div class="desc">Element processing: 147.0s (49.7% of clock time). CPU: 146.9s (50.1%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Shells is the primary cost (35.1%)</span>
+<div class="desc">Shells: 103.7s (35.1% of clock time). CPU: 103.7s (35.4%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Contact algorithm is the primary cost (45.9%)</span>
+<div class="desc">Contact algorithm: 135.6s (45.9% of clock time). CPU: 135.6s (46.3%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">MPP load balance: good (imbalance 1.3%)</span>
+<div class="desc">CPU ratio range: [0.9936, 1.0064] across 2 processors.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">접촉 안정성 dt 상한: 3.809E-08</span>
+<div class="desc">LS-DYNA 권장: dt ≤ 3.809E-08. 가장 작은 서프스 dt = 3.809E-08 (인터페이스 2, surfa, 파트 1001). 활성 서프스 3개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.</div>
+<div class="rec">→ 1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑
+2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절
+3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인
+4. 접촉면 메시 크기가 과도하게 작지 않은지 확인</div>
+</div>
+<h2>경고/오류 요약</h2>
+<table><thead><tr>
+<th class="r">코드</th><th class="r">횟수</th><th class="c">심각도</th><th>설명</th><th>인터페이스</th>
+</tr></thead><tbody>
+<tr><td class="r id">30210</td><td class="r">10</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>Stress vs. plastic strain load curve ID = 1001 of part ID = 1002 has a max. slop</td><td></td></tr>
+<tr><td class="r id">30128</td><td class="r">1</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>Massless nodes The following massless nodes were found Processor: 0 18444 18450 </td><td></td></tr>
+<tr><td class="r id">30131</td><td class="r">1</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>total number of massless nodes = 21   NOTE : For 2D axisymmetric problems the fo</td><td></td></tr>
+</tbody></table>
+<h2>접촉 인터페이스 요약</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Auto S2S</td>
+<td>Impactor to Pouch</td><td class="r"></td>
+<td class="r mono">3.4345</td><td class="r">1.16</td></tr>
+<tr><td class="id">2</td><td>Auto Single Surface</td>
+<td>Cell Internal Self-Contact</td><td class="r"></td>
+<td class="r mono">128.7100</td><td class="r">43.54</td></tr>
+</tbody></table>
+<h2>에너지 수지</h2>
+<table><thead><tr>
+<th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
+</tr></thead><tbody>
+<tr><td>운동 에너지</td><td class="r mono">51.4283</td><td class="r mono">97.0690</td></tr>
+<tr><td>내부 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">99.6554</td></tr>
+<tr><td>Hourglass 에너지</td><td class="r mono">0</td><td class="r mono">-70.3843</td></tr>
+<tr><td>슬라이딩 인터페이스</td><td class="r mono">0</td><td class="r mono">-69.9415</td></tr>
+<tr><td>총 에너지</td><td class="r mono">51.4283</td><td class="r mono">56.3987</td></tr>
+<tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">1.0966</td></tr>
+<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">767.3%</td></tr>
+</tbody></table>
+<h2>최소 타임스텝 요소 (상위 20개)</h2>
+<table><thead><tr>
+<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>
+<th class="r">코어</th>
+</tr></thead><tbody>
+<tr><td class="r">1</td><td>shell</td>
+<td class="id">11251</td><td class="r">11</td>
+<td class="r mono">8.3506E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">2</td><td>shell</td>
+<td class="id">11878</td><td class="r">10</td>
+<td class="r mono">8.3506E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">3</td><td>shell</td>
+<td class="id">11233</td><td class="r">11</td>
+<td class="r mono">8.3506E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">4</td><td>shell</td>
+<td class="id">11860</td><td class="r">10</td>
+<td class="r mono">8.3506E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">5</td><td>shell</td>
+<td class="id">11270</td><td class="r">10</td>
+<td class="r mono">8.3510E-08</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">6</td><td>shell</td>
+<td class="id">10643</td><td class="r">11</td>
+<td class="r mono">8.3510E-08</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">7</td><td>shell</td>
+<td class="id">11252</td><td class="r">10</td>
+<td class="r mono">8.3511E-08</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">8</td><td>shell</td>
+<td class="id">10625</td><td class="r">11</td>
+<td class="r mono">8.3511E-08</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">9</td><td>tshell</td>
+<td class="id">8661</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">10</td><td>tshell</td>
+<td class="id">8674</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">11</td><td>tshell</td>
+<td class="id">8919</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">12</td><td>tshell</td>
+<td class="id">8920</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">13</td><td>tshell</td>
+<td class="id">8921</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">14</td><td>tshell</td>
+<td class="id">8922</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">15</td><td>tshell</td>
+<td class="id">8923</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">16</td><td>tshell</td>
+<td class="id">8924</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">17</td><td>tshell</td>
+<td class="id">8925</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">18</td><td>tshell</td>
+<td class="id">8926</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">19</td><td>tshell</td>
+<td class="id">8927</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">20</td><td>tshell</td>
+<td class="id">8918</td><td class="r">1042</td>
+<td class="r mono">9.8651E-08</td>
+<td class="r">#1</td>
+</tr>
+</tbody></table>
+<h2>파트별 타임스텝 요약 (100 최소)</h2>
+<table><thead><tr>
+<th class="r">파트</th><th class="r">개수</th><th class="r">최소 dt</th><th class="r">최대 dt</th><th>타입</th>
+</tr></thead><tbody>
+<tr><td class="id">11</td><td class="r">4</td>
+<td class="r mono">8.3506E-08</td><td class="r mono">8.3511E-08</td>
+<td>shell</td></tr>
+<tr><td class="id">10</td><td class="r">4</td>
+<td class="r mono">8.3506E-08</td><td class="r mono">8.3511E-08</td>
+<td>shell</td></tr>
+<tr><td class="id">1042</td><td class="r">92</td>
+<td class="r mono">9.8651E-08</td><td class="r mono">9.8651E-08</td>
+<td>tshell</td></tr>
+</tbody></table>
+<div class="note">TSSFAC: 0.9 | 초기 dt: 0 | 최종 dt: 0</div>
+<h2>타임스텝 제어 타임라인</h2>
+<table><thead><tr>
+<th class="r">사이클</th><th>시간 구간</th><th class="r">파트</th>
+<th class="r">요소</th><th>타입</th><th class="r">최소 dt</th><th class="r">스냅</th>
+</tr></thead><tbody>
+<tr><td class="r">1–1</td>
+<td class="mono">0.0000E+00 – 0.0000E+00</td>
+<td class="id">10</td><td class="r">11878</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">1</td></tr>
+<tr><td class="r">204–204</td>
+<td class="mono">1.9974E-05 – 1.9974E-05</td>
+<td class="id">1012</td><td class="r">3136</td>
+<td>tshell</td><td class="r mono">0.0000E+00</td>
+<td class="r">1</td></tr>
+<tr><td class="r">412–412</td>
+<td class="mono">3.9942E-05 – 3.9942E-05</td>
+<td class="id">1002</td><td class="r">941</td>
+<td>tshell</td><td class="r mono">0.0000E+00</td>
+<td class="r">1</td></tr>
+<tr><td class="r">630–630</td>
+<td class="mono">5.9966E-05 – 5.9966E-05</td>
+<td class="id">1022</td><td class="r">4951</td>
+<td>tshell</td><td class="r mono">0.0000E+00</td>
+<td class="r">1</td></tr>
+<tr><td class="r">849–1,291</td>
+<td class="mono">7.9920E-05 – 1.1997E-04</td>
+<td class="id">1022</td><td class="r">4927</td>
+<td>tshell</td><td class="r mono">0.0000E+00</td>
+<td class="r">3</td></tr>
+<tr><td class="r">1,512–4,118</td>
+<td class="mono">1.3999E-04 – 3.5995E-04</td>
+<td class="id">1012</td><td class="r">3148</td>
+<td>tshell</td><td class="r mono">0.0000E+00</td>
+<td class="r">12</td></tr>
+<tr><td class="r">4,378–7,826</td>
+<td class="mono">3.7997E-04 – 5.9999E-04</td>
+<td class="id">1001</td><td class="r">781</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">12</td></tr>
+<tr><td class="r">8,137–40,782</td>
+<td class="mono">6.1999E-04 – 2.5400E-03</td>
+<td class="id">1001</td><td class="r">767</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">97</td></tr>
+<tr><td class="r">41,068–41,716</td>
+<td class="mono">2.5600E-03 – 2.6000E-03</td>
+<td class="id">1005</td><td class="r">2359</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">3</td></tr>
+<tr><td class="r">42,035–43,323</td>
+<td class="mono">2.6199E-03 – 2.7000E-03</td>
+<td class="id">1041</td><td class="r">8656</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">5</td></tr>
+<tr><td class="r">43,618–43,910</td>
+<td class="mono">2.7200E-03 – 2.7400E-03</td>
+<td class="id">1001</td><td class="r">767</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">44,216–46,728</td>
+<td class="mono">2.7599E-03 – 2.9200E-03</td>
+<td class="id">1041</td><td class="r">8656</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">9</td></tr>
+<tr><td class="r">47,022–47,602</td>
+<td class="mono">2.9400E-03 – 2.9800E-03</td>
+<td class="id">1001</td><td class="r">767</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">3</td></tr>
+<tr><td class="r">47,891–48,183</td>
+<td class="mono">3.0000E-03 – 3.0200E-03</td>
+<td class="id">1005</td><td class="r">2359</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">48,478–68,265</td>
+<td class="mono">3.0400E-03 – 4.0800E-03</td>
+<td class="id">1041</td><td class="r">8656</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">53</td></tr>
+<tr><td class="r">68,638–69,415</td>
+<td class="mono">4.1000E-03 – 4.1399E-03</td>
+<td class="id">1031</td><td class="r">6692</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">3</td></tr>
+<tr><td class="r">69,765–70,113</td>
+<td class="mono">4.1600E-03 – 4.1800E-03</td>
+<td class="id">1041</td><td class="r">8643</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">70,461–70,461</td>
+<td class="mono">4.2000E-03 – 4.2000E-03</td>
+<td class="id">1041</td><td class="r">8656</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">1</td></tr>
+<tr><td class="r">70,814–72,697</td>
+<td class="mono">4.2200E-03 – 4.3200E-03</td>
+<td class="id">1011</td><td class="r">2756</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">6</td></tr>
+<tr><td class="r">73,059–73,059</td>
+<td class="mono">4.3400E-03 – 4.3400E-03</td>
+<td class="id">1041</td><td class="r">8656</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">1</td></tr>
+<tr><td class="r">73,420–76,042</td>
+<td class="mono">4.3600E-03 – 4.4999E-03</td>
+<td class="id">1011</td><td class="r">2756</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">8</td></tr>
+<tr><td class="r">76,409–76,771</td>
+<td class="mono">4.5200E-03 – 4.5400E-03</td>
+<td class="id">1041</td><td class="r">8643</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">77,142–77,520</td>
+<td class="mono">4.5600E-03 – 4.5800E-03</td>
+<td class="id">1011</td><td class="r">2756</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">77,887–78,252</td>
+<td class="mono">4.6000E-03 – 4.6200E-03</td>
+<td class="id">1041</td><td class="r">8643</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">78,624–79,004</td>
+<td class="mono">4.6400E-03 – 4.6600E-03</td>
+<td class="id">1011</td><td class="r">2756</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">2</td></tr>
+<tr><td class="r">79,380–82,049</td>
+<td class="mono">4.6800E-03 – 4.8200E-03</td>
+<td class="id">1041</td><td class="r">8643</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">8</td></tr>
+<tr><td class="r">82,433–88,384</td>
+<td class="mono">4.8400E-03 – 5.0000E-03</td>
+<td class="id">1011</td><td class="r">2756</td>
+<td>shell</td><td class="r mono">0.0000E+00</td>
+<td class="r">9</td></tr>
+</tbody></table>
+<h2>성능 프로파일링</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">CPU (s)</th><th class="r">CPU %</th>
+<th class="r">Clock (s)</th><th class="r">Clock %</th><th style="min-width:150px">비율</th>
+</tr></thead><tbody>
+<tr><td>Keyword Processing</td>
+<td class="r mono">0.23</td><td class="r">0.1</td>
+<td class="r mono">0.33</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Reading</td>
+<td class="r mono">0.03</td><td class="r">0.0</td>
+<td class="r mono">0.04</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Writing</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>MPP Decomposition</td>
+<td class="r mono">0.26</td><td class="r">0.1</td>
+<td class="r mono">0.56</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc</td>
+<td class="r mono">0.16</td><td class="r">0.1</td>
+<td class="r mono">0.24</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Decomposition</td>
+<td class="r mono">0.03</td><td class="r">0.0</td>
+<td class="r mono">0.06</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Translation</td>
+<td class="r mono">0.07</td><td class="r">0.0</td>
+<td class="r mono">0.27</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Initialization</td>
+<td class="r mono">0.19</td><td class="r">0.1</td>
+<td class="r mono">0.40</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc Phase 1</td>
+<td class="r mono">0.06</td><td class="r">0.0</td>
+<td class="r mono">0.07</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc Phase 2</td>
+<td class="r mono">0.03</td><td class="r">0.0</td>
+<td class="r mono">0.07</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init solver</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Element processing</td>
+<td class="r mono">146.93</td><td class="r">50.1</td>
+<td class="r mono">146.99</td><td class="r">49.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:99%"></div></div></td></tr>
+<tr><td>Solids</td>
+<td class="r mono">3.86</td><td class="r">1.3</td>
+<td class="r mono">3.87</td><td class="r">1.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Shells</td>
+<td class="r mono">103.70</td><td class="r">35.4</td>
+<td class="r mono">103.72</td><td class="r">35.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:70%"></div></div></td></tr>
+<tr><td>Thick Shells</td>
+<td class="r mono">31.95</td><td class="r">10.9</td>
+<td class="r mono">31.97</td><td class="r">10.8</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:21%"></div></div></td></tr>
+<tr><td>E Other</td>
+<td class="r mono">7.32</td><td class="r">2.5</td>
+<td class="r mono">7.32</td><td class="r">2.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:4%"></div></div></td></tr>
+<tr><td>Binary databases</td>
+<td class="r mono">0.33</td><td class="r">0.1</td>
+<td class="r mono">0.42</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>ASCII database</td>
+<td class="r mono">0.41</td><td class="r">0.1</td>
+<td class="r mono">1.81</td><td class="r">0.6</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Contact algorithm</td>
+<td class="r mono">135.59</td><td class="r">46.3</td>
+<td class="r mono">135.62</td><td class="r">45.9</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:91%"></div></div></td></tr>
+<tr><td>Rigid Bodies</td>
+<td class="r mono">0.29</td><td class="r">0.1</td>
+<td class="r mono">0.29</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Mass Scaling</td>
+<td class="r mono">0.04</td><td class="r">0.0</td>
+<td class="r mono">0.04</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force gather</td>
+<td class="r mono">0.05</td><td class="r">0.0</td>
+<td class="r mono">0.05</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Kinematic Update</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Update nodes</td>
+<td class="r mono">0.04</td><td class="r">0.0</td>
+<td class="r mono">0.04</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step size</td>
+<td class="r mono">0.11</td><td class="r">0.0</td>
+<td class="r mono">0.12</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step Sharing</td>
+<td class="r mono">0.24</td><td class="r">0.1</td>
+<td class="r mono">0.24</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Group force file</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Others</td>
+<td class="r mono">0.24</td><td class="r">0.1</td>
+<td class="r mono">0.26</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Sharing</td>
+<td class="r mono">2.06</td><td class="r">0.7</td>
+<td class="r mono">2.05</td><td class="r">0.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 1</td>
+<td class="r mono">1.48</td><td class="r">0.5</td>
+<td class="r mono">1.51</td><td class="r">0.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Scale Masses</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Constraints</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force to Accel</td>
+<td class="r mono">0.61</td><td class="r">0.2</td>
+<td class="r mono">0.61</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 2</td>
+<td class="r mono">2.11</td><td class="r">0.7</td>
+<td class="r mono">2.11</td><td class="r">0.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Geometry Update</td>
+<td class="r mono">1.96</td><td class="r">0.7</td>
+<td class="r mono">1.95</td><td class="r">0.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 3</td>
+<td class="r mono">0.31</td><td class="r">0.1</td>
+<td class="r mono">0.61</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Sense Switch Share</td>
+<td class="r mono">1.84</td><td class="r">0.6</td>
+<td class="r mono">1.83</td><td class="r">0.6</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 4</td>
+<td class="r mono">0.43</td><td class="r">0.1</td>
+<td class="r mono">0.44</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Timestep Init</td>
+<td class="r mono">0.22</td><td class="r">0.1</td>
+<td class="r mono">0.22</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Apply Loads</td>
+<td class="r mono">0.13</td><td class="r">0.0</td>
+<td class="r mono">0.14</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+</tbody></table>
+<h2>부하 프로파일 요약 (2개 프로세서)</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">최소 %</th><th class="r">최대 %</th><th class="r">평균 %</th><th class="r">편차</th>
+</tr></thead><tbody>
+<tr><td>솔리드</td><td class="r">1.3</td><td class="r">1.4</td>
+<td class="r">1.3</td><td class="r">0.1</td></tr>
+<tr><td>쉘</td><td class="r">35.0</td><td class="r">35.2</td>
+<td class="r">35.1</td><td class="r">0.1</td></tr>
+<tr><td>접촉</td><td class="r">45.7</td><td class="r">46.0</td>
+<td class="r">45.9</td><td class="r">0.3</td></tr>
+<tr><td>Force 공유</td><td class="r">0.6</td><td class="r">0.8</td>
+<td class="r">0.7</td><td class="r">0.3</td></tr>
+<tr><td>Timestep 공유</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+<tr><td>Switch 공유</td><td class="r">0.1</td><td class="r">1.2</td>
+<td class="r">0.6</td><td class="r">1.1</td></tr>
+<tr><td>바이너리 DB</td><td class="r">2.3</td><td class="r">2.7</td>
+<td class="r">2.5</td><td class="r">0.4</td></tr>
+<tr><td>강체</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+<tr><td>기타</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+</tbody></table>
+<h2>MPI 스케일링 예측</h2>
+<table><thead><tr>
+<th class="r">코어 수</th><th class="r">예상 시간 (s)</th><th class="r">속도향상</th><th class="r">효율</th><th class="r">통신 비율</th>
+</tr></thead><tbody>
+<tr><td class="r">2 (현재)</td><td class="r">446</td>
+<td class="r">0.7x</td><td class="r" class="eff-mid">66%</td>
+<td class="r">1%</td></tr>
+<tr><td class="r">32</td><td class="r">121</td>
+<td class="r">2.4x</td><td class="r" class="eff-bad">15%</td>
+<td class="r">14%</td></tr>
+<tr><td class="r">64</td><td class="r">116</td>
+<td class="r">2.5x</td><td class="r" class="eff-bad">8%</td>
+<td class="r">20%</td></tr>
+<tr><td class="r">128</td><td class="r">120</td>
+<td class="r">2.5x</td><td class="r" class="eff-bad">4%</td>
+<td class="r">27%</td></tr>
+<tr><td class="r">256</td><td class="r">131</td>
+<td class="r">2.3x</td><td class="r" class="eff-bad">2%</td>
+<td class="r">36%</td></tr>
+</tbody></table>
+<h2>접촉 인터페이스 타이밍 (상위 10)</h2>
+<table><thead><tr>
+<th class="r">인터페이스 ID</th><th>제목</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
+</tr></thead><tbody>
+<tr><td class="id">2</td><td>Cell Internal Self-Contact</td>
+<td class="r mono">128.7100</td><td class="r">43.54</td></tr>
+<tr><td class="id">1</td><td>Impactor to Pouch</td>
+<td class="r mono">3.4345</td><td class="r">1.16</td></tr>
+</tbody></table>
+<h2>접촉 프로파일 (인터페이스별 프로세서 분포)</h2>
+<table><thead><tr>
+<th class="r">인터페이스</th><th>제목</th><th class="r">최소 (s)</th><th class="r">최대 (s)</th><th class="r">평균 (s)</th><th class="r">불균형</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Impactor to Pouch</td>
+<td class="r mono">3.42</td><td class="r mono">3.45</td><td class="r mono">3.43</td>
+<td class="r">1%</td></tr>
+<tr><td class="id">2</td><td>Cell Internal Self-Contact</td>
+<td class="r mono">128.69</td><td class="r mono">128.73</td><td class="r mono">128.71</td>
+<td class="r">0%</td></tr>
+</tbody></table>
+<h2>MPP 부하 균형</h2>
+<table><thead><tr>
+<th class="r">프로세서</th><th>호스트명</th><th class="r">CPU/평균</th><th class="r">CPU (s)</th>
+</tr></thead><tbody>
+<tr><td class="id">0</td><td>node001</td>
+<td class="r">0.99362</td><td class="r">291.21</td></tr>
+<tr><td class="id">1</td><td>node001</td>
+<td class="r">1.00638</td><td class="r">294.95</td></tr>
+</tbody></table>
+<div class="note">메모리 (최대 d-words): 최소=4,002,403 최대=4,088,440 (~31 MB) 평균=4,045,422 | 피크 랭크: #0</div>
+<h2>접촉 서프스 타임스텝</h2>
+<div class="warn">접촉 안정성 dt 상한: 3.809E-08 — 이 값을 초과하면 접촉 불안정 발생 가능</div>
+<table><thead><tr>
+<th class="r">인터페이스</th><th class="c">서프스</th><th>타입</th>
+<th class="r">서프스 dt</th><th class="r">제어 노드</th><th class="r">파트 ID</th>
+</tr></thead><tbody>
+<tr><td class="id">2</td><td class="c">surfa</td>
+<td>13</td>
+<td class="r mono critical">3.809E-08</td>
+<td class="r">871</td><td class="r">1001</td></tr>
+<tr><td class="id">1</td><td class="c">surfa</td>
+<td>a 3</td>
+<td class="r mono">4.360E-07</td>
+<td class="r">18624</td><td class="r">100</td></tr>
+<tr><td class="id">1</td><td class="c">surfb</td>
+<td>a 3</td>
+<td class="r mono">5.537E-07</td>
+<td class="r">17026</td><td class="r">12</td></tr>
+</tbody></table>
+<h2>파트별 질량 특성</h2>
+<table><thead><tr>
+<th class="r">파트 ID</th><th class="r">총 질량</th>
+<th class="r">CG-X</th><th class="r">CG-Y</th><th class="r">CG-Z</th>
+<th class="r">I11</th><th class="r">I22</th><th class="r">I33</th><th class="r">I비율</th>
+</tr></thead><tbody>
+<tr><td class="id">10</td><td class="r mono">2.2557E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">1.5045</td>
+<td class="r mono">0.0037</td><td class="r mono">9.3360E-04</td>
+<td class="r mono">0.0046</td><td class="r mono">5x</td></tr>
+<tr><td class="id">11</td><td class="r mono">2.2557E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.0765</td>
+<td class="r mono">0.0037</td><td class="r mono">9.3360E-04</td>
+<td class="r mono">0.0046</td><td class="r mono">5x</td></tr>
+<tr><td class="id">12</td><td class="r mono">1.2670E-07</td>
+<td class="r mono">35.0000</td><td class="r mono">64.4657</td>
+<td class="r mono">0.7905</td>
+<td class="r mono">3.1790E-04</td><td class="r mono">1.2810E-04</td>
+<td class="r mono">4.4600E-04</td><td class="r mono">3x</td></tr>
+<tr><td class="id">13</td><td class="r mono">4.6986E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.7905</td>
+<td class="r mono">0.0077</td><td class="r mono">0.0019</td>
+<td class="r mono">0.0096</td><td class="r mono">5x</td></tr>
+<tr><td class="id">30</td><td class="r mono">5.8875E-07</td>
+<td class="r mono">25.0000</td><td class="r mono">149.5000</td>
+<td class="r mono">0.7905</td>
+<td class="r mono">1.4710E-06</td><td class="r mono">3.3260E-05</td>
+<td class="r mono">3.4440E-05</td><td class="r mono">23x</td></tr>
+<tr><td class="id">31</td><td class="r mono">4.7100E-07</td>
+<td class="r mono">47.5000</td><td class="r mono">149.5000</td>
+<td class="r mono">0.7905</td>
+<td class="r mono">1.1780E-06</td><td class="r mono">1.7780E-05</td>
+<td class="r mono">1.8720E-05</td><td class="r mono">16x</td></tr>
+<tr><td class="id">100</td><td class="r mono">1.0286E-04</td>
+<td class="r mono">78.5000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.7905</td>
+<td class="r mono">0.0568</td><td class="r mono">0.0031</td>
+<td class="r mono">0.0568</td><td class="r mono">18x</td></tr>
+<tr><td class="id">1001</td><td class="r mono">3.1974E-07</td>
+<td class="r mono">34.8379</td><td class="r mono">70.5999</td>
+<td class="r mono">0.3590</td>
+<td class="r mono">5.3230E-04</td><td class="r mono">1.3160E-04</td>
+<td class="r mono">6.6390E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1002</td><td class="r mono">1.5907E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.3975</td>
+<td class="r mono">0.0026</td><td class="r mono">6.5480E-04</td>
+<td class="r mono">0.0033</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1003</td><td class="r mono">1.8598E-07</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.4400</td>
+<td class="r mono">3.0390E-04</td><td class="r mono">7.6560E-05</td>
+<td class="r mono">3.8040E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1004</td><td class="r mono">1.2334E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.4850</td>
+<td class="r mono">0.0020</td><td class="r mono">5.0770E-04</td>
+<td class="r mono">0.0025</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1005</td><td class="r mono">7.0739E-07</td>
+<td class="r mono">35.1621</td><td class="r mono">70.5999</td>
+<td class="r mono">0.5240</td>
+<td class="r mono">0.0012</td><td class="r mono">2.9110E-04</td>
+<td class="r mono">0.0015</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1011</td><td class="r mono">3.1974E-07</td>
+<td class="r mono">34.8379</td><td class="r mono">70.5999</td>
+<td class="r mono">0.5340</td>
+<td class="r mono">5.3230E-04</td><td class="r mono">1.3160E-04</td>
+<td class="r mono">6.6390E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1012</td><td class="r mono">1.5907E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.5725</td>
+<td class="r mono">0.0026</td><td class="r mono">6.5480E-04</td>
+<td class="r mono">0.0033</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1013</td><td class="r mono">1.8598E-07</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.6150</td>
+<td class="r mono">3.0390E-04</td><td class="r mono">7.6560E-05</td>
+<td class="r mono">3.8040E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1014</td><td class="r mono">1.2334E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.6600</td>
+<td class="r mono">0.0020</td><td class="r mono">5.0770E-04</td>
+<td class="r mono">0.0025</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1015</td><td class="r mono">7.0739E-07</td>
+<td class="r mono">35.1621</td><td class="r mono">70.5999</td>
+<td class="r mono">0.6990</td>
+<td class="r mono">0.0012</td><td class="r mono">2.9110E-04</td>
+<td class="r mono">0.0015</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1021</td><td class="r mono">3.1974E-07</td>
+<td class="r mono">34.8379</td><td class="r mono">70.5999</td>
+<td class="r mono">0.7090</td>
+<td class="r mono">5.3230E-04</td><td class="r mono">1.3160E-04</td>
+<td class="r mono">6.6390E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1022</td><td class="r mono">1.5907E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.7475</td>
+<td class="r mono">0.0026</td><td class="r mono">6.5480E-04</td>
+<td class="r mono">0.0033</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1023</td><td class="r mono">1.8598E-07</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.7900</td>
+<td class="r mono">3.0390E-04</td><td class="r mono">7.6560E-05</td>
+<td class="r mono">3.8040E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1024</td><td class="r mono">1.2334E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.8350</td>
+<td class="r mono">0.0020</td><td class="r mono">5.0770E-04</td>
+<td class="r mono">0.0025</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1025</td><td class="r mono">7.0739E-07</td>
+<td class="r mono">35.1621</td><td class="r mono">70.5999</td>
+<td class="r mono">0.8740</td>
+<td class="r mono">0.0012</td><td class="r mono">2.9110E-04</td>
+<td class="r mono">0.0015</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1031</td><td class="r mono">3.1974E-07</td>
+<td class="r mono">34.8379</td><td class="r mono">70.5999</td>
+<td class="r mono">0.8840</td>
+<td class="r mono">5.3230E-04</td><td class="r mono">1.3160E-04</td>
+<td class="r mono">6.6390E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1032</td><td class="r mono">1.5907E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.9225</td>
+<td class="r mono">0.0026</td><td class="r mono">6.5480E-04</td>
+<td class="r mono">0.0033</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1033</td><td class="r mono">1.8598E-07</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">0.9650</td>
+<td class="r mono">3.0390E-04</td><td class="r mono">7.6560E-05</td>
+<td class="r mono">3.8040E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1034</td><td class="r mono">1.2334E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">1.0100</td>
+<td class="r mono">0.0020</td><td class="r mono">5.0770E-04</td>
+<td class="r mono">0.0025</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1035</td><td class="r mono">7.0739E-07</td>
+<td class="r mono">35.1621</td><td class="r mono">70.5999</td>
+<td class="r mono">1.0490</td>
+<td class="r mono">0.0012</td><td class="r mono">2.9110E-04</td>
+<td class="r mono">0.0015</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1041</td><td class="r mono">3.1974E-07</td>
+<td class="r mono">34.8379</td><td class="r mono">70.5999</td>
+<td class="r mono">1.0590</td>
+<td class="r mono">5.3230E-04</td><td class="r mono">1.3160E-04</td>
+<td class="r mono">6.6390E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1042</td><td class="r mono">1.5907E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">1.0975</td>
+<td class="r mono">0.0026</td><td class="r mono">6.5480E-04</td>
+<td class="r mono">0.0033</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1043</td><td class="r mono">1.8598E-07</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">1.1400</td>
+<td class="r mono">3.0390E-04</td><td class="r mono">7.6560E-05</td>
+<td class="r mono">3.8040E-04</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1044</td><td class="r mono">1.2334E-06</td>
+<td class="r mono">35.0000</td><td class="r mono">70.0000</td>
+<td class="r mono">1.1850</td>
+<td class="r mono">0.0020</td><td class="r mono">5.0770E-04</td>
+<td class="r mono">0.0025</td><td class="r mono">5x</td></tr>
+<tr><td class="id">1045</td><td class="r mono">7.0739E-07</td>
+<td class="r mono">68.5328</td><td class="r mono">70.6492</td>
+<td class="r mono">0.7912</td>
+<td class="r mono">0.1122</td><td class="r mono">0.0599</td>
+<td class="r mono">0.1690</td><td class="r mono">3x</td></tr>
+</tbody></table>
+<h2>파트 정의</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>
+<th class="r">밀도</th><th class="r">탄성계수 (E)</th><th class="r">포아송비 (ν)</th><th class="c">ELFORM</th>
+</tr></thead><tbody>
+<tr><td class="id">10</td><td>Pouch_Top_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.5000E-09</td><td class="r mono">2000.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">11</td><td>Pouch_Bottom_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.5000E-09</td><td class="r mono">2000.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">12</td><td>Pouch_Side_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.5000E-09</td><td class="r mono">2000.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">13</td><td>Electrolyte_Buffer_Solid</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">1.2000E-09</td><td class="r mono">2000.0000</td>
+<td class="r">0.45</td><td class="c"></td></tr>
+<tr><td class="id">30</td><td>PCM_Positive_Solid</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7.8500E-09</td><td class="r mono">210000.0000</td>
+<td class="r">0.30</td><td class="c">1</td></tr>
+<tr><td class="id">31</td><td>PCM_Negative_Solid</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7.8500E-09</td><td class="r mono">210000.0000</td>
+<td class="r">0.30</td><td class="c">1</td></tr>
+<tr><td class="id">100</td><td>Impactor_Solid</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7.8500E-09</td><td class="r mono">210000.0000</td>
+<td class="r">0.30</td><td class="c">1</td></tr>
+<tr><td class="id">1001</td><td>Al_CC_UC00_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1002</td><td>NMC_Cathode_UC00_TShell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">1003</td><td>PE_Separator_UC00_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">1004</td><td>Graphite_Anode_UC00_TShel</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
+<td class="r">0.28</td><td class="c"></td></tr>
+<tr><td class="id">1005</td><td>Cu_CC_UC00_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1011</td><td>Al_CC_UC01_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1012</td><td>NMC_Cathode_UC01_TShell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">1013</td><td>PE_Separator_UC01_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">1014</td><td>Graphite_Anode_UC01_TShel</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
+<td class="r">0.28</td><td class="c"></td></tr>
+<tr><td class="id">1015</td><td>Cu_CC_UC01_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1021</td><td>Al_CC_UC02_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1022</td><td>NMC_Cathode_UC02_TShell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">1023</td><td>PE_Separator_UC02_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">1024</td><td>Graphite_Anode_UC02_TShel</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
+<td class="r">0.28</td><td class="c"></td></tr>
+<tr><td class="id">1025</td><td>Cu_CC_UC02_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1031</td><td>Al_CC_UC03_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1032</td><td>NMC_Cathode_UC03_TShell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">1033</td><td>PE_Separator_UC03_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">1034</td><td>Graphite_Anode_UC03_TShel</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
+<td class="r">0.28</td><td class="c"></td></tr>
+<tr><td class="id">1035</td><td>Cu_CC_UC03_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1041</td><td>Al_CC_UC04_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+<tr><td class="id">1042</td><td>NMC_Cathode_UC04_TShell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">1043</td><td>PE_Separator_UC04_Shell</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">1044</td><td>Graphite_Anode_UC04_TShel</td>
+<td class="c">24</td><td>Piecewise Linear Plastici</td>
+<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
+<td class="r">0.28</td><td class="c"></td></tr>
+<tr><td class="id">1045</td><td>Cu_CC_UC04_Shell</td>
+<td class="c">15</td><td>Type 15</td>
+<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c"></td></tr>
+</tbody></table>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, load_profile.csv, cont_profile.csv, mes[0000-0001], slurm_26.err</div>
+</body></html>

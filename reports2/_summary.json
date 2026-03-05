@@ -17,11 +17,19 @@
   },
   {
     "category": "Hourglass_WARNING",
-    "case": "results/results_normal",
+    "case": "shield_can_forming_study/form_sus304_t010",
     "termination": "NORMAL",
-    "crit": 2,
-    "warn": 8,
-    "top_finding": "Hourglass energy dominance (26.8%)"
+    "crit": 6,
+    "warn": 2,
+    "top_finding": "Total energy is increasing (divergence)"
+  },
+  {
+    "category": "Hourglass_WARNING",
+    "case": "phase1_efg_benchmark/case06_efg41_m181",
+    "termination": "INCOMPLETE",
+    "crit": 5,
+    "warn": 3,
+    "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
     "category": "KE_폭발",
@@ -41,6 +49,14 @@
   },
   {
     "category": "MPI_통신_에러",
+    "case": "level_study/ex08_tet10_ef17_dt0",
+    "termination": "INCOMPLETE",
+    "crit": 4,
+    "warn": 1,
+    "top_finding": "해석 미완료 (출력 불완전)"
+  },
+  {
+    "category": "MPI_통신_에러",
     "case": "results/level_study_ex08_tet10_ef17_dt0",
     "termination": "INCOMPLETE",
     "crit": 4,
@@ -49,19 +65,19 @@
   },
   {
     "category": "MPP_불균형_CRITICAL",
-    "case": "alt_tet_elform60/ex03_ef60_f2000",
-    "termination": "ERROR",
-    "crit": 5,
-    "warn": 0,
-    "top_finding": "해석 에러 종료"
+    "case": "group1a_dynamic/case1a1",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 1,
+    "top_finding": "Energy balance severely violated"
   },
   {
     "category": "MPP_불균형_CRITICAL",
-    "case": "results/ball_drop_v4_ex12_pronyC_vflag1",
-    "termination": "ERROR",
-    "crit": 4,
-    "warn": 0,
-    "top_finding": "해석 에러 종료"
+    "case": "group1b_quasistatic/case1b1",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 4,
+    "top_finding": "Energy balance severely violated"
   },
   {
     "category": "MPP_불균형_WARNING",
@@ -81,7 +97,7 @@
   },
   {
     "category": "NaN_감지_40455",
-    "case": "results/level_study_ex06_tet4_ef60_dt0",
+    "case": "level_study/ex06_tet4_ef60_dt0",
     "termination": "ERROR",
     "crit": 9,
     "warn": 1,
@@ -89,9 +105,9 @@
   },
   {
     "category": "NaN_감지_40455",
-    "case": "results/ball_drop_v2_dp_ex16_mat077_fine_optimal_dp",
+    "case": "results/level_study_ex06_tet4_ef60_dt0",
     "termination": "ERROR",
-    "crit": 6,
+    "crit": 9,
     "warn": 1,
     "top_finding": "해석 에러 종료"
   },
@@ -121,11 +137,11 @@
   },
   {
     "category": "Negative_Volume_40509",
-    "case": "results/ball_drop_v2_dp_ex09_mat077_optimal_dp",
-    "termination": "ERROR",
-    "crit": 4,
-    "warn": 3,
-    "top_finding": "해석 에러 종료"
+    "case": "viscoelasticityTest_3D_YZforce/viscoelastic_YZdir",
+    "termination": "INCOMPLETE",
+    "crit": 7,
+    "warn": 1,
+    "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
     "category": "Segfault_Signal11",
@@ -257,33 +273,33 @@
   },
   {
     "category": "접촉_계산_과다",
-    "case": "output/Run_20260210_045925_6d2fe3",
+    "case": "battery_study/case_01_phase1_stacked_tier-1",
     "termination": "NORMAL",
-    "crit": 4,
-    "warn": 7,
+    "crit": 5,
+    "warn": 5,
     "top_finding": "Hourglass energy critically high"
   },
   {
     "category": "접촉_계산_과다",
-    "case": "results/ball_drop_v2_dp_ex09_mat077_optimal_dp",
-    "termination": "ERROR",
-    "crit": 4,
+    "case": "phase4_bushing/case03_m181_biaxial",
+    "termination": "NORMAL",
+    "crit": 5,
     "warn": 3,
-    "top_finding": "해석 에러 종료"
+    "top_finding": "Energy balance severely violated"
+  },
+  {
+    "category": "접촉_에너지_과다",
+    "case": "group1a_dynamic/case1a1",
+    "termination": "NORMAL",
+    "crit": 6,
+    "warn": 1,
+    "top_finding": "Energy balance severely violated"
   },
   {
     "category": "접촉_에너지_과다",
     "case": "alt_tet_elform15/ex06_ef15_f5000_mortar",
     "termination": "NORMAL",
     "crit": 5,
-    "warn": 2,
-    "top_finding": "Energy balance severely violated"
-  },
-  {
-    "category": "접촉_에너지_과다",
-    "case": "alt_tet_elform15/ex04_ef15_f5000",
-    "termination": "NORMAL",
-    "crit": 4,
     "warn": 2,
     "top_finding": "Energy balance severely violated"
   },
@@ -313,7 +329,7 @@
   },
   {
     "category": "타임스텝_붕괴",
-    "case": "results/level_study_ex06_tet4_ef60_dt0",
+    "case": "level_study/ex06_tet4_ef60_dt0",
     "termination": "ERROR",
     "crit": 9,
     "warn": 1,

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LS-DYNA 해석 분석 리포트 — 3ptBending_1_00000001.k</title>
+<style>:root {
+  --bg: #1a1b26;
+  --bg2: #24283b;
+  --bg3: #292e42;
+  --fg: #c0caf5;
+  --fg-dim: #565f89;
+  --red: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --cyan: #7dcfff;
+  --blue: #7aa2f7;
+  --magenta: #bb9af7;
+  --border: #3b4261;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 22px;
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 16px;
+  color: var(--cyan);
+  margin: 28px 0 12px 0;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+}
+.header-panel {
+  background: var(--bg2);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.header-panel .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.header-panel .label { color: var(--fg-dim); font-size: 12px; }
+.header-panel .value { color: var(--fg); font-size: 14px; font-weight: 500; }
+.status-normal { color: var(--green); font-weight: 700; }
+.status-error { color: var(--red); font-weight: 700; }
+.status-incomplete { color: var(--yellow); font-weight: 700; }
+.term-panel {
+  background: var(--bg2);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.term-panel .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 8px; }
+.term-panel .item { }
+.term-panel .label { color: var(--fg-dim); font-size: 12px; }
+.term-panel .value { font-size: 14px; }
+.findings-summary {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 12px 16px; background: var(--bg2); border-radius: 6px;
+}
+.findings-summary .badge {
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.badge-critical { background: rgba(247,118,142,0.15); color: var(--red); }
+.badge-warning { background: rgba(224,175,104,0.15); color: var(--yellow); }
+.badge-info { background: rgba(122,162,247,0.15); color: var(--blue); }
+.finding {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border-left: 3px solid var(--border);
+}
+.finding.critical { border-left-color: var(--red); }
+.finding.warning { border-left-color: var(--yellow); }
+.finding.info { border-left-color: var(--blue); }
+.finding .tag {
+  font-size: 11px; font-weight: 700; padding: 2px 6px;
+  border-radius: 3px; margin-right: 8px; display: inline-block;
+}
+.finding .tag.critical { background: rgba(247,118,142,0.2); color: var(--red); }
+.finding .tag.warning { background: rgba(224,175,104,0.2); color: var(--yellow); }
+.finding .tag.info { background: rgba(122,162,247,0.2); color: var(--blue); }
+.finding .title { font-weight: 600; }
+.finding .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+.finding .rec { color: var(--green); font-size: 13px; margin-top: 4px; font-style: italic; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--cyan);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+thead th.r { text-align: right; }
+thead th.c { text-align: center; }
+tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--bg3);
+}
+tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.c { text-align: center; }
+tbody td.id { color: var(--cyan); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+tbody tr:hover { background: var(--bg3); }
+.warn-high { color: var(--yellow); font-weight: 600; }
+.eff-bad { color: var(--red); font-weight: 600; }
+.eff-mid { color: var(--yellow); font-weight: 600; }
+.bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
+.note { color: var(--fg-dim); font-size: 12px; margin-top: 4px; margin-bottom: 12px; }
+.model-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.model-card {
+  background: var(--bg2); border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.model-card .num { font-size: 20px; font-weight: 700; color: var(--fg); }
+.model-card .lbl { font-size: 11px; color: var(--fg-dim); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; }
+</style>
+</head><body>
+<h1>LS-DYNA 해석 분석 리포트</h1>
+<div class="header-panel">
+<div class="row">
+<div><div class="label">버전</div><div class="value">smp d R13 (R13.1.1-27-g8731a0d8c5)</div></div>
+<div><div class="label">일시</div><div class="value">05/18/2024 22:18:31</div></div>
+<div><div class="label">호스트</div><div class="value">DESKTOP-MPPCN5I</div></div>
+<div><div class="label">입력 파일</div><div class="value">3ptBending_1_00000001.k</div></div>
+<div><div class="label">정밀도</div><div class="value">Double precision (I8R8)</div></div>
+<div><div class="label">플랫폼</div><div class="value">WINDOWS X64 SSE2</div></div>
+<div><div class="label">MPI 프로세서</div><div class="value">0개</div></div>
+<div><div class="label">라이선스</div><div class="value"> </div></div>
+</div></div>
+<h2>모델 요약</h2>
+<div class="model-grid">
+<div class="model-card"><div class="num">4,513</div><div class="lbl">노드</div></div>
+<div class="model-card"><div class="num">903</div><div class="lbl">솔리드 요소</div></div>
+<div class="model-card"><div class="num">3,808</div><div class="lbl">쉘 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">빔 요소</div></div>
+<div class="model-card"><div class="num">12</div><div class="lbl">파트</div></div>
+<div class="model-card"><div class="num">12</div><div class="lbl">재료</div></div>
+<div class="model-card"><div class="num">6</div><div class="lbl">접촉</div></div>
+<div class="model-card"><div class="num">153</div><div class="lbl">SPC 노드</div></div>
+</div>
+<h2>종료 상태</h2>
+<div class="term-panel">
+<span class="status-incomplete">미완료 (출력 중단)</span>
+<div class="row">
+<div class="item"><div class="label">목표 시간</div><div class="value">300.0000</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">0</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">0</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">0초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">0초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">0.0 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">0.0 ns</div></div>
+</div>
+</div>
+<h2>진단 결과</h2>
+<div class="findings-summary">
+<span class="badge badge-critical">심각 2</span>
+<span class="badge badge-warning">경고 3</span>
+<span class="badge badge-info">정보 1</span>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">해석 미완료 (출력 불완전)</span>
+<div class="desc">정상 종료 또는 에러 종료 표시가 발견되지 않았습니다. 출력 파일이 불완전하며, 시뮬레이션이 외부에서 강제 종료되었거나 클린 종료 없이 크래시된 것으로 보입니다. 일반적 원인: HPC walltime 초과, OOM(Out Of Memory) kill, 라이선스 만료, 파일시스템 오류.</div>
+<div class="rec">→ 1. 시스템 로그에서 OOM kill 또는 walltime 초과 확인
+2. mes0000 파일의 마지막 줄에서 진행 상태 확인
+3. 코어 덤프(core dump) 또는 signal 파일 확인
+4. HPC의 경우 walltime 증가 또는 restart 파일 활용</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Warning 60303: Implicit solver: line search failed (1x)</span>
+<div class="desc">암시적 솔버의 선 탐색(line search) 알고리즘이 실패했습니다. Newton-Raphson 반복에서 ΔU_n이 계산되면, line search는 α × ΔU_n 방향으로 에너지 내적 g(α) = R(U+α×ΔU)·ΔU = 0이 되는 최적 스텝 크기 α를 찾습니다. g(α) = 0을 만족하는 α를 (0, 1] 내에서 찾지 못하면 라인 서치 실패이며, 이는 현재 방향 ΔU_n이 해로 수렴하는 방향이 아님을 의미합니다. 하중 증분이 너무 크거나, 강성 행렬이 비정확하거나, 접촉 상태가 반복적으로 변할 때 발생합니다.</div>
+<div class="rec">→ 1. 하중 증분 대폭 감소 — *CONTROL_IMPLICIT_SOLUTION의 DT0를 현재의 1/5~1/10으로 줄임
+2. *CONTROL_IMPLICIT_AUTO 사용 — 자동 타임스텝 제어를 활성화하면 수렴 실패 시 자동으로 스텝 크기 감소
+3. 접촉 안정화 — 접촉 타입을 AUTOMATIC으로 변경하고 SOFT=1/2 시도. 접촉 상태 진동이 원인인 경우 stabilization coefficient 추가
+4. NSOLVR=12(BFGS) 시도 — 수치 접선 강성 대신 BFGS 업데이트를 사용하면 일부 비선형 문제에서 더 강건한 수렴</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">772 warnings detected (2 codes)</span>
+<div class="desc">Warning codes: 40538(111x), 60121(661x)</div>
+<div class="rec">→ Review individual warning codes for details. Common tied contact warnings can often be resolved by improving mesh compatibility between contact surfaces.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Part 3: timestep bottleneck (100%)</span>
+<div class="desc">파트 3가 100개의 최소 timestep 중 100개를 차지합니다 (100%). 최소 dt = 7.937E-08. 이 파트의 메시가 시뮬레이션 속도를 제한하고 있습니다.</div>
+<div class="rec">→ 파트 3의 메시를 조정하세요:
+1. 매우 작은 요소를 제거하거나 coarsen
+2. Mass scaling (DT2MS) 적용 고려
+3. 요소 품질(aspect ratio, warpage) 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">파트 3 ()가 timestep 지배 (100%)</span>
+<div class="desc">파트 3 ()가 가장 작은 timestep의 100%를 차지합니다 (100/100개). 최소 dt=7.937E-08. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<div class="rec">→ 1. 파트 3의 메시에서 가장 작은 요소 확인 및 재생성
+2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
+3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
+4. Mass scaling 적용: *CONTROL_TIMESTEP에서 DT2MS 설정
+   (주의: 추가 질량이 원래 질량의 5% 미만이어야 결과 신뢰)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Part 3 dominates timestep control</span>
+<div class="desc">Part 3 controls 100/100 of the 100 smallest timesteps (100%). Smallest dt: 7.9367E-08.</div>
+<div class="rec">→ Review mesh quality in Part 3. Coarsening very small elements or applying mass scaling (DT2MS in *CONTROL_TIMESTEP) could improve performance.</div>
+</div>
+<h2>경고/오류 요약</h2>
+<table><thead><tr>
+<th class="r">코드</th><th class="r">횟수</th><th class="c">심각도</th><th>설명</th><th>인터페이스</th>
+</tr></thead><tbody>
+<tr><td class="r id">60121</td><td class="r">661</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>At least one small pivot detected during factorization. size of smallest pivot: </td><td></td></tr>
+<tr><td class="r id">40538</td><td class="r">111</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>Slave node is not constrained no segment was found in bucket sort. tied interfac</td><td>4, 5, 6</td></tr>
+<tr><td class="r id">60303</td><td class="r">1</td>
+<td class="c"><span class="tag critical">심각</span></td>
+<td>Using IGAP=1 may result in zero contact forces. If this occurs set IGAP=2. Numbe</td><td></td></tr>
+</tbody></table>
+<h2>접촉 인터페이스 요약</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Auto S2S</td>
+<td>10toPushCylinderContact</td><td class="r"></td>
+<td class="r mono"></td><td class="r"></td></tr>
+<tr><td class="id">2</td><td>Auto S2S</td>
+<td>1toLeftSupportCylinderContact</td><td class="r"></td>
+<td class="r mono"></td><td class="r"></td></tr>
+<tr><td class="id">3</td><td>Auto S2S</td>
+<td>1toRightSupportCylinderContact</td><td class="r"></td>
+<td class="r mono"></td><td class="r"></td></tr>
+</tbody></table>
+<h2>최소 타임스텝 요소 (상위 20개)</h2>
+<table><thead><tr>
+<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>
+</tr></thead><tbody>
+<tr><td class="r">1</td><td>shell</td>
+<td class="id">1447</td><td class="r">3</td>
+<td class="r mono">7.9367E-08</td>
+</tr>
+<tr><td class="r">2</td><td>shell</td>
+<td class="id">1521</td><td class="r">3</td>
+<td class="r mono">7.9428E-08</td>
+</tr>
+<tr><td class="r">3</td><td>shell</td>
+<td class="id">2125</td><td class="r">3</td>
+<td class="r mono">7.9431E-08</td>
+</tr>
+<tr><td class="r">4</td><td>shell</td>
+<td class="id">2143</td><td class="r">3</td>
+<td class="r mono">7.9443E-08</td>
+</tr>
+<tr><td class="r">5</td><td>shell</td>
+<td class="id">2144</td><td class="r">3</td>
+<td class="r mono">7.9551E-08</td>
+</tr>
+<tr><td class="r">6</td><td>shell</td>
+<td class="id">1467</td><td class="r">3</td>
+<td class="r mono">7.9593E-08</td>
+</tr>
+<tr><td class="r">7</td><td>shell</td>
+<td class="id">1981</td><td class="r">3</td>
+<td class="r mono">7.9619E-08</td>
+</tr>
+<tr><td class="r">8</td><td>shell</td>
+<td class="id">1478</td><td class="r">3</td>
+<td class="r mono">7.9744E-08</td>
+</tr>
+<tr><td class="r">9</td><td>shell</td>
+<td class="id">2130</td><td class="r">3</td>
+<td class="r mono">7.9785E-08</td>
+</tr>
+<tr><td class="r">10</td><td>shell</td>
+<td class="id">1544</td><td class="r">3</td>
+<td class="r mono">7.9790E-08</td>
+</tr>
+<tr><td class="r">11</td><td>shell</td>
+<td class="id">2128</td><td class="r">3</td>
+<td class="r mono">7.9811E-08</td>
+</tr>
+<tr><td class="r">12</td><td>shell</td>
+<td class="id">1625</td><td class="r">3</td>
+<td class="r mono">7.9826E-08</td>
+</tr>
+<tr><td class="r">13</td><td>shell</td>
+<td class="id">2141</td><td class="r">3</td>
+<td class="r mono">7.9832E-08</td>
+</tr>
+<tr><td class="r">14</td><td>shell</td>
+<td class="id">1982</td><td class="r">3</td>
+<td class="r mono">7.9890E-08</td>
+</tr>
+<tr><td class="r">15</td><td>shell</td>
+<td class="id">1436</td><td class="r">3</td>
+<td class="r mono">7.9903E-08</td>
+</tr>
+<tr><td class="r">16</td><td>shell</td>
+<td class="id">2112</td><td class="r">3</td>
+<td class="r mono">7.9919E-08</td>
+</tr>
+<tr><td class="r">17</td><td>shell</td>
+<td class="id">1475</td><td class="r">3</td>
+<td class="r mono">7.9921E-08</td>
+</tr>
+<tr><td class="r">18</td><td>shell</td>
+<td class="id">1461</td><td class="r">3</td>
+<td class="r mono">7.9931E-08</td>
+</tr>
+<tr><td class="r">19</td><td>shell</td>
+<td class="id">2126</td><td class="r">3</td>
+<td class="r mono">7.9943E-08</td>
+</tr>
+<tr><td class="r">20</td><td>shell</td>
+<td class="id">1457</td><td class="r">3</td>
+<td class="r mono">7.9959E-08</td>
+</tr>
+</tbody></table>
+<h2>파트별 타임스텝 요약 (100 최소)</h2>
+<table><thead><tr>
+<th class="r">파트</th><th class="r">개수</th><th class="r">최소 dt</th><th class="r">최대 dt</th><th>타입</th>
+</tr></thead><tbody>
+<tr><td class="id">3</td><td class="r">100</td>
+<td class="r mono">7.9367E-08</td><td class="r mono">8.1182E-08</td>
+<td>shell</td></tr>
+</tbody></table>
+<div class="note">TSSFAC: 0.7 | 초기 dt: 0 | 최종 dt: 0</div>
+<h2>파트별 질량 특성</h2>
+<table><thead><tr>
+<th class="r">파트 ID</th><th class="r">총 질량</th>
+<th class="r">CG-X</th><th class="r">CG-Y</th><th class="r">CG-Z</th>
+<th class="r">I11</th><th class="r">I22</th><th class="r">I33</th><th class="r">I비율</th>
+</tr></thead><tbody>
+<tr><td class="id">11</td><td class="r mono">3.4390E-04</td>
+<td class="r mono">4.2093E-21</td><td class="r mono">4.4498E-20</td>
+<td class="r mono">0.0017</td>
+<td class="r mono">2.0550E-09</td><td class="r mono">5.2620E-10</td>
+<td class="r mono">2.2190E-09</td><td class="r mono">4x</td></tr>
+<tr><td class="id">12</td><td class="r mono">3.4390E-04</td>
+<td class="r mono">-0.0081</td><td class="r mono">1.2868E-19</td>
+<td class="r mono">-0.0012</td>
+<td class="r mono">2.0560E-09</td><td class="r mono">5.2610E-10</td>
+<td class="r mono">2.2190E-09</td><td class="r mono">4x</td></tr>
+<tr><td class="id">13</td><td class="r mono">3.4390E-04</td>
+<td class="r mono">0.0081</td><td class="r mono">5.4119E-21</td>
+<td class="r mono">-0.0012</td>
+<td class="r mono">2.0560E-09</td><td class="r mono">5.2620E-10</td>
+<td class="r mono">2.2190E-09</td><td class="r mono">4x</td></tr>
+<tr><td class="id">1</td><td class="r mono">9.0224E-05</td>
+<td class="r mono">1.4573E-10</td><td class="r mono">-2.3994E-10</td>
+<td class="r mono">7.5000E-05</td>
+<td class="r mono">4.8610E-10</td><td class="r mono">1.2040E-08</td>
+<td class="r mono">1.2520E-08</td><td class="r mono">26x</td></tr>
+<tr><td class="id">14</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0x</td></tr>
+<tr><td class="id">15</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0x</td></tr>
+<tr><td class="id">16</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0x</td></tr>
+<tr><td class="id">3</td><td class="r mono">2.6304E-04</td>
+<td class="r mono">1.4573E-10</td><td class="r mono">-2.3994E-10</td>
+<td class="r mono">2.0800E-04</td>
+<td class="r mono">1.4170E-09</td><td class="r mono">3.5090E-08</td>
+<td class="r mono">3.6500E-08</td><td class="r mono">26x</td></tr>
+<tr><td class="id">17</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0x</td></tr>
+<tr><td class="id">6</td><td class="r mono">3.9936E-05</td>
+<td class="r mono">1.4573E-10</td><td class="r mono">-2.3994E-10</td>
+<td class="r mono">2.9900E-04</td>
+<td class="r mono">2.1520E-10</td><td class="r mono">5.3270E-09</td>
+<td class="r mono">5.5420E-09</td><td class="r mono">26x</td></tr>
+<tr><td class="id">18</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0</td>
+<td class="r mono">0</td><td class="r mono">0x</td></tr>
+<tr><td class="id">10</td><td class="r mono">2.1741E-04</td>
+<td class="r mono">5.4613E-06</td><td class="r mono">-4.0043E-07</td>
+<td class="r mono">8.9590E-04</td>
+<td class="r mono">2.2880E-08</td><td class="r mono">1.3600E-07</td>
+<td class="r mono">1.4550E-07</td><td class="r mono">6x</td></tr>
+</tbody></table>
+<h2>파트 정의</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>
+<th class="r">밀도</th><th class="r">탄성계수 (E)</th><th class="r">포아송비 (ν)</th><th class="c">ELFORM</th>
+</tr></thead><tbody>
+<tr><td class="id">11</td><td>ThreePointBendingPushCyli</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7840.0000</td><td class="r mono">2.0000E+09</td>
+<td class="r"></td><td class="c">1</td></tr>
+<tr><td class="id">12</td><td>ThreePointBendingSupportL</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7840.0000</td><td class="r mono">2.0000E+09</td>
+<td class="r"></td><td class="c">1</td></tr>
+<tr><td class="id">13</td><td>ThreePointBendingSupportR</td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7840.0000</td><td class="r mono">2.0000E+09</td>
+<td class="r"></td><td class="c">1</td></tr>
+<tr><td class="id">1</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">2230.0000</td><td class="r mono">6.9621E+08</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">14</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">2000.0000</td><td class="r mono">34000.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">15</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">2200.0000</td><td class="r mono">3.7570E+09</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">16</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">1100.0000</td><td class="r mono">2.4130E+09</td>
+<td class="r">0.37</td><td class="c"></td></tr>
+<tr><td class="id">3</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">2000.0000</td><td class="r mono">34000.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">17</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7900.0000</td><td class="r mono">1.5920E+11</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+<tr><td class="id">6</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">2000.0000</td><td class="r mono">34000.0000</td>
+<td class="r">0.35</td><td class="c"></td></tr>
+<tr><td class="id">18</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">1100.0000</td><td class="r mono">5.0000E+07</td>
+<td class="r">0.37</td><td class="c"></td></tr>
+<tr><td class="id">10</td><td></td>
+<td class="c">1</td><td>Elastic</td>
+<td class="r mono">7900.0000</td><td class="r mono">1.0530E+11</td>
+<td class="r">0.30</td><td class="c"></td></tr>
+</tbody></table>
+<div class="footer">분석 파일: d3hsp</div>
+</body></html>

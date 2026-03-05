@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LS-DYNA 해석 분석 리포트 — ex01_ale_f500.k</title>
+<style>:root {
+  --bg: #1a1b26;
+  --bg2: #24283b;
+  --bg3: #292e42;
+  --fg: #c0caf5;
+  --fg-dim: #565f89;
+  --red: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --cyan: #7dcfff;
+  --blue: #7aa2f7;
+  --magenta: #bb9af7;
+  --border: #3b4261;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 22px;
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 16px;
+  color: var(--cyan);
+  margin: 28px 0 12px 0;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+}
+.header-panel {
+  background: var(--bg2);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.header-panel .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.header-panel .label { color: var(--fg-dim); font-size: 12px; }
+.header-panel .value { color: var(--fg); font-size: 14px; font-weight: 500; }
+.status-normal { color: var(--green); font-weight: 700; }
+.status-error { color: var(--red); font-weight: 700; }
+.status-incomplete { color: var(--yellow); font-weight: 700; }
+.term-panel {
+  background: var(--bg2);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.term-panel .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 8px; }
+.term-panel .item { }
+.term-panel .label { color: var(--fg-dim); font-size: 12px; }
+.term-panel .value { font-size: 14px; }
+.findings-summary {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 12px 16px; background: var(--bg2); border-radius: 6px;
+}
+.findings-summary .badge {
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.badge-critical { background: rgba(247,118,142,0.15); color: var(--red); }
+.badge-warning { background: rgba(224,175,104,0.15); color: var(--yellow); }
+.badge-info { background: rgba(122,162,247,0.15); color: var(--blue); }
+.finding {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border-left: 3px solid var(--border);
+}
+.finding.critical { border-left-color: var(--red); }
+.finding.warning { border-left-color: var(--yellow); }
+.finding.info { border-left-color: var(--blue); }
+.finding .tag {
+  font-size: 11px; font-weight: 700; padding: 2px 6px;
+  border-radius: 3px; margin-right: 8px; display: inline-block;
+}
+.finding .tag.critical { background: rgba(247,118,142,0.2); color: var(--red); }
+.finding .tag.warning { background: rgba(224,175,104,0.2); color: var(--yellow); }
+.finding .tag.info { background: rgba(122,162,247,0.2); color: var(--blue); }
+.finding .title { font-weight: 600; }
+.finding .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+.finding .rec { color: var(--green); font-size: 13px; margin-top: 4px; font-style: italic; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--cyan);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+thead th.r { text-align: right; }
+thead th.c { text-align: center; }
+tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--bg3);
+}
+tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.c { text-align: center; }
+tbody td.id { color: var(--cyan); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+tbody tr:hover { background: var(--bg3); }
+.warn-high { color: var(--yellow); font-weight: 600; }
+.eff-bad { color: var(--red); font-weight: 600; }
+.eff-mid { color: var(--yellow); font-weight: 600; }
+.bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
+.note { color: var(--fg-dim); font-size: 12px; margin-top: 4px; margin-bottom: 12px; }
+.model-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.model-card {
+  background: var(--bg2); border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.model-card .num { font-size: 20px; font-weight: 700; color: var(--fg); }
+.model-card .lbl { font-size: 11px; color: var(--fg-dim); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; }
+</style>
+</head><body>
+<h1>LS-DYNA 해석 분석 리포트</h1>
+<div class="header-panel">
+<div class="row">
+<div><div class="label">버전</div><div class="value">mpp s R16 (R16.1.1-20-g0c90cad538)</div></div>
+<div><div class="label">일시</div><div class="value">02/17/2026 07:44:33</div></div>
+<div><div class="label">호스트</div><div class="value">node002</div></div>
+<div><div class="label">입력 파일</div><div class="value">ex01_ale_f500.k</div></div>
+<div><div class="label">정밀도</div><div class="value">Single precision (I4R4)</div></div>
+<div><div class="label">플랫폼</div><div class="value">OpenMPI 4.0.5 x86-64</div></div>
+<div><div class="label">MPI 프로세서</div><div class="value">2개</div></div>
+<div><div class="label">라이선스</div><div class="value">Samsung Electronics Co Ltd -- 1127</div></div>
+</div></div>
+<h2>모델 요약</h2>
+<div class="model-grid">
+<div class="model-card"><div class="num">3,396</div><div class="lbl">노드</div></div>
+<div class="model-card"><div class="num">2,603</div><div class="lbl">솔리드 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">쉘 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">빔 요소</div></div>
+<div class="model-card"><div class="num">4</div><div class="lbl">파트</div></div>
+<div class="model-card"><div class="num">4</div><div class="lbl">재료</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">접촉</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">SPC 노드</div></div>
+</div>
+<h2>종료 상태</h2>
+<div class="term-panel">
+<span class="status-incomplete">미완료 (출력 중단)</span>
+<div class="row">
+<div class="item"><div class="label">목표 시간</div><div class="value">0.0200</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">0</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">0</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">0초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">0초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">0.0 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">0.0 ns</div></div>
+</div>
+</div>
+<h2>진단 결과</h2>
+<div class="findings-summary">
+<span class="badge badge-critical">심각 8</span>
+<span class="badge badge-warning">경고 2</span>
+<span class="badge badge-info">정보 1</span>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">해석 미완료 (출력 불완전)</span>
+<div class="desc">정상 종료 또는 에러 종료 표시가 발견되지 않았습니다. 출력 파일이 불완전하며, 시뮬레이션이 외부에서 강제 종료되었거나 클린 종료 없이 크래시된 것으로 보입니다. 일반적 원인: HPC walltime 초과, OOM(Out Of Memory) kill, 라이선스 만료, 파일시스템 오류.</div>
+<div class="rec">→ 1. 시스템 로그에서 OOM kill 또는 walltime 초과 확인
+2. mes0000 파일의 마지막 줄에서 진행 상태 확인
+3. 코어 덤프(core dump) 또는 signal 파일 확인
+4. HPC의 경우 walltime 증가 또는 restart 파일 활용</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Hourglass energy critically high</span>
+<div class="desc">Max hourglass/internal energy ratio: 74.1% at t=1.1000E-02. This indicates severe zero-energy mode deformation.</div>
+<div class="rec">→ Increase hourglass control stiffness (IHQ/QH in *CONTROL_HOURGLASS). Consider switching to fully integrated elements (ELFORM=2 for solids, ELFORM=16 for shells). Check for single-point-constrained elements.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Energy balance severely violated</span>
+<div class="desc">Energy ratio range: [0.983780, 1.105800]. Deviation &gt; 10% from 1.0 indicates numerical instability or energy source/sink.</div>
+<div class="rec">→ Check for contact energy growth, mass scaling effects, or improperly defined loads. Enable energy output (*CONTROL_ENERGY) to identify the source.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Total energy is increasing (divergence)</span>
+<div class="desc">Total energy grew from 4.0000E-20 to 2.0536E+06 (5133975000000000824358993920.0% increase). This strongly suggests numerical instability.</div>
+<div class="rec">→ Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Kinetic energy explosion (100x in 1.300E-03s)</span>
+<div class="desc">운동 에너지가 1.300E-03초 동안 14768114배 증가했습니다 (KE: 1.099E-04 → 1.623E+03). 운동 에너지 KE = Σ(½mv²)가 급격히 증가한다는 것은 일부 노드의 속도가 발산(velocity divergence)했다는 의미입니다. 명시적 적분에서 v(t+dt) = v(t) + (F/m)×dt로 업데이트하는데, F가 비정상적으로 크면(contact spike, constraint conflict) 한 스텝에서 속도가 급증하고, 이 노드가 인접 요소를 왜곡시켜 추가적인 penalty force를 생성하는 양성 피드백 루프가 형성됩니다. 100배 이상의 KE 증가는 시뮬레이션이 발산 단계에 진입했음을 나타내며, 이후 NaN 또는 negative volume 에러로 이어집니다.</div>
+<div class="rec">→ 1. 발산 시점(t=1.988E-05s) 전후의 변형 확인 — 애니메이션에서 비정상적으로 빠르게 움직이는 노드/파트 식별
+2. Constraint 정의 점검 — *CONSTRAINED_EXTRA_NODES, *CONSTRAINED_RIGID_BODIES 등에서 과잉 구속 확인. 같은 노드에 여러 구속이 적용되면 내부적으로 상반되는 힘이 생성
+3. 접촉 초기 관통 제거 — 관통된 노드에 과도한 penalty force가 집중되어 속도 발산의 주요 원인. *CONTROL_CONTACT의 PENOPT 설정
+4. Penalty stiffness 감소 — SLSFAC &lt; 0.1로 설정하여 접촉력 크기를 완화. SOFT=1(segment-based) 사용 권장</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Contact energy spike (50x in 1.300E-03s)</span>
+<div class="desc">Contact sliding 에너지가 1.300E-03초 동안 197배 급증했습니다 (2.302E-03 → 4.544E-01). 접촉 에너지의 급격한 증가는 다수의 노드가 동시에 접촉면을 심하게 관통한 후 penalty force에 의해 반발되는 과정에서 발생합니다. Penalty method에서 접촉력 F = k × g (g=관통깊이)이므로, 관통이 깊어지면 힘이 급격히 증가하고, 이 힘에 의한 슬라이딩이 에너지를 급증시킵니다. 이는 곧 요소 왜곡과 timestep 감소로 이어져 시뮬레이션 불안정의 전조 증상입니다.</div>
+<div class="rec">→ 1. 시간 1.460E-03s 전후의 접촉 관통 확인 — 후처리기에서 접촉 관통 깊이(penetration depth) 시각화
+2. Penalty factor 감소 — SLSFAC 값을 줄여 관통 시 반발력을 완화하고, SOFT=1(segment-based) 사용으로 양면 강성을 고려한 균형 잡힌 접촉력 적용
+3. Contact stiffness 재조정 — *CONTACT의 SFS/SFM (slave/master scale factor)로 접촉면별 강성 조절</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Negative sliding interface energy (-7.410E-02)</span>
+<div class="desc">Cycle 4684 (t=9.799E-04s)에서 sliding interface energy = -7.410E-02입니다. 접촉 슬라이딩 에너지 E_slide = Σ(F_contact × δ_slide)는 마찰에 의한 에너지 소산이므로 항상 양수(≥0)여야 합니다. 음의 접촉 에너지는 penalty contact에서 비정상적인 에너지 생성을 의미하며, 접촉면에서 인공적으로 에너지가 시스템에 주입되고 있습니다. 이는 주로 penalty stiffness가 과도하여 관통-반발 사이클에서 접촉력이 오버슈팅하거나, tied contact에서 풀린 노드가 비정상적인 penalty force를 받을 때 발생합니다. 음의 접촉 에너지는 energy ratio를 1.0 이상으로 증가시켜 에너지 비보존을 유발하며, 시뮬레이션 결과의 신뢰성을 손상시킵니다.</div>
+<div class="rec">→ 1. Penalty stiffness 감소 — SLSFAC를 0.05~0.1로 설정하여 접촉력의 오버슈팅 방지. k_contact = fs × K × A²/V에서 fs(SLSFAC)를 줄이면 관통 시 반발력이 완화됨
+2. SOFT=1 (segment-based contact) 사용 — 양측 표면의 강성을 고려하여 균형 잡힌 접촉력 적용. SOFT=2(pinball)도 고려
+3. Contact type 변경 — AUTOMATIC_SURFACE_TO_SURFACE 대신 MORTAR contact 사용 검토. Mortar은 에너지 보존이 우수
+4. 초기 관통 제거 — 초기 관통이 있으면 첫 스텝에서 과도한 penalty force → 반발 → 음의 에너지 생성 사이클 유발
+5. Contact damping(VDC) 추가 — VDC=20~40으로 접촉면 진동을 감쇠하여 에너지 생성 방지</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">LS-DYNA exit code 3</span>
+<div class="desc">LS-DYNA가 exit code 3로 종료되었습니다. Slurm job 21459. Exit code 3은 LS-DYNA의 표준 에러 종료(error termination)로, d3hsp 파일에 기록된 에러 메시지에 의해 시뮬레이션이 중단된 것입니다. 일반적인 원인: negative volume(Error 40509), NaN detected(Error 40456), constraint matrix singular(Error 30358) 등. d3hsp의 termination 섹션과 에러/경고 카운트를 통해 정확한 원인을 파악할 수 있습니다.</div>
+<div class="rec">→ 1. d3hsp 파일의 &#x27;E r r o r&#x27; 메시지 확인 — 에러 코드별 대응
+2. 이 도구의 다른 진단 결과 참조 — 에너지 불안정, timestep 붕괴, 경고 패턴 등이 종료 원인을 설명합니다</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Significant timestep drop detected</span>
+<div class="desc">Timestep dropped to 26.2% of initial value (from 2.0926E-07 to 5.4851E-08).</div>
+<div class="rec">→ Monitor the controlling part for potential instability. Check element quality near the smallest timestep elements.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Kinetic energy dominates (KE/IE = 47.1)</span>
+<div class="desc">운동 에너지가 내부 에너지의 47.1배입니다 (KE=2.011E+06, IE=4.267E+04). 준정적(quasi-static) 해석에서는 관성 효과가 무시될 수 있어야 하므로 KE/IE &lt; 0.1 (10% 미만)이 권장됩니다. 현재 KE/IE = 47.1은 동적 효과가 결과를 지배하고 있음을 의미합니다. 이는 하중 속도가 너무 빠르거나(loading rate), 구속 부족으로 rigid body mode가 발생했기 때문일 수 있습니다. 충격 해석(crash, impact)에서는 KE ≈ IE가 정상입니다.</div>
+<div class="rec">→ 1. 시뮬레이션 유형 확인 — 동적(crash/impact)이면 KE &gt; IE는 정상. 준정적(forming, squeeze)이면 아래 조치 필요
+2. 하중 속도(loading rate) 감소 — 준정적 해석에서 *BOUNDARY_PRESCRIBED_MOTION의 속도를 줄이거나 하중 시간을 늘려 관성 효과 최소화
+3. Rigid body mode 확인 — 구속이 부족하면(under-constrained) 자유 운동이 발생하여 KE가 증가합니다. 6개 자유도를 충분히 구속했는지 확인</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Timestep oscillation detected</span>
+<div class="desc">Timestep이 빈번하게 변동합니다 (평균=2.085E-07). dt 진동은 시뮬레이션이 안정성 경계(stability boundary)에서 작동하고 있음을 나타냅니다. dt = TSSFAC × L/c에서 요소가 변형 → 복원을 반복하면 L_char이 진동하여 dt도 진동합니다. 이는 접촉면에서 관통/반발 사이클, 또는 탄성 반발이 반복되는 영역에서 흔히 발생합니다. dt 진동 자체는 즉각적인 위험은 아니지만, mass scaling (DT2MS)이 활성화되어 있으면 진동하는 요소에 과도한 질량이 추가될 수 있습니다.</div>
+<div class="rec">→ 1. 변형이 큰 영역의 메시 개선 — 요소 종횡비를 개선하여 변형 시에도 L_char의 변동을 최소화
+2. Contact 설정 재검토 — 관통/반발 사이클이 원인이면 contact damping(VDC) 추가하여 진동 감쇠
+3. Mass scaling 검토 — DT2MS 설정 시 dt 진동 영역의 요소에 과도한 질량이 추가되지 않는지 확인. m_added = m × ((dt_target/dt_element)² - 1)</div>
+</div>
+<h2>에너지 수지</h2>
+<table><thead><tr>
+<th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
+</tr></thead><tbody>
+<tr><td>운동 에너지</td><td class="r mono">0</td><td class="r mono">2.0109E+06</td></tr>
+<tr><td>내부 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">42670.7000</td></tr>
+<tr><td>Hourglass 에너지</td><td class="r mono">0</td><td class="r mono">6.7389</td></tr>
+<tr><td>슬라이딩 인터페이스</td><td class="r mono">0</td><td class="r mono">46.3033</td></tr>
+<tr><td>총 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">2.0536E+06</td></tr>
+<tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">1.0225</td></tr>
+<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">74.1%</td></tr>
+</tbody></table>
+<h2>타임스텝 제어 타임라인</h2>
+<table><thead><tr>
+<th class="r">사이클</th><th>시간 구간</th><th class="r">파트</th>
+<th class="r">요소</th><th>타입</th><th class="r">최소 dt</th><th class="r">스냅</th>
+</tr></thead><tbody>
+<tr><td class="r">1–1</td>
+<td class="mono">0.0000E+00 – 0.0000E+00</td>
+<td class="id">2</td><td class="r">4068</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">96–96</td>
+<td class="mono">1.9880E-05 – 1.9880E-05</td>
+<td class="id">2</td><td class="r">3083</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">192–192</td>
+<td class="mono">3.9969E-05 – 3.9969E-05</td>
+<td class="id">2</td><td class="r">4110</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">287–287</td>
+<td class="mono">5.9849E-05 – 5.9849E-05</td>
+<td class="id">2</td><td class="r">4138</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">383–383</td>
+<td class="mono">7.9939E-05 – 7.9939E-05</td>
+<td class="id">2</td><td class="r">4180</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">478–478</td>
+<td class="mono">9.9819E-05 – 9.9819E-05</td>
+<td class="id">2</td><td class="r">4078</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">574–574</td>
+<td class="mono">1.1991E-04 – 1.1991E-04</td>
+<td class="id">2</td><td class="r">4194</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">670–670</td>
+<td class="mono">1.4000E-04 – 1.4000E-04</td>
+<td class="id">2</td><td class="r">4082</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">765–765</td>
+<td class="mono">1.5988E-04 – 1.5988E-04</td>
+<td class="id">2</td><td class="r">2633</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">861–861</td>
+<td class="mono">1.7997E-04 – 1.7997E-04</td>
+<td class="id">2</td><td class="r">2258</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">956–956</td>
+<td class="mono">1.9985E-04 – 1.9985E-04</td>
+<td class="id">2</td><td class="r">4077</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,052–1,052</td>
+<td class="mono">2.1994E-04 – 2.1994E-04</td>
+<td class="id">2</td><td class="r">4221</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,147–1,721</td>
+<td class="mono">2.3982E-04 – 3.5993E-04</td>
+<td class="id">2</td><td class="r">4041</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">7</td></tr>
+<tr><td class="r">1,816–1,912</td>
+<td class="mono">3.7981E-04 – 3.9990E-04</td>
+<td class="id">2</td><td class="r">4056</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">2,008–2,008</td>
+<td class="mono">4.1999E-04 – 4.1999E-04</td>
+<td class="id">2</td><td class="r">4238</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,103–2,390</td>
+<td class="mono">4.3987E-04 – 4.9993E-04</td>
+<td class="id">2</td><td class="r">3548</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">4</td></tr>
+<tr><td class="r">2,485–2,485</td>
+<td class="mono">5.1981E-04 – 5.1981E-04</td>
+<td class="id">2</td><td class="r">3591</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,581–2,581</td>
+<td class="mono">5.3990E-04 – 5.3990E-04</td>
+<td class="id">2</td><td class="r">3532</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,677–2,772</td>
+<td class="mono">5.5999E-04 – 5.7987E-04</td>
+<td class="id">2</td><td class="r">3548</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">2,868–2,868</td>
+<td class="mono">5.9996E-04 – 5.9996E-04</td>
+<td class="id">2</td><td class="r">3558</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,963–2,963</td>
+<td class="mono">6.1984E-04 – 6.1984E-04</td>
+<td class="id">2</td><td class="r">3353</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,059–3,059</td>
+<td class="mono">6.3993E-04 – 6.3993E-04</td>
+<td class="id">2</td><td class="r">3563</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,154–3,250</td>
+<td class="mono">6.5980E-04 – 6.7989E-04</td>
+<td class="id">2</td><td class="r">3977</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">3,346–3,346</td>
+<td class="mono">6.9998E-04 – 6.9998E-04</td>
+<td class="id">2</td><td class="r">3971</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,441–3,441</td>
+<td class="mono">7.1985E-04 – 7.1985E-04</td>
+<td class="id">2</td><td class="r">3945</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,537–3,537</td>
+<td class="mono">7.3994E-04 – 7.3994E-04</td>
+<td class="id">2</td><td class="r">4138</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,632–3,632</td>
+<td class="mono">7.5982E-04 – 7.5982E-04</td>
+<td class="id">2</td><td class="r">2416</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,728–3,728</td>
+<td class="mono">7.7991E-04 – 7.7991E-04</td>
+<td class="id">2</td><td class="r">3972</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,824–3,824</td>
+<td class="mono">8.0000E-04 – 8.0000E-04</td>
+<td class="id">2</td><td class="r">4138</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,919–3,919</td>
+<td class="mono">8.1988E-04 – 8.1988E-04</td>
+<td class="id">2</td><td class="r">3333</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,015–4,015</td>
+<td class="mono">8.3997E-04 – 8.3997E-04</td>
+<td class="id">2</td><td class="r">3323</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,110–4,110</td>
+<td class="mono">8.5984E-04 – 8.5984E-04</td>
+<td class="id">2</td><td class="r">3927</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,206–4,206</td>
+<td class="mono">8.7992E-04 – 8.7992E-04</td>
+<td class="id">2</td><td class="r">3747</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,301–4,301</td>
+<td class="mono">8.9980E-04 – 8.9980E-04</td>
+<td class="id">2</td><td class="r">3688</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,397–4,397</td>
+<td class="mono">9.1988E-04 – 9.1988E-04</td>
+<td class="id">2</td><td class="r">3737</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,493–4,493</td>
+<td class="mono">9.3997E-04 – 9.3997E-04</td>
+<td class="id">2</td><td class="r">3688</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,588–4,588</td>
+<td class="mono">9.5985E-04 – 9.5985E-04</td>
+<td class="id">2</td><td class="r">3702</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,684–4,684</td>
+<td class="mono">9.7994E-04 – 9.7994E-04</td>
+<td class="id">2</td><td class="r">3349</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,779–4,779</td>
+<td class="mono">9.9982E-04 – 9.9982E-04</td>
+<td class="id">2</td><td class="r">3108</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,875–4,875</td>
+<td class="mono">1.0199E-03 – 1.0199E-03</td>
+<td class="id">2</td><td class="r">2928</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,971–4,971</td>
+<td class="mono">1.0400E-03 – 1.0400E-03</td>
+<td class="id">2</td><td class="r">4138</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,066–5,066</td>
+<td class="mono">1.0599E-03 – 1.0599E-03</td>
+<td class="id">2</td><td class="r">3463</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,162–5,162</td>
+<td class="mono">1.0800E-03 – 1.0800E-03</td>
+<td class="id">2</td><td class="r">3079</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,257–5,257</td>
+<td class="mono">1.0998E-03 – 1.0998E-03</td>
+<td class="id">2</td><td class="r">3294</td>
+<td>solid</td><td class="r mono">2.0901E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,353–5,353</td>
+<td class="mono">1.1199E-03 – 1.1199E-03</td>
+<td class="id">2</td><td class="r">2883</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,449–5,449</td>
+<td class="mono">1.1400E-03 – 1.1400E-03</td>
+<td class="id">2</td><td class="r">3688</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,544–5,544</td>
+<td class="mono">1.1599E-03 – 1.1599E-03</td>
+<td class="id">2</td><td class="r">3252</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,640–5,640</td>
+<td class="mono">1.1799E-03 – 1.1799E-03</td>
+<td class="id">2</td><td class="r">2693</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,735–5,735</td>
+<td class="mono">1.1998E-03 – 1.1998E-03</td>
+<td class="id">2</td><td class="r">3069</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,831–5,831</td>
+<td class="mono">1.2199E-03 – 1.2199E-03</td>
+<td class="id">2</td><td class="r">2698</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,927–5,927</td>
+<td class="mono">1.2400E-03 – 1.2400E-03</td>
+<td class="id">2</td><td class="r">3688</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,022–6,022</td>
+<td class="mono">1.2599E-03 – 1.2599E-03</td>
+<td class="id">2</td><td class="r">3013</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,118–6,118</td>
+<td class="mono">1.2799E-03 – 1.2799E-03</td>
+<td class="id">2</td><td class="r">2844</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,213–6,213</td>
+<td class="mono">1.2998E-03 – 1.2998E-03</td>
+<td class="id">2</td><td class="r">2847</td>
+<td>solid</td><td class="r mono">2.0907E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,309–6,309</td>
+<td class="mono">1.3199E-03 – 1.3199E-03</td>
+<td class="id">2</td><td class="r">2774</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,405–6,405</td>
+<td class="mono">1.3400E-03 – 1.3400E-03</td>
+<td class="id">2</td><td class="r">2343</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,500–6,500</td>
+<td class="mono">1.3598E-03 – 1.3598E-03</td>
+<td class="id">2</td><td class="r">2499</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,596–6,596</td>
+<td class="mono">1.3799E-03 – 1.3799E-03</td>
+<td class="id">2</td><td class="r">2577</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,691–6,691</td>
+<td class="mono">1.3998E-03 – 1.3998E-03</td>
+<td class="id">2</td><td class="r">2560</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,787–6,787</td>
+<td class="mono">1.4199E-03 – 1.4199E-03</td>
+<td class="id">2</td><td class="r">2394</td>
+<td>solid</td><td class="r mono">2.0904E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,883–6,883</td>
+<td class="mono">1.4399E-03 – 1.4399E-03</td>
+<td class="id">2</td><td class="r">2914</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,978–6,978</td>
+<td class="mono">1.4598E-03 – 1.4598E-03</td>
+<td class="id">2</td><td class="r">2386</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,074–7,074</td>
+<td class="mono">1.4799E-03 – 1.4799E-03</td>
+<td class="id">2</td><td class="r">2169</td>
+<td>solid</td><td class="r mono">2.0884E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,170–7,170</td>
+<td class="mono">1.5000E-03 – 1.5000E-03</td>
+<td class="id">2</td><td class="r">2054</td>
+<td>solid</td><td class="r mono">2.0900E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,265–7,265</td>
+<td class="mono">1.5198E-03 – 1.5198E-03</td>
+<td class="id">2</td><td class="r">2099</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,361–7,361</td>
+<td class="mono">1.5399E-03 – 1.5399E-03</td>
+<td class="id">2</td><td class="r">3238</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,456–7,456</td>
+<td class="mono">1.5598E-03 – 1.5598E-03</td>
+<td class="id">2</td><td class="r">2466</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,552–7,552</td>
+<td class="mono">1.5799E-03 – 1.5799E-03</td>
+<td class="id">2</td><td class="r">2646</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,648–7,648</td>
+<td class="mono">1.6000E-03 – 1.6000E-03</td>
+<td class="id">2</td><td class="r">2885</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,743–7,743</td>
+<td class="mono">1.6199E-03 – 1.6199E-03</td>
+<td class="id">2</td><td class="r">2448</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,839–7,839</td>
+<td class="mono">1.6400E-03 – 1.6400E-03</td>
+<td class="id">2</td><td class="r">2014</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,934–7,934</td>
+<td class="mono">1.6598E-03 – 1.6598E-03</td>
+<td class="id">2</td><td class="r">2407</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,030–8,030</td>
+<td class="mono">1.6799E-03 – 1.6799E-03</td>
+<td class="id">2</td><td class="r">2003</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,125–8,125</td>
+<td class="mono">1.6998E-03 – 1.6998E-03</td>
+<td class="id">2</td><td class="r">2632</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,221–8,221</td>
+<td class="mono">1.7199E-03 – 1.7199E-03</td>
+<td class="id">2</td><td class="r">2873</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,317–8,317</td>
+<td class="mono">1.7400E-03 – 1.7400E-03</td>
+<td class="id">2</td><td class="r">3339</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,412–8,412</td>
+<td class="mono">1.7599E-03 – 1.7599E-03</td>
+<td class="id">2</td><td class="r">2002</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,508–8,508</td>
+<td class="mono">1.7799E-03 – 1.7799E-03</td>
+<td class="id">2</td><td class="r">2406</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,603–8,603</td>
+<td class="mono">1.7998E-03 – 1.7998E-03</td>
+<td class="id">2</td><td class="r">2453</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,699–8,699</td>
+<td class="mono">1.8199E-03 – 1.8199E-03</td>
+<td class="id">2</td><td class="r">2646</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,795–8,795</td>
+<td class="mono">1.8400E-03 – 1.8400E-03</td>
+<td class="id">2</td><td class="r">2392</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,890–8,890</td>
+<td class="mono">1.8599E-03 – 1.8599E-03</td>
+<td class="id">2</td><td class="r">2245</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">8,986–8,986</td>
+<td class="mono">1.8800E-03 – 1.8800E-03</td>
+<td class="id">2</td><td class="r">2632</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,081–9,081</td>
+<td class="mono">1.8999E-03 – 1.8999E-03</td>
+<td class="id">2</td><td class="r">3358</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,177–9,177</td>
+<td class="mono">1.9199E-03 – 1.9199E-03</td>
+<td class="id">2</td><td class="r">2842</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,272–9,272</td>
+<td class="mono">1.9398E-03 – 1.9398E-03</td>
+<td class="id">2</td><td class="r">2231</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,368–9,368</td>
+<td class="mono">1.9599E-03 – 1.9599E-03</td>
+<td class="id">2</td><td class="r">3099</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,464–9,464</td>
+<td class="mono">1.9800E-03 – 1.9800E-03</td>
+<td class="id">2</td><td class="r">2559</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,559–9,559</td>
+<td class="mono">1.9999E-03 – 1.9999E-03</td>
+<td class="id">2</td><td class="r">3307</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,655–9,655</td>
+<td class="mono">2.0200E-03 – 2.0200E-03</td>
+<td class="id">2</td><td class="r">2575</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">9,750–9,941</td>
+<td class="mono">2.0398E-03 – 2.0798E-03</td>
+<td class="id">2</td><td class="r">2332</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">10,037–10,037</td>
+<td class="mono">2.0999E-03 – 2.0999E-03</td>
+<td class="id">2</td><td class="r">3128</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">10,133–10,228</td>
+<td class="mono">2.1200E-03 – 2.1399E-03</td>
+<td class="id">2</td><td class="r">3456</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">10,324–10,324</td>
+<td class="mono">2.1599E-03 – 2.1599E-03</td>
+<td class="id">2</td><td class="r">2336</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">10,419–10,419</td>
+<td class="mono">2.1798E-03 – 2.1798E-03</td>
+<td class="id">2</td><td class="r">2331</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">10,515–10,515</td>
+<td class="mono">2.1999E-03 – 2.1999E-03</td>
+<td class="id">2</td><td class="r">2336</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">10,610–10,706</td>
+<td class="mono">2.2198E-03 – 2.2399E-03</td>
+<td class="id">2</td><td class="r">3717</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">10,802–10,897</td>
+<td class="mono">2.2600E-03 – 2.2799E-03</td>
+<td class="id">2</td><td class="r">3682</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">10,993–10,993</td>
+<td class="mono">2.2999E-03 – 2.2999E-03</td>
+<td class="id">2</td><td class="r">2245</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,088–11,088</td>
+<td class="mono">2.3198E-03 – 2.3198E-03</td>
+<td class="id">2</td><td class="r">2036</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,184–11,184</td>
+<td class="mono">2.3399E-03 – 2.3399E-03</td>
+<td class="id">2</td><td class="r">3606</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,279–11,279</td>
+<td class="mono">2.3598E-03 – 2.3598E-03</td>
+<td class="id">2</td><td class="r">3741</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,375–11,375</td>
+<td class="mono">2.3799E-03 – 2.3799E-03</td>
+<td class="id">2</td><td class="r">2263</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,471–11,471</td>
+<td class="mono">2.4000E-03 – 2.4000E-03</td>
+<td class="id">2</td><td class="r">3235</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,566–11,566</td>
+<td class="mono">2.4198E-03 – 2.4198E-03</td>
+<td class="id">2</td><td class="r">3250</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,662–11,662</td>
+<td class="mono">2.4399E-03 – 2.4399E-03</td>
+<td class="id">2</td><td class="r">3247</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,757–11,757</td>
+<td class="mono">2.4598E-03 – 2.4598E-03</td>
+<td class="id">2</td><td class="r">3232</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,853–11,853</td>
+<td class="mono">2.4799E-03 – 2.4799E-03</td>
+<td class="id">2</td><td class="r">3358</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">11,949–11,949</td>
+<td class="mono">2.5000E-03 – 2.5000E-03</td>
+<td class="id">2</td><td class="r">2458</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,044–12,044</td>
+<td class="mono">2.5199E-03 – 2.5199E-03</td>
+<td class="id">2</td><td class="r">2227</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,140–12,140</td>
+<td class="mono">2.5400E-03 – 2.5400E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,235–12,235</td>
+<td class="mono">2.5598E-03 – 2.5598E-03</td>
+<td class="id">2</td><td class="r">3700</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,331–12,331</td>
+<td class="mono">2.5799E-03 – 2.5799E-03</td>
+<td class="id">2</td><td class="r">3685</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,426–12,426</td>
+<td class="mono">2.5998E-03 – 2.5998E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,522–12,522</td>
+<td class="mono">2.6199E-03 – 2.6199E-03</td>
+<td class="id">2</td><td class="r">3658</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">12,618–12,713</td>
+<td class="mono">2.6400E-03 – 2.6599E-03</td>
+<td class="id">2</td><td class="r">3223</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">12,809–12,904</td>
+<td class="mono">2.6800E-03 – 2.6998E-03</td>
+<td class="id">2</td><td class="r">3598</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">13,000–13,000</td>
+<td class="mono">2.7199E-03 – 2.7199E-03</td>
+<td class="id">2</td><td class="r">3463</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,095–13,095</td>
+<td class="mono">2.7398E-03 – 2.7398E-03</td>
+<td class="id">2</td><td class="r">3462</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,191–13,191</td>
+<td class="mono">2.7599E-03 – 2.7599E-03</td>
+<td class="id">2</td><td class="r">3682</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,287–13,287</td>
+<td class="mono">2.7800E-03 – 2.7800E-03</td>
+<td class="id">2</td><td class="r">3643</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,382–13,382</td>
+<td class="mono">2.7999E-03 – 2.7999E-03</td>
+<td class="id">2</td><td class="r">3456</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,478–13,478</td>
+<td class="mono">2.8199E-03 – 2.8199E-03</td>
+<td class="id">2</td><td class="r">3598</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,573–13,764</td>
+<td class="mono">2.8398E-03 – 2.8798E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">13,860–13,860</td>
+<td class="mono">2.8999E-03 – 2.8999E-03</td>
+<td class="id">2</td><td class="r">3373</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">13,956–14,051</td>
+<td class="mono">2.9200E-03 – 2.9398E-03</td>
+<td class="id">2</td><td class="r">3578</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">14,147–14,147</td>
+<td class="mono">2.9599E-03 – 2.9599E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">14,242–14,242</td>
+<td class="mono">2.9798E-03 – 2.9798E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">14,338–14,529</td>
+<td class="mono">2.9999E-03 – 3.0399E-03</td>
+<td class="id">2</td><td class="r">3581</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">14,625–14,625</td>
+<td class="mono">3.0600E-03 – 3.0600E-03</td>
+<td class="id">2</td><td class="r">3808</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">14,720–14,720</td>
+<td class="mono">3.0798E-03 – 3.0798E-03</td>
+<td class="id">2</td><td class="r">2570</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">14,816–14,911</td>
+<td class="mono">3.0999E-03 – 3.1198E-03</td>
+<td class="id">2</td><td class="r">2376</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">15,007–15,007</td>
+<td class="mono">3.1399E-03 – 3.1399E-03</td>
+<td class="id">2</td><td class="r">2248</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,103–15,103</td>
+<td class="mono">3.1600E-03 – 3.1600E-03</td>
+<td class="id">2</td><td class="r">2908</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,198–15,198</td>
+<td class="mono">3.1799E-03 – 3.1799E-03</td>
+<td class="id">2</td><td class="r">3695</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,294–15,294</td>
+<td class="mono">3.2000E-03 – 3.2000E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,389–15,389</td>
+<td class="mono">3.2198E-03 – 3.2198E-03</td>
+<td class="id">2</td><td class="r">3755</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,485–15,485</td>
+<td class="mono">3.2399E-03 – 3.2399E-03</td>
+<td class="id">2</td><td class="r">3163</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,580–15,580</td>
+<td class="mono">3.2598E-03 – 3.2598E-03</td>
+<td class="id">2</td><td class="r">3789</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,676–15,676</td>
+<td class="mono">3.2799E-03 – 3.2799E-03</td>
+<td class="id">2</td><td class="r">3531</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,772–15,772</td>
+<td class="mono">3.3000E-03 – 3.3000E-03</td>
+<td class="id">2</td><td class="r">3596</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">15,867–16,058</td>
+<td class="mono">3.3199E-03 – 3.3598E-03</td>
+<td class="id">2</td><td class="r">3581</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">16,154–16,154</td>
+<td class="mono">3.3799E-03 – 3.3799E-03</td>
+<td class="id">2</td><td class="r">3531</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,249–16,249</td>
+<td class="mono">3.3998E-03 – 3.3998E-03</td>
+<td class="id">2</td><td class="r">3651</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,345–16,345</td>
+<td class="mono">3.4199E-03 – 3.4199E-03</td>
+<td class="id">2</td><td class="r">3981</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,441–16,441</td>
+<td class="mono">3.4400E-03 – 3.4400E-03</td>
+<td class="id">2</td><td class="r">3232</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,536–16,536</td>
+<td class="mono">3.4599E-03 – 3.4599E-03</td>
+<td class="id">2</td><td class="r">3133</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,632–16,632</td>
+<td class="mono">3.4799E-03 – 3.4799E-03</td>
+<td class="id">2</td><td class="r">3806</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,727–16,727</td>
+<td class="mono">3.4998E-03 – 3.4998E-03</td>
+<td class="id">2</td><td class="r">4020</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,823–16,823</td>
+<td class="mono">3.5199E-03 – 3.5199E-03</td>
+<td class="id">2</td><td class="r">3806</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">16,918–16,918</td>
+<td class="mono">3.5398E-03 – 3.5398E-03</td>
+<td class="id">2</td><td class="r">3170</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,014–17,014</td>
+<td class="mono">3.5599E-03 – 3.5599E-03</td>
+<td class="id">2</td><td class="r">3353</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,110–17,110</td>
+<td class="mono">3.5800E-03 – 3.5800E-03</td>
+<td class="id">2</td><td class="r">3756</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,205–17,205</td>
+<td class="mono">3.5998E-03 – 3.5998E-03</td>
+<td class="id">2</td><td class="r">3578</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,301–17,396</td>
+<td class="mono">3.6199E-03 – 3.6398E-03</td>
+<td class="id">2</td><td class="r">3804</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">17,492–17,588</td>
+<td class="mono">3.6599E-03 – 3.6800E-03</td>
+<td class="id">2</td><td class="r">3581</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">17,683–17,683</td>
+<td class="mono">3.6999E-03 – 3.6999E-03</td>
+<td class="id">2</td><td class="r">3588</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,779–17,779</td>
+<td class="mono">3.7200E-03 – 3.7200E-03</td>
+<td class="id">2</td><td class="r">2906</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,874–17,874</td>
+<td class="mono">3.7398E-03 – 3.7398E-03</td>
+<td class="id">2</td><td class="r">3797</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">17,970–17,970</td>
+<td class="mono">3.7599E-03 – 3.7599E-03</td>
+<td class="id">2</td><td class="r">3803</td>
+<td>solid</td><td class="r mono">2.0926E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,065–18,065</td>
+<td class="mono">3.7798E-03 – 3.7798E-03</td>
+<td class="id">2</td><td class="r">4020</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,161–18,161</td>
+<td class="mono">3.7999E-03 – 3.7999E-03</td>
+<td class="id">2</td><td class="r">3578</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,257–18,257</td>
+<td class="mono">3.8200E-03 – 3.8200E-03</td>
+<td class="id">2</td><td class="r">3588</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,352–18,448</td>
+<td class="mono">3.8399E-03 – 3.8600E-03</td>
+<td class="id">2</td><td class="r">3579</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">18,543–18,543</td>
+<td class="mono">3.8798E-03 – 3.8798E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,639–18,639</td>
+<td class="mono">3.8999E-03 – 3.8999E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,734–18,734</td>
+<td class="mono">3.9198E-03 – 3.9198E-03</td>
+<td class="id">2</td><td class="r">3598</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,830–18,830</td>
+<td class="mono">3.9399E-03 – 3.9399E-03</td>
+<td class="id">2</td><td class="r">3457</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">18,926–19,117</td>
+<td class="mono">3.9600E-03 – 3.9999E-03</td>
+<td class="id">2</td><td class="r">3581</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">19,212–19,212</td>
+<td class="mono">4.0198E-03 – 4.0198E-03</td>
+<td class="id">2</td><td class="r">3354</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">19,308–19,308</td>
+<td class="mono">4.0399E-03 – 4.0399E-03</td>
+<td class="id">2</td><td class="r">3711</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">19,404–19,404</td>
+<td class="mono">4.0600E-03 – 4.0600E-03</td>
+<td class="id">2</td><td class="r">3666</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">19,499–19,499</td>
+<td class="mono">4.0799E-03 – 4.0799E-03</td>
+<td class="id">2</td><td class="r">3596</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">19,595–19,595</td>
+<td class="mono">4.1000E-03 – 4.1000E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">19,690–19,881</td>
+<td class="mono">4.1198E-03 – 4.1598E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">19,977–19,977</td>
+<td class="mono">4.1799E-03 – 4.1799E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,073–20,073</td>
+<td class="mono">4.2000E-03 – 4.2000E-03</td>
+<td class="id">2</td><td class="r">3805</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,168–20,168</td>
+<td class="mono">4.2199E-03 – 4.2199E-03</td>
+<td class="id">2</td><td class="r">2344</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,264–20,264</td>
+<td class="mono">4.2399E-03 – 4.2399E-03</td>
+<td class="id">2</td><td class="r">3778</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,359–20,359</td>
+<td class="mono">4.2598E-03 – 4.2598E-03</td>
+<td class="id">2</td><td class="r">3790</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,455–20,550</td>
+<td class="mono">4.2799E-03 – 4.2998E-03</td>
+<td class="id">2</td><td class="r">3791</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">20,646–20,646</td>
+<td class="mono">4.3199E-03 – 4.3199E-03</td>
+<td class="id">2</td><td class="r">3581</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,742–20,742</td>
+<td class="mono">4.3400E-03 – 4.3400E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,837–20,837</td>
+<td class="mono">4.3598E-03 – 4.3598E-03</td>
+<td class="id">2</td><td class="r">3565</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">20,933–20,933</td>
+<td class="mono">4.3799E-03 – 4.3799E-03</td>
+<td class="id">2</td><td class="r">3726</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,028–21,028</td>
+<td class="mono">4.3998E-03 – 4.3998E-03</td>
+<td class="id">2</td><td class="r">3598</td>
+<td>solid</td><td class="r mono">2.0925E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,124–21,124</td>
+<td class="mono">4.4199E-03 – 4.4199E-03</td>
+<td class="id">2</td><td class="r">4015</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,220–21,411</td>
+<td class="mono">4.4400E-03 – 4.4799E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">21,506–21,506</td>
+<td class="mono">4.4998E-03 – 4.4998E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,602–21,602</td>
+<td class="mono">4.5199E-03 – 4.5199E-03</td>
+<td class="id">2</td><td class="r">3580</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,698–21,698</td>
+<td class="mono">4.5400E-03 – 4.5400E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,793–21,793</td>
+<td class="mono">4.5599E-03 – 4.5599E-03</td>
+<td class="id">2</td><td class="r">3395</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,889–21,889</td>
+<td class="mono">4.5800E-03 – 4.5800E-03</td>
+<td class="id">2</td><td class="r">4018</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">21,984–22,080</td>
+<td class="mono">4.5998E-03 – 4.6199E-03</td>
+<td class="id">2</td><td class="r">3651</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">22,175–22,271</td>
+<td class="mono">4.6398E-03 – 4.6599E-03</td>
+<td class="id">2</td><td class="r">3580</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">22,367–22,367</td>
+<td class="mono">4.6800E-03 – 4.6800E-03</td>
+<td class="id">2</td><td class="r">3277</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,462–22,462</td>
+<td class="mono">4.6999E-03 – 4.6999E-03</td>
+<td class="id">2</td><td class="r">3325</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,558–22,558</td>
+<td class="mono">4.7199E-03 – 4.7199E-03</td>
+<td class="id">2</td><td class="r">3133</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,653–22,653</td>
+<td class="mono">4.7398E-03 – 4.7398E-03</td>
+<td class="id">2</td><td class="r">3726</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,749–22,749</td>
+<td class="mono">4.7599E-03 – 4.7599E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">22,845–23,036</td>
+<td class="mono">4.7800E-03 – 4.8199E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">23,131–23,131</td>
+<td class="mono">4.8398E-03 – 4.8398E-03</td>
+<td class="id">2</td><td class="r">2908</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,227–23,227</td>
+<td class="mono">4.8599E-03 – 4.8599E-03</td>
+<td class="id">2</td><td class="r">4014</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,323–23,323</td>
+<td class="mono">4.8800E-03 – 4.8800E-03</td>
+<td class="id">2</td><td class="r">3531</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,418–23,418</td>
+<td class="mono">4.8999E-03 – 4.8999E-03</td>
+<td class="id">2</td><td class="r">3381</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,514–23,514</td>
+<td class="mono">4.9200E-03 – 4.9200E-03</td>
+<td class="id">2</td><td class="r">3808</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,609–23,609</td>
+<td class="mono">4.9398E-03 – 4.9398E-03</td>
+<td class="id">2</td><td class="r">3563</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,705–23,705</td>
+<td class="mono">4.9599E-03 – 4.9599E-03</td>
+<td class="id">2</td><td class="r">3808</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,800–23,800</td>
+<td class="mono">4.9798E-03 – 4.9798E-03</td>
+<td class="id">2</td><td class="r">4011</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,896–23,896</td>
+<td class="mono">4.9999E-03 – 4.9999E-03</td>
+<td class="id">2</td><td class="r">3561</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">23,992–23,992</td>
+<td class="mono">5.0200E-03 – 5.0200E-03</td>
+<td class="id">2</td><td class="r">3813</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,087–24,183</td>
+<td class="mono">5.0399E-03 – 5.0599E-03</td>
+<td class="id">2</td><td class="r">4447</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">24,278–24,374</td>
+<td class="mono">5.0798E-03 – 5.0999E-03</td>
+<td class="id">2</td><td class="r">3587</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">24,470–24,470</td>
+<td class="mono">5.1200E-03 – 5.1200E-03</td>
+<td class="id">2</td><td class="r">3789</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,565–24,565</td>
+<td class="mono">5.1398E-03 – 5.1398E-03</td>
+<td class="id">2</td><td class="r">3363</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,661–24,661</td>
+<td class="mono">5.1599E-03 – 5.1599E-03</td>
+<td class="id">2</td><td class="r">3827</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,756–24,756</td>
+<td class="mono">5.1798E-03 – 5.1798E-03</td>
+<td class="id">2</td><td class="r">2902</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,852–24,852</td>
+<td class="mono">5.1999E-03 – 5.1999E-03</td>
+<td class="id">2</td><td class="r">3115</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">24,948–24,948</td>
+<td class="mono">5.2200E-03 – 5.2200E-03</td>
+<td class="id">2</td><td class="r">3776</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,043–25,043</td>
+<td class="mono">5.2399E-03 – 5.2399E-03</td>
+<td class="id">2</td><td class="r">3812</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,139–25,139</td>
+<td class="mono">5.2600E-03 – 5.2600E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,234–25,234</td>
+<td class="mono">5.2798E-03 – 5.2798E-03</td>
+<td class="id">2</td><td class="r">3347</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,330–25,330</td>
+<td class="mono">5.2999E-03 – 5.2999E-03</td>
+<td class="id">2</td><td class="r">4020</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,425–25,425</td>
+<td class="mono">5.3198E-03 – 5.3198E-03</td>
+<td class="id">2</td><td class="r">3789</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,521–25,521</td>
+<td class="mono">5.3399E-03 – 5.3399E-03</td>
+<td class="id">2</td><td class="r">4014</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,617–25,617</td>
+<td class="mono">5.3600E-03 – 5.3600E-03</td>
+<td class="id">2</td><td class="r">3456</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,712–25,712</td>
+<td class="mono">5.3798E-03 – 5.3798E-03</td>
+<td class="id">2</td><td class="r">4018</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,808–25,808</td>
+<td class="mono">5.3999E-03 – 5.3999E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,903–25,903</td>
+<td class="mono">5.4198E-03 – 5.4198E-03</td>
+<td class="id">2</td><td class="r">3588</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">25,999–25,999</td>
+<td class="mono">5.4399E-03 – 5.4399E-03</td>
+<td class="id">2</td><td class="r">3578</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,095–26,095</td>
+<td class="mono">5.4600E-03 – 5.4600E-03</td>
+<td class="id">2</td><td class="r">4243</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,190–26,190</td>
+<td class="mono">5.4798E-03 – 5.4798E-03</td>
+<td class="id">2</td><td class="r">3470</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,286–26,286</td>
+<td class="mono">5.4999E-03 – 5.4999E-03</td>
+<td class="id">2</td><td class="r">3456</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,381–26,381</td>
+<td class="mono">5.5198E-03 – 5.5198E-03</td>
+<td class="id">2</td><td class="r">3358</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,477–26,477</td>
+<td class="mono">5.5399E-03 – 5.5399E-03</td>
+<td class="id">2</td><td class="r">3553</td>
+<td>solid</td><td class="r mono">2.0924E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,573–26,573</td>
+<td class="mono">5.5600E-03 – 5.5600E-03</td>
+<td class="id">2</td><td class="r">3803</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,668–26,668</td>
+<td class="mono">5.5799E-03 – 5.5799E-03</td>
+<td class="id">2</td><td class="r">3327</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,764–26,764</td>
+<td class="mono">5.6000E-03 – 5.6000E-03</td>
+<td class="id">2</td><td class="r">3362</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,859–26,859</td>
+<td class="mono">5.6198E-03 – 5.6198E-03</td>
+<td class="id">2</td><td class="r">3396</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">26,955–26,955</td>
+<td class="mono">5.6399E-03 – 5.6399E-03</td>
+<td class="id">2</td><td class="r">3373</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,051–27,146</td>
+<td class="mono">5.6600E-03 – 5.6799E-03</td>
+<td class="id">2</td><td class="r">3411</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">27,242–27,242</td>
+<td class="mono">5.6999E-03 – 5.6999E-03</td>
+<td class="id">2</td><td class="r">3426</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,337–27,337</td>
+<td class="mono">5.7198E-03 – 5.7198E-03</td>
+<td class="id">2</td><td class="r">4017</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,433–27,433</td>
+<td class="mono">5.7399E-03 – 5.7399E-03</td>
+<td class="id">2</td><td class="r">3695</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,529–27,529</td>
+<td class="mono">5.7600E-03 – 5.7600E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,624–27,624</td>
+<td class="mono">5.7799E-03 – 5.7799E-03</td>
+<td class="id">2</td><td class="r">3328</td>
+<td>solid</td><td class="r mono">2.0923E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,720–27,720</td>
+<td class="mono">5.8000E-03 – 5.8000E-03</td>
+<td class="id">2</td><td class="r">3246</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,815–27,815</td>
+<td class="mono">5.8198E-03 – 5.8198E-03</td>
+<td class="id">2</td><td class="r">3681</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">27,911–27,911</td>
+<td class="mono">5.8399E-03 – 5.8399E-03</td>
+<td class="id">2</td><td class="r">2345</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,007–28,007</td>
+<td class="mono">5.8600E-03 – 5.8600E-03</td>
+<td class="id">2</td><td class="r">2332</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,102–28,102</td>
+<td class="mono">5.8799E-03 – 5.8799E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,198–28,198</td>
+<td class="mono">5.9000E-03 – 5.9000E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,293–28,293</td>
+<td class="mono">5.9198E-03 – 5.9198E-03</td>
+<td class="id">2</td><td class="r">3351</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,389–28,389</td>
+<td class="mono">5.9399E-03 – 5.9399E-03</td>
+<td class="id">2</td><td class="r">3365</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,485–28,485</td>
+<td class="mono">5.9600E-03 – 5.9600E-03</td>
+<td class="id">2</td><td class="r">3470</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,580–28,580</td>
+<td class="mono">5.9799E-03 – 5.9799E-03</td>
+<td class="id">2</td><td class="r">3129</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,676–28,676</td>
+<td class="mono">6.0000E-03 – 6.0000E-03</td>
+<td class="id">2</td><td class="r">3876</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,771–28,771</td>
+<td class="mono">6.0198E-03 – 6.0198E-03</td>
+<td class="id">2</td><td class="r">3778</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,867–28,867</td>
+<td class="mono">6.0399E-03 – 6.0399E-03</td>
+<td class="id">2</td><td class="r">3501</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">28,963–29,058</td>
+<td class="mono">6.0600E-03 – 6.0799E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">29,154–29,249</td>
+<td class="mono">6.1000E-03 – 6.1198E-03</td>
+<td class="id">2</td><td class="r">3580</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">29,345–29,345</td>
+<td class="mono">6.1399E-03 – 6.1399E-03</td>
+<td class="id">2</td><td class="r">3395</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29,441–29,441</td>
+<td class="mono">6.1600E-03 – 6.1600E-03</td>
+<td class="id">2</td><td class="r">2118</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29,536–29,536</td>
+<td class="mono">6.1799E-03 – 6.1799E-03</td>
+<td class="id">2</td><td class="r">3565</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29,632–29,632</td>
+<td class="mono">6.2000E-03 – 6.2000E-03</td>
+<td class="id">2</td><td class="r">4000</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29,727–29,727</td>
+<td class="mono">6.2198E-03 – 6.2198E-03</td>
+<td class="id">2</td><td class="r">3826</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29,823–29,823</td>
+<td class="mono">6.2399E-03 – 6.2399E-03</td>
+<td class="id">2</td><td class="r">2332</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29,919–29,919</td>
+<td class="mono">6.2600E-03 – 6.2600E-03</td>
+<td class="id">2</td><td class="r">3364</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,014–30,014</td>
+<td class="mono">6.2799E-03 – 6.2799E-03</td>
+<td class="id">2</td><td class="r">2240</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,110–30,110</td>
+<td class="mono">6.3000E-03 – 6.3000E-03</td>
+<td class="id">2</td><td class="r">2225</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,205–30,205</td>
+<td class="mono">6.3198E-03 – 6.3198E-03</td>
+<td class="id">2</td><td class="r">3365</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,301–30,301</td>
+<td class="mono">6.3399E-03 – 6.3399E-03</td>
+<td class="id">2</td><td class="r">2331</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,397–30,397</td>
+<td class="mono">6.3600E-03 – 6.3600E-03</td>
+<td class="id">2</td><td class="r">4013</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,492–30,492</td>
+<td class="mono">6.3799E-03 – 6.3799E-03</td>
+<td class="id">2</td><td class="r">2240</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,588–30,588</td>
+<td class="mono">6.3999E-03 – 6.3999E-03</td>
+<td class="id">2</td><td class="r">4308</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,683–30,683</td>
+<td class="mono">6.4198E-03 – 6.4198E-03</td>
+<td class="id">2</td><td class="r">3980</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,779–30,779</td>
+<td class="mono">6.4399E-03 – 6.4399E-03</td>
+<td class="id">2</td><td class="r">4007</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,875–30,875</td>
+<td class="mono">6.4600E-03 – 6.4600E-03</td>
+<td class="id">2</td><td class="r">3673</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">30,970–30,970</td>
+<td class="mono">6.4799E-03 – 6.4799E-03</td>
+<td class="id">2</td><td class="r">3516</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,066–31,066</td>
+<td class="mono">6.4999E-03 – 6.4999E-03</td>
+<td class="id">2</td><td class="r">2323</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,161–31,161</td>
+<td class="mono">6.5198E-03 – 6.5198E-03</td>
+<td class="id">2</td><td class="r">3559</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,257–31,257</td>
+<td class="mono">6.5399E-03 – 6.5399E-03</td>
+<td class="id">2</td><td class="r">3396</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,353–31,353</td>
+<td class="mono">6.5600E-03 – 6.5600E-03</td>
+<td class="id">2</td><td class="r">4234</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,448–31,448</td>
+<td class="mono">6.5799E-03 – 6.5799E-03</td>
+<td class="id">2</td><td class="r">4447</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,544–31,544</td>
+<td class="mono">6.6000E-03 – 6.6000E-03</td>
+<td class="id">2</td><td class="r">4235</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,639–31,639</td>
+<td class="mono">6.6198E-03 – 6.6198E-03</td>
+<td class="id">2</td><td class="r">4010</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">31,735–31,831</td>
+<td class="mono">6.6399E-03 – 6.6600E-03</td>
+<td class="id">2</td><td class="r">4458</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">31,926–31,926</td>
+<td class="mono">6.6799E-03 – 6.6799E-03</td>
+<td class="id">2</td><td class="r">2015</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,022–32,022</td>
+<td class="mono">6.6999E-03 – 6.6999E-03</td>
+<td class="id">2</td><td class="r">3606</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,117–32,117</td>
+<td class="mono">6.7198E-03 – 6.7198E-03</td>
+<td class="id">2</td><td class="r">4253</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,213–32,213</td>
+<td class="mono">6.7399E-03 – 6.7399E-03</td>
+<td class="id">2</td><td class="r">4191</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,309–32,309</td>
+<td class="mono">6.7600E-03 – 6.7600E-03</td>
+<td class="id">2</td><td class="r">2240</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,404–32,404</td>
+<td class="mono">6.7798E-03 – 6.7798E-03</td>
+<td class="id">2</td><td class="r">4232</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,500–32,500</td>
+<td class="mono">6.7999E-03 – 6.7999E-03</td>
+<td class="id">2</td><td class="r">2241</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,595–32,595</td>
+<td class="mono">6.8198E-03 – 6.8198E-03</td>
+<td class="id">2</td><td class="r">3363</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,691–32,691</td>
+<td class="mono">6.8399E-03 – 6.8399E-03</td>
+<td class="id">2</td><td class="r">3563</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,787–32,787</td>
+<td class="mono">6.8600E-03 – 6.8600E-03</td>
+<td class="id">2</td><td class="r">2248</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,882–32,882</td>
+<td class="mono">6.8798E-03 – 6.8798E-03</td>
+<td class="id">2</td><td class="r">3570</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">32,978–32,978</td>
+<td class="mono">6.8999E-03 – 6.8999E-03</td>
+<td class="id">2</td><td class="r">3635</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,073–33,073</td>
+<td class="mono">6.9198E-03 – 6.9198E-03</td>
+<td class="id">2</td><td class="r">3185</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,169–33,169</td>
+<td class="mono">6.9399E-03 – 6.9399E-03</td>
+<td class="id">2</td><td class="r">3103</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,265–33,265</td>
+<td class="mono">6.9600E-03 – 6.9600E-03</td>
+<td class="id">2</td><td class="r">2923</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,360–33,360</td>
+<td class="mono">6.9799E-03 – 6.9799E-03</td>
+<td class="id">2</td><td class="r">3148</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,456–33,456</td>
+<td class="mono">6.9999E-03 – 6.9999E-03</td>
+<td class="id">2</td><td class="r">2113</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,552–33,552</td>
+<td class="mono">7.0200E-03 – 7.0200E-03</td>
+<td class="id">2</td><td class="r">3792</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,647–33,647</td>
+<td class="mono">7.0399E-03 – 7.0399E-03</td>
+<td class="id">2</td><td class="r">3007</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">33,743–33,838</td>
+<td class="mono">7.0600E-03 – 7.0799E-03</td>
+<td class="id">2</td><td class="r">3019</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">33,934–33,934</td>
+<td class="mono">7.0999E-03 – 7.0999E-03</td>
+<td class="id">2</td><td class="r">2344</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,030–34,030</td>
+<td class="mono">7.1200E-03 – 7.1200E-03</td>
+<td class="id">2</td><td class="r">2406</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,125–34,125</td>
+<td class="mono">7.1399E-03 – 7.1399E-03</td>
+<td class="id">2</td><td class="r">3470</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,221–34,221</td>
+<td class="mono">7.1600E-03 – 7.1600E-03</td>
+<td class="id">2</td><td class="r">3328</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,316–34,316</td>
+<td class="mono">7.1798E-03 – 7.1798E-03</td>
+<td class="id">2</td><td class="r">3456</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,412–34,412</td>
+<td class="mono">7.1999E-03 – 7.1999E-03</td>
+<td class="id">2</td><td class="r">3470</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,508–34,508</td>
+<td class="mono">7.2200E-03 – 7.2200E-03</td>
+<td class="id">2</td><td class="r">3440</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,603–34,699</td>
+<td class="mono">7.2399E-03 – 7.2600E-03</td>
+<td class="id">2</td><td class="r">3244</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">34,794–34,794</td>
+<td class="mono">7.2799E-03 – 7.2799E-03</td>
+<td class="id">2</td><td class="r">3501</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,890–34,890</td>
+<td class="mono">7.2999E-03 – 7.2999E-03</td>
+<td class="id">2</td><td class="r">3238</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">34,986–34,986</td>
+<td class="mono">7.3200E-03 – 7.3200E-03</td>
+<td class="id">2</td><td class="r">3200</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,081–35,081</td>
+<td class="mono">7.3399E-03 – 7.3399E-03</td>
+<td class="id">2</td><td class="r">4048</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,177–35,177</td>
+<td class="mono">7.3600E-03 – 7.3600E-03</td>
+<td class="id">2</td><td class="r">3919</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,272–35,272</td>
+<td class="mono">7.3799E-03 – 7.3799E-03</td>
+<td class="id">2</td><td class="r">4048</td>
+<td>solid</td><td class="r mono">2.0922E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,368–35,368</td>
+<td class="mono">7.3999E-03 – 7.3999E-03</td>
+<td class="id">2</td><td class="r">3718</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,464–35,464</td>
+<td class="mono">7.4200E-03 – 7.4200E-03</td>
+<td class="id">2</td><td class="r">3148</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,559–35,559</td>
+<td class="mono">7.4399E-03 – 7.4399E-03</td>
+<td class="id">2</td><td class="r">3907</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,655–35,750</td>
+<td class="mono">7.4600E-03 – 7.4798E-03</td>
+<td class="id">2</td><td class="r">3351</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">35,846–35,846</td>
+<td class="mono">7.4999E-03 – 7.4999E-03</td>
+<td class="id">2</td><td class="r">3365</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">35,942–35,942</td>
+<td class="mono">7.5200E-03 – 7.5200E-03</td>
+<td class="id">2</td><td class="r">3575</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,037–36,324</td>
+<td class="mono">7.5399E-03 – 7.5999E-03</td>
+<td class="id">2</td><td class="r">4474</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">4</td></tr>
+<tr><td class="r">36,420–36,420</td>
+<td class="mono">7.6200E-03 – 7.6200E-03</td>
+<td class="id">2</td><td class="r">4428</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,515–36,515</td>
+<td class="mono">7.6399E-03 – 7.6399E-03</td>
+<td class="id">2</td><td class="r">4203</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,611–36,611</td>
+<td class="mono">7.6599E-03 – 7.6599E-03</td>
+<td class="id">2</td><td class="r">4014</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,707–36,707</td>
+<td class="mono">7.6800E-03 – 7.6800E-03</td>
+<td class="id">2</td><td class="r">3563</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,802–36,802</td>
+<td class="mono">7.6999E-03 – 7.6999E-03</td>
+<td class="id">2</td><td class="r">2075</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,898–36,898</td>
+<td class="mono">7.7200E-03 – 7.7200E-03</td>
+<td class="id">2</td><td class="r">3913</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">36,993–36,993</td>
+<td class="mono">7.7398E-03 – 7.7398E-03</td>
+<td class="id">2</td><td class="r">3688</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,089–37,089</td>
+<td class="mono">7.7599E-03 – 7.7599E-03</td>
+<td class="id">2</td><td class="r">2284</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,185–37,185</td>
+<td class="mono">7.7800E-03 – 7.7800E-03</td>
+<td class="id">2</td><td class="r">4038</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,280–37,280</td>
+<td class="mono">7.7999E-03 – 7.7999E-03</td>
+<td class="id">2</td><td class="r">3339</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,376–37,376</td>
+<td class="mono">7.8200E-03 – 7.8200E-03</td>
+<td class="id">2</td><td class="r">3592</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,471–37,471</td>
+<td class="mono">7.8398E-03 – 7.8398E-03</td>
+<td class="id">2</td><td class="r">3605</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,567–37,567</td>
+<td class="mono">7.8599E-03 – 7.8599E-03</td>
+<td class="id">2</td><td class="r">3365</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,663–37,663</td>
+<td class="mono">7.8800E-03 – 7.8800E-03</td>
+<td class="id">2</td><td class="r">4458</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,758–37,758</td>
+<td class="mono">7.8999E-03 – 7.8999E-03</td>
+<td class="id">2</td><td class="r">3561</td>
+<td>solid</td><td class="r mono">2.0911E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,854–37,854</td>
+<td class="mono">7.9199E-03 – 7.9199E-03</td>
+<td class="id">2</td><td class="r">3575</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">37,950–37,950</td>
+<td class="mono">7.9400E-03 – 7.9400E-03</td>
+<td class="id">2</td><td class="r">4474</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,045–38,045</td>
+<td class="mono">7.9599E-03 – 7.9599E-03</td>
+<td class="id">2</td><td class="r">4283</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,141–38,141</td>
+<td class="mono">7.9800E-03 – 7.9800E-03</td>
+<td class="id">2</td><td class="r">4023</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,236–38,236</td>
+<td class="mono">7.9998E-03 – 7.9998E-03</td>
+<td class="id">2</td><td class="r">3819</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,332–38,332</td>
+<td class="mono">8.0199E-03 – 8.0199E-03</td>
+<td class="id">2</td><td class="r">4052</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,428–38,428</td>
+<td class="mono">8.0400E-03 – 8.0400E-03</td>
+<td class="id">2</td><td class="r">4232</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,523–38,523</td>
+<td class="mono">8.0599E-03 – 8.0599E-03</td>
+<td class="id">2</td><td class="r">3109</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,619–38,619</td>
+<td class="mono">8.0799E-03 – 8.0799E-03</td>
+<td class="id">2</td><td class="r">3353</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,715–38,715</td>
+<td class="mono">8.1000E-03 – 8.1000E-03</td>
+<td class="id">2</td><td class="r">3425</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,810–38,810</td>
+<td class="mono">8.1199E-03 – 8.1199E-03</td>
+<td class="id">2</td><td class="r">2236</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">38,906–38,906</td>
+<td class="mono">8.1400E-03 – 8.1400E-03</td>
+<td class="id">2</td><td class="r">2287</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,001–39,001</td>
+<td class="mono">8.1598E-03 – 8.1598E-03</td>
+<td class="id">2</td><td class="r">2284</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,097–39,097</td>
+<td class="mono">8.1799E-03 – 8.1799E-03</td>
+<td class="id">2</td><td class="r">3996</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,193–39,193</td>
+<td class="mono">8.2000E-03 – 8.2000E-03</td>
+<td class="id">2</td><td class="r">4357</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,288–39,288</td>
+<td class="mono">8.2199E-03 – 8.2199E-03</td>
+<td class="id">2</td><td class="r">4223</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,384–39,384</td>
+<td class="mono">8.2400E-03 – 8.2400E-03</td>
+<td class="id">2</td><td class="r">3582</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,479–39,575</td>
+<td class="mono">8.2598E-03 – 8.2799E-03</td>
+<td class="id">2</td><td class="r">2227</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">39,671–39,671</td>
+<td class="mono">8.3000E-03 – 8.3000E-03</td>
+<td class="id">2</td><td class="r">3569</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,766–39,766</td>
+<td class="mono">8.3199E-03 – 8.3199E-03</td>
+<td class="id">2</td><td class="r">3124</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,862–39,862</td>
+<td class="mono">8.3400E-03 – 8.3400E-03</td>
+<td class="id">2</td><td class="r">2225</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">39,957–39,957</td>
+<td class="mono">8.3598E-03 – 8.3598E-03</td>
+<td class="id">2</td><td class="r">4295</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,053–40,053</td>
+<td class="mono">8.3799E-03 – 8.3799E-03</td>
+<td class="id">2</td><td class="r">2016</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,149–40,149</td>
+<td class="mono">8.4000E-03 – 8.4000E-03</td>
+<td class="id">2</td><td class="r">2210</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,244–40,244</td>
+<td class="mono">8.4199E-03 – 8.4199E-03</td>
+<td class="id">2</td><td class="r">4022</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,340–40,531</td>
+<td class="mono">8.4399E-03 – 8.4799E-03</td>
+<td class="id">2</td><td class="r">3363</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">40,627–40,627</td>
+<td class="mono">8.5000E-03 – 8.5000E-03</td>
+<td class="id">2</td><td class="r">3305</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,722–40,722</td>
+<td class="mono">8.5198E-03 – 8.5198E-03</td>
+<td class="id">2</td><td class="r">4275</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,818–40,818</td>
+<td class="mono">8.5399E-03 – 8.5399E-03</td>
+<td class="id">2</td><td class="r">4451</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">40,914–40,914</td>
+<td class="mono">8.5600E-03 – 8.5600E-03</td>
+<td class="id">2</td><td class="r">2448</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,009–41,009</td>
+<td class="mono">8.5799E-03 – 8.5799E-03</td>
+<td class="id">2</td><td class="r">3338</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,105–41,105</td>
+<td class="mono">8.6000E-03 – 8.6000E-03</td>
+<td class="id">2</td><td class="r">3278</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,200–41,200</td>
+<td class="mono">8.6198E-03 – 8.6198E-03</td>
+<td class="id">2</td><td class="r">3771</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,296–41,296</td>
+<td class="mono">8.6399E-03 – 8.6399E-03</td>
+<td class="id">2</td><td class="r">3829</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,392–41,392</td>
+<td class="mono">8.6600E-03 – 8.6600E-03</td>
+<td class="id">2</td><td class="r">4054</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,487–41,487</td>
+<td class="mono">8.6798E-03 – 8.6798E-03</td>
+<td class="id">2</td><td class="r">3351</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,583–41,583</td>
+<td class="mono">8.6999E-03 – 8.6999E-03</td>
+<td class="id">2</td><td class="r">2239</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,679–41,679</td>
+<td class="mono">8.7200E-03 – 8.7200E-03</td>
+<td class="id">2</td><td class="r">2227</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,774–41,774</td>
+<td class="mono">8.7399E-03 – 8.7399E-03</td>
+<td class="id">2</td><td class="r">2239</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,870–41,870</td>
+<td class="mono">8.7600E-03 – 8.7600E-03</td>
+<td class="id">2</td><td class="r">3133</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">41,966–41,966</td>
+<td class="mono">8.7800E-03 – 8.7800E-03</td>
+<td class="id">2</td><td class="r">2908</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">42,061–42,157</td>
+<td class="mono">8.7999E-03 – 8.8200E-03</td>
+<td class="id">2</td><td class="r">4099</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">42,252–42,539</td>
+<td class="mono">8.8398E-03 – 8.8999E-03</td>
+<td class="id">2</td><td class="r">4449</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">4</td></tr>
+<tr><td class="r">42,635–42,635</td>
+<td class="mono">8.9199E-03 – 8.9199E-03</td>
+<td class="id">2</td><td class="r">3276</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">42,731–42,731</td>
+<td class="mono">8.9400E-03 – 8.9400E-03</td>
+<td class="id">2</td><td class="r">4449</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">42,826–42,826</td>
+<td class="mono">8.9599E-03 – 8.9599E-03</td>
+<td class="id">2</td><td class="r">3293</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">42,922–42,922</td>
+<td class="mono">8.9800E-03 – 8.9800E-03</td>
+<td class="id">2</td><td class="r">3982</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,017–43,017</td>
+<td class="mono">8.9998E-03 – 8.9998E-03</td>
+<td class="id">2</td><td class="r">4208</td>
+<td>solid</td><td class="r mono">2.0909E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,113–43,113</td>
+<td class="mono">9.0199E-03 – 9.0199E-03</td>
+<td class="id">2</td><td class="r">4068</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,209–43,209</td>
+<td class="mono">9.0400E-03 – 9.0400E-03</td>
+<td class="id">2</td><td class="r">4223</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,304–43,304</td>
+<td class="mono">9.0598E-03 – 9.0598E-03</td>
+<td class="id">2</td><td class="r">3546</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,400–43,400</td>
+<td class="mono">9.0799E-03 – 9.0799E-03</td>
+<td class="id">2</td><td class="r">3575</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,496–43,496</td>
+<td class="mono">9.1000E-03 – 9.1000E-03</td>
+<td class="id">2</td><td class="r">4278</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,591–43,591</td>
+<td class="mono">9.1199E-03 – 9.1199E-03</td>
+<td class="id">2</td><td class="r">3808</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,687–43,687</td>
+<td class="mono">9.1399E-03 – 9.1399E-03</td>
+<td class="id">2</td><td class="r">2434</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,783–43,783</td>
+<td class="mono">9.1600E-03 – 9.1600E-03</td>
+<td class="id">2</td><td class="r">3583</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,878–43,878</td>
+<td class="mono">9.1799E-03 – 9.1799E-03</td>
+<td class="id">2</td><td class="r">2227</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">43,974–44,069</td>
+<td class="mono">9.2000E-03 – 9.2198E-03</td>
+<td class="id">2</td><td class="r">4099</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">44,165–44,261</td>
+<td class="mono">9.2399E-03 – 9.2600E-03</td>
+<td class="id">2</td><td class="r">4269</td>
+<td>solid</td><td class="r mono">2.0906E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">44,356–44,356</td>
+<td class="mono">9.2798E-03 – 9.2798E-03</td>
+<td class="id">2</td><td class="r">4447</td>
+<td>solid</td><td class="r mono">2.0909E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">44,452–44,452</td>
+<td class="mono">9.2999E-03 – 9.2999E-03</td>
+<td class="id">2</td><td class="r">3143</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">44,548–44,548</td>
+<td class="mono">9.3200E-03 – 9.3200E-03</td>
+<td class="id">2</td><td class="r">3580</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">44,643–44,643</td>
+<td class="mono">9.3399E-03 – 9.3399E-03</td>
+<td class="id">2</td><td class="r">3333</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">44,739–44,739</td>
+<td class="mono">9.3599E-03 – 9.3599E-03</td>
+<td class="id">2</td><td class="r">4218</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">44,835–44,930</td>
+<td class="mono">9.3800E-03 – 9.3999E-03</td>
+<td class="id">2</td><td class="r">4058</td>
+<td>solid</td><td class="r mono">2.0907E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">45,026–45,026</td>
+<td class="mono">9.4199E-03 – 9.4199E-03</td>
+<td class="id">2</td><td class="r">3771</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">45,122–45,122</td>
+<td class="mono">9.4400E-03 – 9.4400E-03</td>
+<td class="id">2</td><td class="r">3546</td>
+<td>solid</td><td class="r mono">2.0901E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">45,217–45,217</td>
+<td class="mono">9.4599E-03 – 9.4599E-03</td>
+<td class="id">2</td><td class="r">3561</td>
+<td>solid</td><td class="r mono">2.0903E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">45,313–45,313</td>
+<td class="mono">9.4799E-03 – 9.4799E-03</td>
+<td class="id">2</td><td class="r">4458</td>
+<td>solid</td><td class="r mono">2.0903E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">45,409–45,504</td>
+<td class="mono">9.5000E-03 – 9.5199E-03</td>
+<td class="id">2</td><td class="r">4264</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">45,600–45,600</td>
+<td class="mono">9.5400E-03 – 9.5400E-03</td>
+<td class="id">2</td><td class="r">4085</td>
+<td>solid</td><td class="r mono">2.0905E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">45,696–45,696</td>
+<td class="mono">9.5600E-03 – 9.5600E-03</td>
+<td class="id">2</td><td class="r">4071</td>
+<td>solid</td><td class="r mono">2.0893E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">45,791–45,983</td>
+<td class="mono">9.5799E-03 – 9.6200E-03</td>
+<td class="id">2</td><td class="r">4449</td>
+<td>solid</td><td class="r mono">2.0900E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">46,078–46,078</td>
+<td class="mono">9.6399E-03 – 9.6399E-03</td>
+<td class="id">2</td><td class="r">4457</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,174–46,174</td>
+<td class="mono">9.6599E-03 – 9.6599E-03</td>
+<td class="id">2</td><td class="r">3355</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,270–46,270</td>
+<td class="mono">9.6800E-03 – 9.6800E-03</td>
+<td class="id">2</td><td class="r">4011</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,365–46,365</td>
+<td class="mono">9.6999E-03 – 9.6999E-03</td>
+<td class="id">2</td><td class="r">3308</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,461–46,461</td>
+<td class="mono">9.7200E-03 – 9.7200E-03</td>
+<td class="id">2</td><td class="r">3355</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,556–46,556</td>
+<td class="mono">9.7398E-03 – 9.7398E-03</td>
+<td class="id">2</td><td class="r">2920</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,652–46,652</td>
+<td class="mono">9.7599E-03 – 9.7599E-03</td>
+<td class="id">2</td><td class="r">2716</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,748–46,748</td>
+<td class="mono">9.7800E-03 – 9.7800E-03</td>
+<td class="id">2</td><td class="r">3126</td>
+<td>solid</td><td class="r mono">2.0911E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,843–46,843</td>
+<td class="mono">9.7999E-03 – 9.7999E-03</td>
+<td class="id">2</td><td class="r">3577</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">46,939–46,939</td>
+<td class="mono">9.8199E-03 – 9.8199E-03</td>
+<td class="id">2</td><td class="r">4464</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,035–47,035</td>
+<td class="mono">9.8400E-03 – 9.8400E-03</td>
+<td class="id">2</td><td class="r">2014</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,130–47,130</td>
+<td class="mono">9.8599E-03 – 9.8599E-03</td>
+<td class="id">2</td><td class="r">2001</td>
+<td>solid</td><td class="r mono">2.0901E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,226–47,226</td>
+<td class="mono">9.8799E-03 – 9.8799E-03</td>
+<td class="id">2</td><td class="r">3793</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,322–47,417</td>
+<td class="mono">9.9000E-03 – 9.9199E-03</td>
+<td class="id">2</td><td class="r">4085</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">47,513–47,513</td>
+<td class="mono">9.9400E-03 – 9.9400E-03</td>
+<td class="id">2</td><td class="r">4296</td>
+<td>solid</td><td class="r mono">2.0909E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,609–47,609</td>
+<td class="mono">9.9600E-03 – 9.9600E-03</td>
+<td class="id">2</td><td class="r">4416</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,704–47,704</td>
+<td class="mono">9.9799E-03 – 9.9799E-03</td>
+<td class="id">2</td><td class="r">3305</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,800–47,800</td>
+<td class="mono">1.0000E-02 – 1.0000E-02</td>
+<td class="id">2</td><td class="r">2347</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,895–47,895</td>
+<td class="mono">1.0020E-02 – 1.0020E-02</td>
+<td class="id">2</td><td class="r">2888</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">47,991–47,991</td>
+<td class="mono">1.0040E-02 – 1.0040E-02</td>
+<td class="id">2</td><td class="r">2344</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,087–48,087</td>
+<td class="mono">1.0060E-02 – 1.0060E-02</td>
+<td class="id">2</td><td class="r">3308</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,182–48,182</td>
+<td class="mono">1.0080E-02 – 1.0080E-02</td>
+<td class="id">2</td><td class="r">2288</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,278–48,278</td>
+<td class="mono">1.0100E-02 – 1.0100E-02</td>
+<td class="id">2</td><td class="r">4057</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,374–48,374</td>
+<td class="mono">1.0120E-02 – 1.0120E-02</td>
+<td class="id">2</td><td class="r">4054</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,469–48,469</td>
+<td class="mono">1.0140E-02 – 1.0140E-02</td>
+<td class="id">2</td><td class="r">3342</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,565–48,565</td>
+<td class="mono">1.0160E-02 – 1.0160E-02</td>
+<td class="id">2</td><td class="r">3389</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,660–48,756</td>
+<td class="mono">1.0180E-02 – 1.0200E-02</td>
+<td class="id">2</td><td class="r">2451</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">48,852–48,852</td>
+<td class="mono">1.0220E-02 – 1.0220E-02</td>
+<td class="id">2</td><td class="r">4205</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">48,947–48,947</td>
+<td class="mono">1.0240E-02 – 1.0240E-02</td>
+<td class="id">2</td><td class="r">4099</td>
+<td>solid</td><td class="r mono">2.0908E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,043–49,043</td>
+<td class="mono">1.0260E-02 – 1.0260E-02</td>
+<td class="id">2</td><td class="r">4087</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,139–49,139</td>
+<td class="mono">1.0280E-02 – 1.0280E-02</td>
+<td class="id">2</td><td class="r">3813</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,234–49,234</td>
+<td class="mono">1.0300E-02 – 1.0300E-02</td>
+<td class="id">2</td><td class="r">3563</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,330–49,330</td>
+<td class="mono">1.0320E-02 – 1.0320E-02</td>
+<td class="id">2</td><td class="r">3798</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,426–49,426</td>
+<td class="mono">1.0340E-02 – 1.0340E-02</td>
+<td class="id">2</td><td class="r">3578</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,521–49,521</td>
+<td class="mono">1.0360E-02 – 1.0360E-02</td>
+<td class="id">2</td><td class="r">2440</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,617–49,617</td>
+<td class="mono">1.0380E-02 – 1.0380E-02</td>
+<td class="id">2</td><td class="r">3687</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,712–49,712</td>
+<td class="mono">1.0400E-02 – 1.0400E-02</td>
+<td class="id">2</td><td class="r">2931</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,808–49,808</td>
+<td class="mono">1.0420E-02 – 1.0420E-02</td>
+<td class="id">2</td><td class="r">4041</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,904–49,904</td>
+<td class="mono">1.0440E-02 – 1.0440E-02</td>
+<td class="id">2</td><td class="r">3817</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">49,999–49,999</td>
+<td class="mono">1.0460E-02 – 1.0460E-02</td>
+<td class="id">2</td><td class="r">2461</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,095–50,095</td>
+<td class="mono">1.0480E-02 – 1.0480E-02</td>
+<td class="id">2</td><td class="r">4042</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,191–50,191</td>
+<td class="mono">1.0500E-02 – 1.0500E-02</td>
+<td class="id">2</td><td class="r">2435</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,286–50,382</td>
+<td class="mono">1.0520E-02 – 1.0540E-02</td>
+<td class="id">2</td><td class="r">4055</td>
+<td>solid</td><td class="r mono">2.0907E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">50,478–50,478</td>
+<td class="mono">1.0560E-02 – 1.0560E-02</td>
+<td class="id">2</td><td class="r">3684</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,573–50,573</td>
+<td class="mono">1.0580E-02 – 1.0580E-02</td>
+<td class="id">2</td><td class="r">2194</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,669–50,669</td>
+<td class="mono">1.0600E-02 – 1.0600E-02</td>
+<td class="id">2</td><td class="r">4099</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,764–50,764</td>
+<td class="mono">1.0620E-02 – 1.0620E-02</td>
+<td class="id">2</td><td class="r">4087</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,860–50,860</td>
+<td class="mono">1.0640E-02 – 1.0640E-02</td>
+<td class="id">2</td><td class="r">3862</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">50,956–50,956</td>
+<td class="mono">1.0660E-02 – 1.0660E-02</td>
+<td class="id">2</td><td class="r">4278</td>
+<td>solid</td><td class="r mono">2.0905E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,051–51,051</td>
+<td class="mono">1.0680E-02 – 1.0680E-02</td>
+<td class="id">2</td><td class="r">3711</td>
+<td>solid</td><td class="r mono">2.0911E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,147–51,243</td>
+<td class="mono">1.0700E-02 – 1.0720E-02</td>
+<td class="id">2</td><td class="r">3461</td>
+<td>solid</td><td class="r mono">2.0911E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">51,338–51,338</td>
+<td class="mono">1.0740E-02 – 1.0740E-02</td>
+<td class="id">2</td><td class="r">3478</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,434–51,434</td>
+<td class="mono">1.0760E-02 – 1.0760E-02</td>
+<td class="id">2</td><td class="r">2214</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,530–51,530</td>
+<td class="mono">1.0780E-02 – 1.0780E-02</td>
+<td class="id">2</td><td class="r">2252</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,625–51,625</td>
+<td class="mono">1.0800E-02 – 1.0800E-02</td>
+<td class="id">2</td><td class="r">2447</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,721–51,721</td>
+<td class="mono">1.0820E-02 – 1.0820E-02</td>
+<td class="id">2</td><td class="r">2438</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,816–51,816</td>
+<td class="mono">1.0840E-02 – 1.0840E-02</td>
+<td class="id">2</td><td class="r">3674</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">51,912–51,912</td>
+<td class="mono">1.0860E-02 – 1.0860E-02</td>
+<td class="id">2</td><td class="r">3576</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,008–52,008</td>
+<td class="mono">1.0880E-02 – 1.0880E-02</td>
+<td class="id">2</td><td class="r">2421</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,103–52,103</td>
+<td class="mono">1.0900E-02 – 1.0900E-02</td>
+<td class="id">2</td><td class="r">2408</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,199–52,199</td>
+<td class="mono">1.0920E-02 – 1.0920E-02</td>
+<td class="id">2</td><td class="r">2898</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,295–52,295</td>
+<td class="mono">1.0940E-02 – 1.0940E-02</td>
+<td class="id">2</td><td class="r">2900</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,390–52,390</td>
+<td class="mono">1.0960E-02 – 1.0960E-02</td>
+<td class="id">2</td><td class="r">4277</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,486–52,486</td>
+<td class="mono">1.0980E-02 – 1.0980E-02</td>
+<td class="id">2</td><td class="r">3420</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,581–52,581</td>
+<td class="mono">1.1000E-02 – 1.1000E-02</td>
+<td class="id">2</td><td class="r">3191</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,677–52,677</td>
+<td class="mono">1.1020E-02 – 1.1020E-02</td>
+<td class="id">2</td><td class="r">3515</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,773–52,773</td>
+<td class="mono">1.1040E-02 – 1.1040E-02</td>
+<td class="id">2</td><td class="r">3276</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">52,868–52,964</td>
+<td class="mono">1.1060E-02 – 1.1080E-02</td>
+<td class="id">2</td><td class="r">4251</td>
+<td>solid</td><td class="r mono">2.0909E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">53,060–53,155</td>
+<td class="mono">1.1100E-02 – 1.1120E-02</td>
+<td class="id">2</td><td class="r">4249</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">53,251–53,251</td>
+<td class="mono">1.1140E-02 – 1.1140E-02</td>
+<td class="id">2</td><td class="r">2214</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,346–53,346</td>
+<td class="mono">1.1160E-02 – 1.1160E-02</td>
+<td class="id">2</td><td class="r">2222</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,442–53,442</td>
+<td class="mono">1.1180E-02 – 1.1180E-02</td>
+<td class="id">2</td><td class="r">2225</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,538–53,538</td>
+<td class="mono">1.1200E-02 – 1.1200E-02</td>
+<td class="id">2</td><td class="r">2229</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,633–53,633</td>
+<td class="mono">1.1220E-02 – 1.1220E-02</td>
+<td class="id">2</td><td class="r">2195</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,729–53,729</td>
+<td class="mono">1.1240E-02 – 1.1240E-02</td>
+<td class="id">2</td><td class="r">2166</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,825–53,825</td>
+<td class="mono">1.1260E-02 – 1.1260E-02</td>
+<td class="id">2</td><td class="r">3691</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">53,920–54,312</td>
+<td class="mono">1.1280E-02 – 1.1360E-02</td>
+<td class="id">2</td><td class="r">2226</td>
+<td>solid</td><td class="r mono">2.0506E-07</td>
+<td class="r">5</td></tr>
+<tr><td class="r">54,409–54,409</td>
+<td class="mono">1.1380E-02 – 1.1380E-02</td>
+<td class="id">2</td><td class="r">2001</td>
+<td>solid</td><td class="r mono">2.0532E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">54,506–54,506</td>
+<td class="mono">1.1400E-02 – 1.1400E-02</td>
+<td class="id">2</td><td class="r">2226</td>
+<td>solid</td><td class="r mono">2.0880E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">54,602–54,602</td>
+<td class="mono">1.1420E-02 – 1.1420E-02</td>
+<td class="id">2</td><td class="r">3422</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">54,697–54,697</td>
+<td class="mono">1.1440E-02 – 1.1440E-02</td>
+<td class="id">2</td><td class="r">2558</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">54,793–54,793</td>
+<td class="mono">1.1460E-02 – 1.1460E-02</td>
+<td class="id">2</td><td class="r">3879</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">54,888–54,888</td>
+<td class="mono">1.1480E-02 – 1.1480E-02</td>
+<td class="id">2</td><td class="r">2013</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">54,984–55,175</td>
+<td class="mono">1.1500E-02 – 1.1540E-02</td>
+<td class="id">2</td><td class="r">2674</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">55,271–55,366</td>
+<td class="mono">1.1560E-02 – 1.1580E-02</td>
+<td class="id">2</td><td class="r">2336</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">55,462–55,462</td>
+<td class="mono">1.1600E-02 – 1.1600E-02</td>
+<td class="id">2</td><td class="r">2339</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">55,558–55,558</td>
+<td class="mono">1.1620E-02 – 1.1620E-02</td>
+<td class="id">2</td><td class="r">4453</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">55,653–55,653</td>
+<td class="mono">1.1640E-02 – 1.1640E-02</td>
+<td class="id">2</td><td class="r">3914</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">55,749–55,749</td>
+<td class="mono">1.1660E-02 – 1.1660E-02</td>
+<td class="id">2</td><td class="r">3673</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">55,844–55,844</td>
+<td class="mono">1.1680E-02 – 1.1680E-02</td>
+<td class="id">2</td><td class="r">2818</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">55,940–55,940</td>
+<td class="mono">1.1700E-02 – 1.1700E-02</td>
+<td class="id">2</td><td class="r">4393</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,036–56,036</td>
+<td class="mono">1.1720E-02 – 1.1720E-02</td>
+<td class="id">2</td><td class="r">2240</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,131–56,131</td>
+<td class="mono">1.1740E-02 – 1.1740E-02</td>
+<td class="id">2</td><td class="r">2015</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,227–56,227</td>
+<td class="mono">1.1760E-02 – 1.1760E-02</td>
+<td class="id">2</td><td class="r">2416</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,323–56,323</td>
+<td class="mono">1.1780E-02 – 1.1780E-02</td>
+<td class="id">2</td><td class="r">2319</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,418–56,418</td>
+<td class="mono">1.1800E-02 – 1.1800E-02</td>
+<td class="id">2</td><td class="r">3909</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,514–56,514</td>
+<td class="mono">1.1820E-02 – 1.1820E-02</td>
+<td class="id">2</td><td class="r">4040</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,609–56,609</td>
+<td class="mono">1.1840E-02 – 1.1840E-02</td>
+<td class="id">2</td><td class="r">4265</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,705–56,705</td>
+<td class="mono">1.1860E-02 – 1.1860E-02</td>
+<td class="id">2</td><td class="r">2439</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,801–56,801</td>
+<td class="mono">1.1880E-02 – 1.1880E-02</td>
+<td class="id">2</td><td class="r">2354</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,896–56,896</td>
+<td class="mono">1.1900E-02 – 1.1900E-02</td>
+<td class="id">2</td><td class="r">2915</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">56,992–57,087</td>
+<td class="mono">1.1920E-02 – 1.1940E-02</td>
+<td class="id">2</td><td class="r">3919</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">57,183–57,183</td>
+<td class="mono">1.1960E-02 – 1.1960E-02</td>
+<td class="id">2</td><td class="r">4357</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">57,279–57,279</td>
+<td class="mono">1.1980E-02 – 1.1980E-02</td>
+<td class="id">2</td><td class="r">3914</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">57,374–57,374</td>
+<td class="mono">1.2000E-02 – 1.2000E-02</td>
+<td class="id">2</td><td class="r">3686</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">57,470–57,470</td>
+<td class="mono">1.2020E-02 – 1.2020E-02</td>
+<td class="id">2</td><td class="r">2107</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">57,565–57,565</td>
+<td class="mono">1.2040E-02 – 1.2040E-02</td>
+<td class="id">2</td><td class="r">4177</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">57,661–57,661</td>
+<td class="mono">1.2060E-02 – 1.2060E-02</td>
+<td class="id">2</td><td class="r">3981</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">57,757–57,852</td>
+<td class="mono">1.2080E-02 – 1.2100E-02</td>
+<td class="id">2</td><td class="r">4177</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">57,948–57,948</td>
+<td class="mono">1.2120E-02 – 1.2120E-02</td>
+<td class="id">2</td><td class="r">4312</td>
+<td>solid</td><td class="r mono">2.0918E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,044–58,044</td>
+<td class="mono">1.2140E-02 – 1.2140E-02</td>
+<td class="id">2</td><td class="r">3516</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,139–58,139</td>
+<td class="mono">1.2160E-02 – 1.2160E-02</td>
+<td class="id">2</td><td class="r">3953</td>
+<td>solid</td><td class="r mono">2.0921E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,235–58,235</td>
+<td class="mono">1.2180E-02 – 1.2180E-02</td>
+<td class="id">2</td><td class="r">2015</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,330–58,330</td>
+<td class="mono">1.2200E-02 – 1.2200E-02</td>
+<td class="id">2</td><td class="r">3232</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,426–58,426</td>
+<td class="mono">1.2220E-02 – 1.2220E-02</td>
+<td class="id">2</td><td class="r">4144</td>
+<td>solid</td><td class="r mono">2.0919E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,522–58,522</td>
+<td class="mono">1.2240E-02 – 1.2240E-02</td>
+<td class="id">2</td><td class="r">4132</td>
+<td>solid</td><td class="r mono">2.0920E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,617–58,617</td>
+<td class="mono">1.2260E-02 – 1.2260E-02</td>
+<td class="id">2</td><td class="r">3588</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,713–58,713</td>
+<td class="mono">1.2280E-02 – 1.2280E-02</td>
+<td class="id">2</td><td class="r">4252</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,808–58,808</td>
+<td class="mono">1.2300E-02 – 1.2300E-02</td>
+<td class="id">2</td><td class="r">3363</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">58,904–58,904</td>
+<td class="mono">1.2320E-02 – 1.2320E-02</td>
+<td class="id">2</td><td class="r">4225</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,000–59,000</td>
+<td class="mono">1.2340E-02 – 1.2340E-02</td>
+<td class="id">2</td><td class="r">4006</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,095–59,095</td>
+<td class="mono">1.2360E-02 – 1.2360E-02</td>
+<td class="id">2</td><td class="r">3781</td>
+<td>solid</td><td class="r mono">2.0917E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,191–59,191</td>
+<td class="mono">1.2380E-02 – 1.2380E-02</td>
+<td class="id">2</td><td class="r">4224</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,287–59,287</td>
+<td class="mono">1.2400E-02 – 1.2400E-02</td>
+<td class="id">2</td><td class="r">4457</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,382–59,382</td>
+<td class="mono">1.2420E-02 – 1.2420E-02</td>
+<td class="id">2</td><td class="r">4239</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,478–59,478</td>
+<td class="mono">1.2440E-02 – 1.2440E-02</td>
+<td class="id">2</td><td class="r">4041</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,573–59,669</td>
+<td class="mono">1.2460E-02 – 1.2480E-02</td>
+<td class="id">2</td><td class="r">4228</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">59,765–59,765</td>
+<td class="mono">1.2500E-02 – 1.2500E-02</td>
+<td class="id">2</td><td class="r">4265</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">59,860–59,956</td>
+<td class="mono">1.2520E-02 – 1.2540E-02</td>
+<td class="id">2</td><td class="r">2226</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">60,052–60,052</td>
+<td class="mono">1.2560E-02 – 1.2560E-02</td>
+<td class="id">2</td><td class="r">2001</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,147–60,147</td>
+<td class="mono">1.2580E-02 – 1.2580E-02</td>
+<td class="id">2</td><td class="r">4253</td>
+<td>solid</td><td class="r mono">2.0914E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,243–60,243</td>
+<td class="mono">1.2600E-02 – 1.2600E-02</td>
+<td class="id">2</td><td class="r">3231</td>
+<td>solid</td><td class="r mono">2.0910E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,338–60,338</td>
+<td class="mono">1.2620E-02 – 1.2620E-02</td>
+<td class="id">2</td><td class="r">4071</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,434–60,434</td>
+<td class="mono">1.2640E-02 – 1.2640E-02</td>
+<td class="id">2</td><td class="r">4087</td>
+<td>solid</td><td class="r mono">2.0911E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,530–60,530</td>
+<td class="mono">1.2660E-02 – 1.2660E-02</td>
+<td class="id">2</td><td class="r">4099</td>
+<td>solid</td><td class="r mono">2.0913E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,625–60,625</td>
+<td class="mono">1.2680E-02 – 1.2680E-02</td>
+<td class="id">2</td><td class="r">4177</td>
+<td>solid</td><td class="r mono">2.0912E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,721–60,721</td>
+<td class="mono">1.2700E-02 – 1.2700E-02</td>
+<td class="id">2</td><td class="r">4402</td>
+<td>solid</td><td class="r mono">2.0916E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,817–60,817</td>
+<td class="mono">1.2720E-02 – 1.2720E-02</td>
+<td class="id">2</td><td class="r">3530</td>
+<td>solid</td><td class="r mono">2.0915E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">60,914–61,014</td>
+<td class="mono">1.2740E-02 – 1.2760E-02</td>
+<td class="id">2</td><td class="r">4040</td>
+<td>solid</td><td class="r mono">2.0245E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">61,113–61,113</td>
+<td class="mono">1.2780E-02 – 1.2780E-02</td>
+<td class="id">2</td><td class="r">4265</td>
+<td>solid</td><td class="r mono">1.9877E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">61,212–61,410</td>
+<td class="mono">1.2800E-02 – 1.2840E-02</td>
+<td class="id">2</td><td class="r">4040</td>
+<td>solid</td><td class="r mono">2.0317E-07</td>
+<td class="r">3</td></tr>
+<tr><td class="r">61,509–61,607</td>
+<td class="mono">1.2860E-02 – 1.2880E-02</td>
+<td class="id">2</td><td class="r">4265</td>
+<td>solid</td><td class="r mono">2.0155E-07</td>
+<td class="r">2</td></tr>
+<tr><td class="r">61,706–62,004</td>
+<td class="mono">1.2900E-02 – 1.2960E-02</td>
+<td class="id">2</td><td class="r">4040</td>
+<td>solid</td><td class="r mono">2.0022E-07</td>
+<td class="r">4</td></tr>
+<tr><td class="r">62,107–62,107</td>
+<td class="mono">1.2980E-02 – 1.2980E-02</td>
+<td class="id">2</td><td class="r">4295</td>
+<td>solid</td><td class="r mono">2.0628E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,209–62,209</td>
+<td class="mono">1.3000E-02 – 1.3000E-02</td>
+<td class="id">2</td><td class="r">4265</td>
+<td>solid</td><td class="r mono">1.9463E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,313–62,313</td>
+<td class="mono">1.3020E-02 – 1.3020E-02</td>
+<td class="id">2</td><td class="r">4055</td>
+<td>solid</td><td class="r mono">1.9505E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,417–62,417</td>
+<td class="mono">1.3040E-02 – 1.3040E-02</td>
+<td class="id">2</td><td class="r">4265</td>
+<td>solid</td><td class="r mono">1.6773E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,524–62,524</td>
+<td class="mono">1.3060E-02 – 1.3060E-02</td>
+<td class="id">2</td><td class="r">3448</td>
+<td>solid</td><td class="r mono">1.6897E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,631–62,631</td>
+<td class="mono">1.3080E-02 – 1.3080E-02</td>
+<td class="id">2</td><td class="r">4040</td>
+<td>solid</td><td class="r mono">1.7414E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,746–62,746</td>
+<td class="mono">1.3100E-02 – 1.3100E-02</td>
+<td class="id">2</td><td class="r">3590</td>
+<td>solid</td><td class="r mono">1.7780E-07</td>
+<td class="r">1</td></tr>
+<tr><td class="r">62,892–62,892</td>
+<td class="mono">1.3120E-02 – 1.3120E-02</td>
+<td class="id">2</td><td class="r">2472</td>
+<td>solid</td><td class="r mono">5.4851E-08</td>
+<td class="r">1</td></tr>
+</tbody></table>
+<h2>부하 프로파일 요약 (2개 프로세서)</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">최소 %</th><th class="r">최대 %</th><th class="r">평균 %</th><th class="r">편차</th>
+</tr></thead><tbody>
+</tbody></table>
+<div class="note">메모리 (최대 d-words): 최소=2,195,671 최대=2,257,592 (~17 MB) 평균=2,226,632 | 피크 랭크: #0</div>
+<h2>파트 정의</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>
+<th class="r">밀도</th><th class="r">탄성계수 (E)</th><th class="r">포아송비 (ν)</th><th class="c">ELFORM</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>Bottom_Plate_Rigid</td>
+<td class="c">20</td><td>Rigid</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c"></td></tr>
+<tr><td class="id">2</td><td>ALE_Rubber_Region</td>
+<td class="c">27</td><td>Type 27</td>
+<td class="r mono">1.1000E-09</td><td class="r mono">0</td>
+<td class="r"></td><td class="c">11</td></tr>
+<tr><td class="id">3</td><td>Top_Plate_Rigid</td>
+<td class="c">20</td><td>Rigid</td>
+<td class="r mono">2.7000E-09</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c"></td></tr>
+<tr><td class="id">4</td><td>ALE_Void_Region</td>
+<td class="c">140</td><td>Type 140</td>
+<td class="r mono">1.0000E-12</td><td class="r mono">70000.0000</td>
+<td class="r">0.33</td><td class="c">11</td></tr>
+</tbody></table>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, load_profile.csv, mes[0000-0001], slurm_21459.err</div>
+</body></html>
