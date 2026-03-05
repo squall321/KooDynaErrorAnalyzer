@@ -85,7 +85,7 @@ RE_ENERGY_FIELD = re.compile(r'^\s*([\w\s/().]+?)\.{2,}\s+([\d.E+\-]+|\d+)\s*$')
 # --- 100 smallest timesteps ---
 RE_SMALLEST_TS_HEADER = re.compile(r'100 smallest timesteps')
 RE_SMALLEST_TS_ENTRY = re.compile(
-    r'(solid|shell|beam|tshell)\s+(\d+)\s+(\d+)\s+([\d.E+\-]+)'
+    r'(solid|shell|beam|tshell|sph|spg|particle|discrete|thick shell)\s+(\d+)\s+(\d+)\s+([\d.E+\-]+)'
 )
 
 # --- Cycle progress ---
@@ -289,6 +289,21 @@ class D3hspParser:
                             part_block = []
                         state = "CONTACTS"
                         continue
+                    # No contacts case: jump directly to BODY on first warning or timing
+                    if ("***" in stripped and ("Warning" in stripped or "Error" in stripped)) or \
+                            "problem cycle" in stripped or "100 smallest timesteps" in stripped or \
+                            "T i m i n g   i n f o r m a t i o n" in stripped or \
+                            "N o r m a l   t e r m i n a t i o n" in stripped:
+                        if part_block:
+                            part = self._parse_part_block(part_block)
+                            if part:
+                                data.parts.append(part)
+                            part_block = []
+                        state = "BODY"
+                        if "100 smallest timesteps" in stripped:
+                            in_smallest_ts = True
+                            continue
+                        # fall through to BODY handling
                     if RE_PART_SEPARATOR.match(stripped):
                         if part_block:
                             part = self._parse_part_block(part_block)
@@ -318,6 +333,11 @@ class D3hspParser:
                         in_timing = True
                         continue
                     elif "problem cycle" in stripped:
+                        state = "BODY"
+                        continue
+                    elif "100 smallest timesteps" in stripped:
+                        # SPG/SPH: this section appears before first cycle (still CONTACTS)
+                        in_smallest_ts = True
                         state = "BODY"
                         continue
                     else:
