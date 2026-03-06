@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -186,7 +188,7 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <h2>진단 결과</h2>
 <div class="findings-summary">
-<span class="badge badge-critical">심각 9</span>
+<span class="badge badge-critical">심각 10</span>
 <span class="badge badge-warning">경고 4</span>
 <span class="badge badge-info">정보 4</span>
 </div>
@@ -245,6 +247,14 @@ tbody tr:hover { background: var(--bg3); }
 <div class="rec">→ 1. 시간 5.078E-06s 전후의 접촉 관통 확인 — 후처리기에서 접촉 관통 깊이(penetration depth) 시각화
 2. Penalty factor 감소 — SLSFAC 값을 줄여 관통 시 반발력을 완화하고, SOFT=1(segment-based) 사용으로 양면 강성을 고려한 균형 잡힌 접촉력 적용
 3. Contact stiffness 재조정 — *CONTACT의 SFS/SFM (slave/master scale factor)로 접촉면별 강성 조절</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">재료별 Hourglass 에너지 과다 (2개 재료 &gt; 20%)</span>
+<div class="desc">Mat3(Stack1_BoxMesh10000_2): 353.6%; Mat2(Stack1_BoxMesh10000_1): 84.4%. 해당 재료의 요소들에서 Hourglass 에너지가 내부에너지의 20%를 초과합니다. Reduced integration 요소(single-point)는 강성행렬 rank가 부족하여 zero-energy deformation mode(hourglass mode)가 존재합니다. 특정 재료/파트에 hourglass가 집중된다면 해당 영역의 요소 형상(종횡비, 왜곡)이나 하중 방향이 hourglass mode와 일치한다는 뜻입니다. 글로벌 HG/IE 비율이 낮아도 개별 재료에 집중된 hourglass는 해당 파트의 응력 결과를 왜곡시킵니다.</div>
+<div class="rec">→ 1. 해당 재료 파트의 요소 공식 변경 — ELFORM=16(shell 4-point full integration) 또는 ELFORM=2(solid selective reduced). Hourglass mode 원천 제거
+2. Hourglass control 강화 — *HOURGLASS에서 IHQ=4(stiffness-based Flanagan), QH=0.05~0.10으로 설정. 해당 파트에만 별도 *SECTION으로 적용 가능
+3. 메시 개선 — 해당 재료의 요소 종횡비(aspect ratio)를 5 미만으로 유지. 왜곡된 요소는 hourglass mode에 더 취약</div>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -325,23 +335,6 @@ tbody tr:hover { background: var(--bg3); }
 <td class="c"><span class="tag warning">경고</span></td>
 <td>total number of massless nodes = 10056   NOTE : For 2D axisymmetric problems the</td><td></td></tr>
 </tbody></table>
-<h2>접촉 인터페이스 요약</h2>
-<table><thead><tr>
-<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
-</tr></thead><tbody>
-<tr><td class="id">1</td><td>Auto S2S</td>
-<td>3toImpactBallContact</td><td class="r"></td>
-<td class="r mono">86.8250</td><td class="r">0.38</td></tr>
-<tr><td class="id">2</td><td>Auto S2S</td>
-<td>1toBacksideWallContact</td><td class="r"></td>
-<td class="r mono">1665.7000</td><td class="r">7.32</td></tr>
-<tr><td class="id">3</td><td>Auto S2S</td>
-<td>1to2</td><td class="r"></td>
-<td class="r mono">2340.4000</td><td class="r">10.29</td></tr>
-<tr><td class="id">4</td><td>Auto S2S</td>
-<td>2to3</td><td class="r"></td>
-<td class="r mono">605.1800</td><td class="r">2.66</td></tr>
-</tbody></table>
 <h2>에너지 수지</h2>
 <table><thead><tr>
 <th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
@@ -353,6 +346,24 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td>총 에너지</td><td class="r mono">0.3924</td><td class="r mono">16.5247</td></tr>
 <tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">42.1089</td></tr>
 <tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">7561.0%</td></tr>
+</tbody></table>
+<h2>재료별 Hourglass 에너지 (matsum)</h2>
+<table><thead><tr>
+<th class="r">재료 ID</th><th>이름</th><th class="r">최대 HG/IE</th>
+<th class="r">최종 내부에너지</th><th class="r">최종 HG에너지</th>
+</tr></thead><tbody>
+<tr class="critical-row">
+<td class="id">3</td><td>Stack1_BoxMesh10000_2</td>
+<td class="r">353.6%</td>
+<td class="r mono">0.0037</td>
+<td class="r mono">0.0131</td>
+</tr>
+<tr class="critical-row">
+<td class="id">2</td><td>Stack1_BoxMesh10000_1</td>
+<td class="r">84.4%</td>
+<td class="r mono">0.0113</td>
+<td class="r mono">0.0015</td>
+</tr>
 </tbody></table>
 <h2>최소 타임스텝 요소 (상위 20개)</h2>
 <table><thead><tr>
@@ -801,14 +812,46 @@ tbody tr:hover { background: var(--bg3); }
 <table><thead><tr>
 <th class="r">인터페이스 ID</th><th>제목</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
 </tr></thead><tbody>
-<tr><td class="id">3</td><td>1to2</td>
+<tr><td class="id">3</td><td></td>
 <td class="r mono">2340.4000</td><td class="r">10.29</td></tr>
-<tr><td class="id">2</td><td>1toBacksideWallContact</td>
+<tr><td class="id">2</td><td></td>
 <td class="r mono">1665.7000</td><td class="r">7.32</td></tr>
-<tr><td class="id">4</td><td>2to3</td>
+<tr><td class="id">4</td><td></td>
 <td class="r mono">605.1800</td><td class="r">2.66</td></tr>
-<tr><td class="id">1</td><td>3toImpactBallContact</td>
+<tr><td class="id">1</td><td></td>
 <td class="r mono">86.8250</td><td class="r">0.38</td></tr>
+</tbody></table>
+<h2>파트별 질량 특성</h2>
+<table><thead><tr>
+<th class="r">파트 ID</th><th class="r">총 질량</th>
+<th class="r">CG-X</th><th class="r">CG-Y</th><th class="r">CG-Z</th>
+<th class="r">I11</th><th class="r">I22</th><th class="r">I33</th><th class="r">I비율</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td class="r mono">6.1000E-04</td>
+<td class="r mono">-2.1449E-08</td><td class="r mono">4.5631E-08</td>
+<td class="r mono">5.0000E-05</td>
+<td class="r mono">1.2720E-07</td><td class="r mono">1.2720E-07</td>
+<td class="r mono">2.5440E-07</td><td class="r mono">2x</td></tr>
+<tr><td class="id">2</td><td class="r mono">9.5550E-05</td>
+<td class="r mono">-2.1449E-08</td><td class="r mono">4.5631E-08</td>
+<td class="r mono">1.7500E-04</td>
+<td class="r mono">1.9930E-08</td><td class="r mono">1.9930E-08</td>
+<td class="r mono">3.9860E-08</td><td class="r mono">2x</td></tr>
+<tr><td class="id">3</td><td class="r mono">0.0030</td>
+<td class="r mono">-2.1449E-08</td><td class="r mono">4.5631E-08</td>
+<td class="r mono">3.2500E-04</td>
+<td class="r mono">6.1780E-07</td><td class="r mono">6.1790E-07</td>
+<td class="r mono">1.2360E-06</td><td class="r mono">2x</td></tr>
+<tr><td class="id">4</td><td class="r mono">1.6108E-05</td>
+<td class="r mono">7.9175E-08</td><td class="r mono">3.2174E-08</td>
+<td class="r mono">0.0010</td>
+<td class="r mono">4.3710E-12</td><td class="r mono">4.3660E-12</td>
+<td class="r mono">6.5910E-12</td><td class="r mono">2x</td></tr>
+<tr><td class="id">5</td><td class="r mono">0.0097</td>
+<td class="r mono">-1.1546E-06</td><td class="r mono">-4.2259E-06</td>
+<td class="r mono">0.0013</td>
+<td class="r mono">2.9980E-06</td><td class="r mono">2.9990E-06</td>
+<td class="r mono">5.9360E-06</td><td class="r mono">2x</td></tr>
 </tbody></table>
 <h2>파트 정의</h2>
 <table><thead><tr>
@@ -836,5 +879,5 @@ tbody tr:hover { background: var(--bg3); }
 <td class="r mono">7800.0000</td><td class="r mono">2.0000E+11</td>
 <td class="r">0.30</td><td class="c">1</td></tr>
 </tbody></table>
-<div class="footer">분석 파일: d3hsp, glstat, status.out</div>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, matsum</div>
 </body></html>

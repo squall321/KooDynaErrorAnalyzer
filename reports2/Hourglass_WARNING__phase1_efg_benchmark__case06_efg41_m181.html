@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -169,31 +171,35 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <h2>종료 상태</h2>
 <div class="term-panel">
-<span class="status-incomplete">미완료 (출력 중단)</span>
+<span class="status-error">오류 종료</span>
 <div class="row">
 <div class="item"><div class="label">목표 시간</div><div class="value">6.0000</div></div>
-<div class="item"><div class="label">도달 시간</div><div class="value">0</div></div>
-<div class="item"><div class="label">사이클 수</div><div class="value">0</div></div>
-<div class="item"><div class="label">CPU 시간</div><div class="value">0초</div></div>
-<div class="item"><div class="label">경과 시간</div><div class="value">0초</div></div>
-<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">0.0 ns</div></div>
-<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">0.0 ns</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">2.5439</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">280,600</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">44초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">50초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">5734.6 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">6313.2 ns</div></div>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="item"><div class="label">시작</div><div class="value">03/01/2026 09:01:30</div></div>
+<div class="item"><div class="label">종료</div><div class="value">03/01/2026 09:02:20</div></div>
 </div>
 </div>
 <h2>진단 결과</h2>
 <div class="findings-summary">
 <span class="badge badge-critical">심각 5</span>
-<span class="badge badge-warning">경고 3</span>
-<span class="badge badge-info">정보 0</span>
+<span class="badge badge-warning">경고 4</span>
+<span class="badge badge-info">정보 4</span>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
-<span class="title">해석 미완료 (출력 불완전)</span>
-<div class="desc">정상 종료 또는 에러 종료 표시가 발견되지 않았습니다. 출력 파일이 불완전하며, 시뮬레이션이 외부에서 강제 종료되었거나 클린 종료 없이 크래시된 것으로 보입니다. 일반적 원인: HPC walltime 초과, OOM(Out Of Memory) kill, 라이선스 만료, 파일시스템 오류.</div>
-<div class="rec">→ 1. 시스템 로그에서 OOM kill 또는 walltime 초과 확인
-2. mes0000 파일의 마지막 줄에서 진행 상태 확인
-3. 코어 덤프(core dump) 또는 signal 파일 확인
-4. HPC의 경우 walltime 증가 또는 restart 파일 활용</div>
+<span class="title">해석 에러 종료</span>
+<div class="desc">시뮬레이션이 비정상 종료되었습니다. 도달 시간: 2.5439E+00, 목표 시간: 6.0000E+00. LS-DYNA는 복구 불가능한 수치적 오류(negative volume, NaN, 메모리 부족 등)를 감지하면 즉시 종료합니다.</div>
+<div class="rec">→ 1. d3hsp/mes 파일에서 에러 코드와 위치(요소/노드 번호) 확인
+2. 가장 흔한 원인: negative volume(요소 반전), NaN velocity(발산)
+3. 해당 위치의 메시/경계조건/접촉 설정 검토
+4. *MAT_ADD_EROSION으로 파손 요소 자동 제거 고려</div>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -240,10 +246,38 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
+<span class="title">MPP load imbalance: 23.5%</span>
+<div class="desc">CPU ratio range: [0.8824, 1.1176]. Slowest: proc #1 (node002), Fastest: proc #0 (node002).</div>
+<div class="rec">→ 도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
 <span class="title">Elevated hourglass energy (14.5%)</span>
 <div class="desc">Hourglass 에너지가 내부 에너지의 14.5%입니다 (HG=5.299E+00, IE=3.652E+01). 일반적으로 HG/IE &lt; 10%가 권장되며, 현재 값은 경계 수준입니다. Reduced integration 요소의 zero-energy mode가 에너지를 소비하고 있으나, 아직 결과에 심각한 영향을 주는 수준은 아닙니다. 그러나 시뮬레이션이 진행될수록 비율이 증가할 수 있습니다.</div>
 <div class="rec">→ 1. Hourglass control 강화 — IHQ 값을 1→4 또는 4→8로 변경. Stiffness-based(IHQ=4)가 viscous(IHQ=1)보다 정적 문제에 효과적
 2. 변형이 큰 영역의 메시 확인 — 요소 종횡비(aspect ratio) &gt; 5인 요소가 hourglass mode에 취약합니다. 정방형에 가까운 메시 권장</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Element processing is the primary cost (70.4%)</span>
+<div class="desc">Element processing: 35.1s (70.4% of clock time). CPU: 35.1s (80.6%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Solids is the primary cost (66.1%)</span>
+<div class="desc">Solids: 33.0s (66.1% of clock time). CPU: 33.0s (75.7%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">nodout 파일 없음 — 노드 속도 진단 불가</span>
+<div class="desc">nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. *DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. 수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다.</div>
+<div class="rec">→ *DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 관심 노드의 시계열 데이터를 출력하도록 설정</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">bndout 파일 없음 — 경계 반력 진단 불가</span>
+<div class="desc">bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. *DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. 과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다.</div>
+<div class="rec">→ *DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. DT=0 설정 시 매 사이클 저장 (파일 크기 주의)</div>
 </div>
 <h2>경고/오류 요약</h2>
 <table><thead><tr>
@@ -321,6 +355,168 @@ tbody tr:hover { background: var(--bg3); }
 <td>solid</td><td class="r mono">4.4212E-06</td>
 <td class="r">1</td></tr>
 </tbody></table>
+<h2>성능 프로파일링</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">CPU (s)</th><th class="r">CPU %</th>
+<th class="r">Clock (s)</th><th class="r">Clock %</th><th style="min-width:150px">비율</th>
+</tr></thead><tbody>
+<tr><td>Keyword Processing</td>
+<td class="r mono">0.28</td><td class="r">0.6</td>
+<td class="r mono">0.43</td><td class="r">0.9</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Reading</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Writing</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>MPP Decomposition</td>
+<td class="r mono">0.22</td><td class="r">0.5</td>
+<td class="r mono">1.10</td><td class="r">2.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:4%"></div></div></td></tr>
+<tr><td>Init Proc</td>
+<td class="r mono">0.10</td><td class="r">0.2</td>
+<td class="r mono">0.21</td><td class="r">0.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Decomposition</td>
+<td class="r mono">0.02</td><td class="r">0.1</td>
+<td class="r mono">0.05</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Translation</td>
+<td class="r mono">0.10</td><td class="r">0.2</td>
+<td class="r mono">0.84</td><td class="r">1.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:3%"></div></div></td></tr>
+<tr><td>Initialization</td>
+<td class="r mono">0.15</td><td class="r">0.3</td>
+<td class="r mono">0.57</td><td class="r">1.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc Phase 1</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td class="r mono">0.06</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc Phase 2</td>
+<td class="r mono">0.02</td><td class="r">0.0</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init solver</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Element processing</td>
+<td class="r mono">35.10</td><td class="r">80.6</td>
+<td class="r mono">35.14</td><td class="r">70.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:140%"></div></div></td></tr>
+<tr><td>Solids</td>
+<td class="r mono">32.96</td><td class="r">75.7</td>
+<td class="r mono">32.98</td><td class="r">66.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:132%"></div></div></td></tr>
+<tr><td>E Other</td>
+<td class="r mono">0.46</td><td class="r">1.1</td>
+<td class="r mono">0.46</td><td class="r">0.9</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Binary databases</td>
+<td class="r mono">0.07</td><td class="r">0.2</td>
+<td class="r mono">0.09</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>ASCII database</td>
+<td class="r mono">0.24</td><td class="r">0.5</td>
+<td class="r mono">4.76</td><td class="r">9.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:19%"></div></div></td></tr>
+<tr><td>Contact algorithm</td>
+<td class="r mono">0.13</td><td class="r">0.3</td>
+<td class="r mono">0.13</td><td class="r">0.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Rigid Bodies</td>
+<td class="r mono">0.38</td><td class="r">0.9</td>
+<td class="r mono">0.38</td><td class="r">0.8</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Mass Scaling</td>
+<td class="r mono">0.06</td><td class="r">0.1</td>
+<td class="r mono">0.06</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force gather</td>
+<td class="r mono">0.09</td><td class="r">0.2</td>
+<td class="r mono">0.09</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Kinematic Update</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Update nodes</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step size</td>
+<td class="r mono">0.15</td><td class="r">0.3</td>
+<td class="r mono">0.45</td><td class="r">0.9</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step Sharing</td>
+<td class="r mono">0.15</td><td class="r">0.3</td>
+<td class="r mono">0.15</td><td class="r">0.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Bnd prescribed opt</td>
+<td class="r mono">0.07</td><td class="r">0.2</td>
+<td class="r mono">0.08</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Group force file</td>
+<td class="r mono">0.05</td><td class="r">0.1</td>
+<td class="r mono">0.05</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Others</td>
+<td class="r mono">0.18</td><td class="r">0.4</td>
+<td class="r mono">0.19</td><td class="r">0.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Sharing</td>
+<td class="r mono">0.24</td><td class="r">0.6</td>
+<td class="r mono">0.24</td><td class="r">0.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 1</td>
+<td class="r mono">0.75</td><td class="r">1.7</td>
+<td class="r mono">0.76</td><td class="r">1.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:3%"></div></div></td></tr>
+<tr><td>Scale Masses</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Constraints</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force to Accel</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td class="r mono">0.04</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 2</td>
+<td class="r mono">0.26</td><td class="r">0.6</td>
+<td class="r mono">0.26</td><td class="r">0.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Geometry Update</td>
+<td class="r mono">0.11</td><td class="r">0.3</td>
+<td class="r mono">0.11</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 3</td>
+<td class="r mono">0.15</td><td class="r">0.3</td>
+<td class="r mono">0.16</td><td class="r">0.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Sense Switch Share</td>
+<td class="r mono">4.74</td><td class="r">10.9</td>
+<td class="r mono">4.74</td><td class="r">9.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:18%"></div></div></td></tr>
+<tr><td>Misc. 4</td>
+<td class="r mono">0.25</td><td class="r">0.6</td>
+<td class="r mono">0.25</td><td class="r">0.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Timestep Init</td>
+<td class="r mono">0.07</td><td class="r">0.2</td>
+<td class="r mono">0.07</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Apply Loads</td>
+<td class="r mono">0.08</td><td class="r">0.2</td>
+<td class="r mono">0.08</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+</tbody></table>
 <h2>부하 프로파일 요약 (2개 프로세서)</h2>
 <table><thead><tr>
 <th>컴포넌트</th><th class="r">최소 %</th><th class="r">최대 %</th><th class="r">평균 %</th><th class="r">편차</th>
@@ -341,6 +537,35 @@ tbody tr:hover { background: var(--bg3); }
 <td class="r">0.8</td><td class="r">0.0</td></tr>
 <tr><td>기타</td><td class="r">0.4</td><td class="r">0.4</td>
 <td class="r">0.4</td><td class="r">0.0</td></tr>
+</tbody></table>
+<h2>MPI 스케일링 예측</h2>
+<table><thead><tr>
+<th class="r">코어 수</th><th class="r">예상 시간 (s)</th><th class="r">속도향상</th><th class="r">효율</th><th class="r">통신 비율</th>
+</tr></thead><tbody>
+<tr><td class="r">2 (현재)</td><td class="r">85</td>
+<td class="r">0.6x</td><td class="r" class="eff-mid">59%</td>
+<td class="r">6%</td></tr>
+<tr><td class="r">32</td><td class="r">50</td>
+<td class="r">1.0x</td><td class="r" class="eff-bad">6%</td>
+<td class="r">41%</td></tr>
+<tr><td class="r">64</td><td class="r">57</td>
+<td class="r">0.9x</td><td class="r" class="eff-bad">3%</td>
+<td class="r">51%</td></tr>
+<tr><td class="r">128</td><td class="r">68</td>
+<td class="r">0.7x</td><td class="r" class="eff-bad">1%</td>
+<td class="r">60%</td></tr>
+<tr><td class="r">256</td><td class="r">84</td>
+<td class="r">0.6x</td><td class="r" class="eff-bad">0%</td>
+<td class="r">69%</td></tr>
+</tbody></table>
+<h2>MPP 부하 균형</h2>
+<table><thead><tr>
+<th class="r">프로세서</th><th>호스트명</th><th class="r">CPU/평균</th><th class="r">CPU (s)</th>
+</tr></thead><tbody>
+<tr><td class="id">0</td><td>node002</td>
+<td class="r" class="eff-mid">0.88236</td><td class="r">38.44</td></tr>
+<tr><td class="id">1</td><td>node002</td>
+<td class="r" class="eff-bad">1.11764</td><td class="r">48.69</td></tr>
 </tbody></table>
 <div class="note">메모리 (최대 d-words): 최소=2,127,007 최대=2,148,775 (~16 MB) 평균=2,137,891 | 피크 랭크: #0</div>
 <h2>파트 정의</h2>

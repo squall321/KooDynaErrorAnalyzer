@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -187,8 +189,8 @@ tbody tr:hover { background: var(--bg3); }
 <h2>진단 결과</h2>
 <div class="findings-summary">
 <span class="badge badge-critical">심각 6</span>
-<span class="badge badge-warning">경고 2</span>
-<span class="badge badge-info">정보 4</span>
+<span class="badge badge-warning">경고 4</span>
+<span class="badge badge-info">정보 7</span>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -254,6 +256,31 @@ tbody tr:hover { background: var(--bg3); }
 <div class="desc">Contact algorithm uses 144.7s (75.4% of total clock time). This is above the 40% threshold.</div>
 <div class="rec">→ Consider using MPP groupable contacts where possible. Reduce contact search frequency (NSBCS in *CONTROL_CONTACT). Check if some contacts can be removed or simplified.</div>
 </div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Part 1: timestep bottleneck (100%)</span>
+<div class="desc">파트 1가 100개의 최소 timestep 중 100개를 차지합니다 (100%). 최소 dt = 8.740E-05. 이 파트의 메시가 시뮬레이션 속도를 제한하고 있습니다.</div>
+<div class="rec">→ 파트 1의 메시를 조정하세요:
+1. 매우 작은 요소를 제거하거나 coarsen
+2. Mass scaling (DT2MS) 적용 고려
+3. 요소 품질(aspect ratio, warpage) 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">파트 1 (Blank)가 timestep 지배 (100%)</span>
+<div class="desc">파트 1 (Blank)가 가장 작은 timestep의 100%를 차지합니다 (100/100개). 최소 dt=8.740E-05. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<div class="rec">→ 1. 파트 1의 메시에서 가장 작은 요소 확인 및 재생성
+2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
+3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
+4. Mass scaling 적용: *CONTROL_TIMESTEP에서 DT2MS 설정
+   (주의: 추가 질량이 원래 질량의 5% 미만이어야 결과 신뢰)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Part 1 dominates timestep control</span>
+<div class="desc">Part 1 controls 100/100 of the 100 smallest timesteps (100%). Smallest dt: 8.7398E-05.</div>
+<div class="rec">→ Review mesh quality in Part 1. Coarsening very small elements or applying mass scaling (DT2MS in *CONTROL_TIMESTEP) could improve performance.</div>
+</div>
 <div class="finding info">
 <span class="tag info">정보</span>
 <span class="title">Mass scaling is active</span>
@@ -276,6 +303,18 @@ tbody tr:hover { background: var(--bg3); }
 <span class="title">MPP load balance: good (imbalance 0.0%)</span>
 <div class="desc">CPU ratio range: [1.0000, 1.0000] across 1 processors.</div>
 </div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">nodout 파일 없음 — 노드 속도 진단 불가</span>
+<div class="desc">nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. *DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. 수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다.</div>
+<div class="rec">→ *DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 관심 노드의 시계열 데이터를 출력하도록 설정</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">bndout 파일 없음 — 경계 반력 진단 불가</span>
+<div class="desc">bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. *DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. 과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다.</div>
+<div class="rec">→ *DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. DT=0 설정 시 매 사이클 저장 (파일 크기 주의)</div>
+</div>
 <h2>에너지 수지</h2>
 <table><thead><tr>
 <th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
@@ -288,6 +327,121 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">1.0041</td></tr>
 <tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">29.5%</td></tr>
 </tbody></table>
+<h2>최소 타임스텝 요소 (상위 20개)</h2>
+<table><thead><tr>
+<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>
+<th class="r">코어</th>
+</tr></thead><tbody>
+<tr><td class="r">1</td><td>shell</td>
+<td class="id">100</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">2</td><td>shell</td>
+<td class="id">99</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">3</td><td>shell</td>
+<td class="id">98</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">4</td><td>shell</td>
+<td class="id">97</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">5</td><td>shell</td>
+<td class="id">96</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">6</td><td>shell</td>
+<td class="id">95</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">7</td><td>shell</td>
+<td class="id">94</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">8</td><td>shell</td>
+<td class="id">93</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">9</td><td>shell</td>
+<td class="id">92</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">10</td><td>shell</td>
+<td class="id">91</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">11</td><td>shell</td>
+<td class="id">90</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">12</td><td>shell</td>
+<td class="id">89</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">13</td><td>shell</td>
+<td class="id">88</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">14</td><td>shell</td>
+<td class="id">87</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">15</td><td>shell</td>
+<td class="id">86</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">16</td><td>shell</td>
+<td class="id">85</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">17</td><td>shell</td>
+<td class="id">84</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">18</td><td>shell</td>
+<td class="id">83</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">19</td><td>shell</td>
+<td class="id">82</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">20</td><td>shell</td>
+<td class="id">81</td><td class="r">1</td>
+<td class="r mono">8.7398E-05</td>
+<td class="r">#0</td>
+</tr>
+</tbody></table>
+<h2>파트별 타임스텝 요약 (100 최소)</h2>
+<table><thead><tr>
+<th class="r">파트</th><th class="r">개수</th><th class="r">최소 dt</th><th class="r">최대 dt</th><th>타입</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td class="r">100</td>
+<td class="r mono">8.7398E-05</td><td class="r mono">8.7398E-05</td>
+<td>shell</td></tr>
+</tbody></table>
+<div class="note">TSSFAC: 0.9 | 초기 dt: 0 | 최종 dt: 0</div>
 <h2>성능 프로파일링</h2>
 <table><thead><tr>
 <th>컴포넌트</th><th class="r">CPU (s)</th><th class="r">CPU %</th>

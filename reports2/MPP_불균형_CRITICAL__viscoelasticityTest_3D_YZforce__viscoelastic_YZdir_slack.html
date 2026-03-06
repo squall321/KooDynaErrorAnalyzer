@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LS-DYNA 해석 분석 리포트 — fpcb_viscoelastic_YZdir_slack.k</title>
+<style>:root {
+  --bg: #1a1b26;
+  --bg2: #24283b;
+  --bg3: #292e42;
+  --fg: #c0caf5;
+  --fg-dim: #565f89;
+  --red: #f7768e;
+  --orange: #ff9e64;
+  --yellow: #e0af68;
+  --green: #9ece6a;
+  --cyan: #7dcfff;
+  --blue: #7aa2f7;
+  --magenta: #bb9af7;
+  --border: #3b4261;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  font-size: 22px;
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+h2 {
+  font-size: 16px;
+  color: var(--cyan);
+  margin: 28px 0 12px 0;
+  padding: 6px 12px;
+  background: var(--bg2);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+}
+.header-panel {
+  background: var(--bg2);
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.header-panel .row { display: flex; gap: 24px; flex-wrap: wrap; }
+.header-panel .label { color: var(--fg-dim); font-size: 12px; }
+.header-panel .value { color: var(--fg); font-size: 14px; font-weight: 500; }
+.status-normal { color: var(--green); font-weight: 700; }
+.status-error { color: var(--red); font-weight: 700; }
+.status-incomplete { color: var(--yellow); font-weight: 700; }
+.term-panel {
+  background: var(--bg2);
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.term-panel .row { display: flex; gap: 32px; flex-wrap: wrap; margin-top: 8px; }
+.term-panel .item { }
+.term-panel .label { color: var(--fg-dim); font-size: 12px; }
+.term-panel .value { font-size: 14px; }
+.findings-summary {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  padding: 12px 16px; background: var(--bg2); border-radius: 6px;
+}
+.findings-summary .badge {
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.badge-critical { background: rgba(247,118,142,0.15); color: var(--red); }
+.badge-warning { background: rgba(224,175,104,0.15); color: var(--yellow); }
+.badge-info { background: rgba(122,162,247,0.15); color: var(--blue); }
+.finding {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border-radius: 6px;
+  border-left: 3px solid var(--border);
+}
+.finding.critical { border-left-color: var(--red); }
+.finding.warning { border-left-color: var(--yellow); }
+.finding.info { border-left-color: var(--blue); }
+.finding .tag {
+  font-size: 11px; font-weight: 700; padding: 2px 6px;
+  border-radius: 3px; margin-right: 8px; display: inline-block;
+}
+.finding .tag.critical { background: rgba(247,118,142,0.2); color: var(--red); }
+.finding .tag.warning { background: rgba(224,175,104,0.2); color: var(--yellow); }
+.finding .tag.info { background: rgba(122,162,247,0.2); color: var(--blue); }
+.finding .title { font-weight: 600; }
+.finding .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+.finding .rec { color: var(--green); font-size: 13px; margin-top: 4px; font-style: italic; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--cyan);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+thead th.r { text-align: right; }
+thead th.c { text-align: center; }
+tbody td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--bg3);
+}
+tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.c { text-align: center; }
+tbody td.id { color: var(--cyan); text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+tbody tr:hover { background: var(--bg3); }
+.warn-high { color: var(--yellow); font-weight: 600; }
+.eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
+.eff-mid { color: var(--yellow); font-weight: 600; }
+.bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
+.note { color: var(--fg-dim); font-size: 12px; margin-top: 4px; margin-bottom: 12px; }
+.model-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.model-card {
+  background: var(--bg2); border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.model-card .num { font-size: 20px; font-weight: 700; color: var(--fg); }
+.model-card .lbl { font-size: 11px; color: var(--fg-dim); }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; }
+</style>
+</head><body>
+<h1>LS-DYNA 해석 분석 리포트</h1>
+<div class="header-panel">
+<div class="row">
+<div><div class="label">버전</div><div class="value">mpp s R16 (R16.1.1-20-g0c90cad538)</div></div>
+<div><div class="label">일시</div><div class="value">02/12/2026 12:58:16</div></div>
+<div><div class="label">호스트</div><div class="value">node002</div></div>
+<div><div class="label">입력 파일</div><div class="value">fpcb_viscoelastic_YZdir_slack.k</div></div>
+<div><div class="label">정밀도</div><div class="value">Single precision (I4R4)</div></div>
+<div><div class="label">플랫폼</div><div class="value">OpenMPI 4.0.5 x86-64</div></div>
+<div><div class="label">MPI 프로세서</div><div class="value">2개</div></div>
+<div><div class="label">라이선스</div><div class="value">Samsung Electronics Co Ltd -- 1127</div></div>
+</div></div>
+<h2>모델 요약</h2>
+<div class="model-grid">
+<div class="model-card"><div class="num">1,215</div><div class="lbl">노드</div></div>
+<div class="model-card"><div class="num">640</div><div class="lbl">솔리드 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">쉘 요소</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">빔 요소</div></div>
+<div class="model-card"><div class="num">1</div><div class="lbl">파트</div></div>
+<div class="model-card"><div class="num">1</div><div class="lbl">재료</div></div>
+<div class="model-card"><div class="num">0</div><div class="lbl">접촉</div></div>
+<div class="model-card"><div class="num">15</div><div class="lbl">SPC 노드</div></div>
+</div>
+<h2>종료 상태</h2>
+<div class="term-panel">
+<span class="status-error">오류 종료</span>
+<div class="row">
+<div class="item"><div class="label">목표 시간</div><div class="value">5.0000</div></div>
+<div class="item"><div class="label">도달 시간</div><div class="value">0.2572</div></div>
+<div class="item"><div class="label">사이클 수</div><div class="value">7,960</div></div>
+<div class="item"><div class="label">CPU 시간</div><div class="value">4초</div></div>
+<div class="item"><div class="label">경과 시간</div><div class="value">18초</div></div>
+<div class="item"><div class="label">CPU/zone-cycle</div><div class="value">739.6 ns</div></div>
+<div class="item"><div class="label">Clock/zone-cycle</div><div class="value">2860.4 ns</div></div>
+</div>
+<div class="row" style="margin-top:8px">
+<div class="item"><div class="label">시작</div><div class="value">02/12/2026 12:58:16</div></div>
+<div class="item"><div class="label">종료</div><div class="value">02/12/2026 12:58:34</div></div>
+</div>
+</div>
+<h2>진단 결과</h2>
+<div class="findings-summary">
+<span class="badge badge-critical">심각 8</span>
+<span class="badge badge-warning">경고 3</span>
+<span class="badge badge-info">정보 5</span>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">해석 에러 종료</span>
+<div class="desc">시뮬레이션이 비정상 종료되었습니다. 도달 시간: 2.5721E-01, 목표 시간: 5.0000E+00. LS-DYNA는 복구 불가능한 수치적 오류(negative volume, NaN, 메모리 부족 등)를 감지하면 즉시 종료합니다.</div>
+<div class="rec">→ 1. d3hsp/mes 파일에서 에러 코드와 위치(요소/노드 번호) 확인
+2. 가장 흔한 원인: negative volume(요소 반전), NaN velocity(발산)
+3. 해당 위치의 메시/경계조건/접촉 설정 검토
+4. *MAT_ADD_EROSION으로 파손 요소 자동 제거 고려</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Energy balance severely violated</span>
+<div class="desc">Energy ratio range: [1.000000, 4063.400000]. Deviation &gt; 10% from 1.0 indicates numerical instability or energy source/sink.</div>
+<div class="rec">→ Check for contact energy growth, mass scaling effects, or improperly defined loads. Enable energy output (*CONTROL_ENERGY) to identify the source.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Total energy is increasing (divergence)</span>
+<div class="desc">Total energy grew from 4.0000E-20 to 4.0803E+03 (10200700000000000328204288.0% increase). This strongly suggests numerical instability.</div>
+<div class="rec">→ Reduce timestep scale factor (TSSFAC). Check for improperly defined initial penetrations in contacts. Verify material properties and boundary conditions.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Error 40509: Negative volume warning</span>
+<div class="desc">3 occurrence(s). 요소에서 negative volume(Jacobian J &lt; 0) 경고가 발생했습니다. 이 경고는 에러(30010)와 달리 시뮬레이션을 즉시 종료하지 않지만, 해당 요소의 계산이 비물리적임을 나타냅니다. 반복 발생하면 시뮬레이션의 수치적 안정성이 저하되고, 결국 에러로 종료될 가능성이 높습니다. 이 경고의 빈도(총 사이클 대비 경고 횟수)가 시뮬레이션의 건전성을 판단하는 핵심 지표입니다.</div>
+<div class="rec">→ 1. 경고 빈도 분석 — 총 사이클 대비 40509 경고 비율 확인. &gt; 50%이면 시스템적 문제, &gt; 10%이면 개선 필요
+2. 문제 요소에 침식 설정 — *MAT_ADD_EROSION의 MXEPS 또는 *CONTROL_TIMESTEP의 ERODE=1로 과도 왜곡 요소 제거
+3. 메시 품질 개선 — 문제 발생 영역의 메시를 세분화하고, 초기 요소 품질(Jacobian, aspect ratio) 개선
+4. 하중 조건 점검 — 국부 하중이 과도한지 확인</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">MPP load imbalance: 118.1%</span>
+<div class="desc">CPU ratio range: [0.4093, 1.5907]. Slowest: proc #1 (node002), Fastest: proc #0 (node002). 가장 느린 프로세서가 평균 대비 1.6배 더 많은 작업을 처리하고 있습니다.</div>
+<div class="rec">→ 도메인 분해를 재검토하세요. *CONTROL_MPP_DECOMPOSITION에 RCBLOG 옵션을 사용하거나, 모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요.</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">Kinetic energy explosion (100x in 2.500E-02s)</span>
+<div class="desc">운동 에너지가 2.500E-02초 동안 152949배 증가했습니다 (KE: 1.132E-08 → 1.731E-03). 운동 에너지 KE = Σ(½mv²)가 급격히 증가한다는 것은 일부 노드의 속도가 발산(velocity divergence)했다는 의미입니다. 명시적 적분에서 v(t+dt) = v(t) + (F/m)×dt로 업데이트하는데, F가 비정상적으로 크면(contact spike, constraint conflict) 한 스텝에서 속도가 급증하고, 이 노드가 인접 요소를 왜곡시켜 추가적인 penalty force를 생성하는 양성 피드백 루프가 형성됩니다. 100배 이상의 KE 증가는 시뮬레이션이 발산 단계에 진입했음을 나타내며, 이후 NaN 또는 negative volume 에러로 이어집니다.</div>
+<div class="rec">→ 1. 발산 시점(t=9.883E-04s) 전후의 변형 확인 — 애니메이션에서 비정상적으로 빠르게 움직이는 노드/파트 식별
+2. Constraint 정의 점검 — *CONSTRAINED_EXTRA_NODES, *CONSTRAINED_RIGID_BODIES 등에서 과잉 구속 확인. 같은 노드에 여러 구속이 적용되면 내부적으로 상반되는 힘이 생성
+3. 접촉 초기 관통 제거 — 관통된 노드에 과도한 penalty force가 집중되어 속도 발산의 주요 원인. *CONTROL_CONTACT의 PENOPT 설정
+4. Penalty stiffness 감소 — SLSFAC &lt; 0.1로 설정하여 접촉력 크기를 완화. SOFT=1(segment-based) 사용 권장</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">LS-DYNA exit code 3</span>
+<div class="desc">LS-DYNA가 exit code 3로 종료되었습니다. Slurm job 20195. Exit code 3은 LS-DYNA의 표준 에러 종료(error termination)로, d3hsp 파일에 기록된 에러 메시지에 의해 시뮬레이션이 중단된 것입니다. 일반적인 원인: negative volume(Error 40509), NaN detected(Error 40456), constraint matrix singular(Error 30358) 등. d3hsp의 termination 섹션과 에러/경고 카운트를 통해 정확한 원인을 파악할 수 있습니다.</div>
+<div class="rec">→ 1. d3hsp 파일의 &#x27;E r r o r&#x27; 메시지 확인 — 에러 코드별 대응
+2. 이 도구의 다른 진단 결과 참조 — 에너지 불안정, timestep 붕괴, 경고 패턴 등이 종료 원인을 설명합니다</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">에너지 비율 폭주 (ratio = 4063.40)</span>
+<div class="desc">에너지 비율이 4063.40로 상승했습니다. 에너지 비율(E_total/E_initial)은 이상적으로 1.0이어야 하며, 1.05를 초과하면 에너지가 인위적으로 생성되고 있음을 의미합니다. 4.0 이상은 NaN 발산이나 제약조건 행렬 특이성(Error 30358)의 전조이며, 곧 시뮬레이션이 발산할 가능성이 높습니다.</div>
+<div class="rec">→ 1. *CONSTRAINED_* 정의 점검 (과도하게 구속된 노드 → 에너지 주입)
+2. Contact interface에서 초기 관통(initial penetration) 제거
+3. Penalty stiffness 감소 (SLSFAC) → 접촉 에너지 주입 감소
+4. &#x27;shooting nodes&#x27; 확인 (비정상 고속 노드 → 에너지 폭주 원인)</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Significant timestep drop detected</span>
+<div class="desc">Timestep dropped to 42.3% of initial value (from 3.5298E-05 to 1.4946E-05).</div>
+<div class="rec">→ Monitor the controlling part for potential instability. Check element quality near the smallest timestep elements.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Part 1: timestep bottleneck (100%)</span>
+<div class="desc">파트 1가 100개의 최소 timestep 중 100개를 차지합니다 (100%). 최소 dt = 3.530E-05. 이 파트의 메시가 시뮬레이션 속도를 제한하고 있습니다.</div>
+<div class="rec">→ 파트 1의 메시를 조정하세요:
+1. 매우 작은 요소를 제거하거나 coarsen
+2. Mass scaling (DT2MS) 적용 고려
+3. 요소 품질(aspect ratio, warpage) 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">파트 1 (FPCB_Cable_Viscoelastic)가 timestep 지배 (100%)</span>
+<div class="desc">파트 1 (FPCB_Cable_Viscoelastic)가 가장 작은 timestep의 100%를 차지합니다 (100/100개). 최소 dt=3.530E-05. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<div class="rec">→ 1. 파트 1의 메시에서 가장 작은 요소 확인 및 재생성
+2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
+3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
+4. Mass scaling 적용: *CONTROL_TIMESTEP에서 DT2MS 설정
+   (주의: 추가 질량이 원래 질량의 5% 미만이어야 결과 신뢰)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Part 1 dominates timestep control</span>
+<div class="desc">Part 1 controls 100/100 of the 100 smallest timesteps (100%). Smallest dt: 3.5298E-05.</div>
+<div class="rec">→ Review mesh quality in Part 1. Coarsening very small elements or applying mass scaling (DT2MS in *CONTROL_TIMESTEP) could improve performance.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">ASCII database is the primary cost (71.5%)</span>
+<div class="desc">ASCII database: 12.9s (71.5% of clock time). CPU: 1.4s (35.3%).</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">nodout 파일 없음 — 노드 속도 진단 불가</span>
+<div class="desc">nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. *DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. 수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다.</div>
+<div class="rec">→ *DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 관심 노드의 시계열 데이터를 출력하도록 설정</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">bndout 파일 없음 — 경계 반력 진단 불가</span>
+<div class="desc">bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. *DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. 과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다.</div>
+<div class="rec">→ *DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. DT=0 설정 시 매 사이클 저장 (파일 크기 주의)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Timestep oscillation detected</span>
+<div class="desc">Timestep이 빈번하게 변동합니다 (평균=3.292E-05). dt 진동은 시뮬레이션이 안정성 경계(stability boundary)에서 작동하고 있음을 나타냅니다. dt = TSSFAC × L/c에서 요소가 변형 → 복원을 반복하면 L_char이 진동하여 dt도 진동합니다. 이는 접촉면에서 관통/반발 사이클, 또는 탄성 반발이 반복되는 영역에서 흔히 발생합니다. dt 진동 자체는 즉각적인 위험은 아니지만, mass scaling (DT2MS)이 활성화되어 있으면 진동하는 요소에 과도한 질량이 추가될 수 있습니다.</div>
+<div class="rec">→ 1. 변형이 큰 영역의 메시 개선 — 요소 종횡비를 개선하여 변형 시에도 L_char의 변동을 최소화
+2. Contact 설정 재검토 — 관통/반발 사이클이 원인이면 contact damping(VDC) 추가하여 진동 감쇠
+3. Mass scaling 검토 — DT2MS 설정 시 dt 진동 영역의 요소에 과도한 질량이 추가되지 않는지 확인. m_added = m × ((dt_target/dt_element)² - 1)</div>
+</div>
+<h2>경고/오류 요약</h2>
+<table><thead><tr>
+<th class="r">코드</th><th class="r">횟수</th><th class="c">심각도</th><th>설명</th><th>인터페이스</th>
+</tr></thead><tbody>
+<tr><td class="r id">40509</td><td class="r">3</td>
+<td class="c"><span class="tag critical">심각</span></td>
+<td>negative volume in solid element # 585 cycle 7960 time 2.5721E-01</td><td></td></tr>
+</tbody></table>
+<h2>에너지 수지</h2>
+<table><thead><tr>
+<th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
+</tr></thead><tbody>
+<tr><td>운동 에너지</td><td class="r mono">0</td><td class="r mono">701.6890</td></tr>
+<tr><td>내부 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">3378.5900</td></tr>
+<tr><td>Hourglass 에너지</td><td class="r mono">0</td><td class="r mono">0</td></tr>
+<tr><td>슬라이딩 인터페이스</td><td class="r mono">0</td><td class="r mono">0</td></tr>
+<tr><td>총 에너지</td><td class="r mono">4.0000E-20</td><td class="r mono">4080.2800</td></tr>
+<tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">4063.4000</td></tr>
+<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">0.0%</td></tr>
+</tbody></table>
+<h2>최소 타임스텝 요소 (상위 20개)</h2>
+<table><thead><tr>
+<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>
+<th class="r">코어</th>
+</tr></thead><tbody>
+<tr><td class="r">1</td><td>solid</td>
+<td class="id">480</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">2</td><td>solid</td>
+<td class="id">484</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">3</td><td>solid</td>
+<td class="id">483</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">4</td><td>solid</td>
+<td class="id">637</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">5</td><td>solid</td>
+<td class="id">638</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">6</td><td>solid</td>
+<td class="id">639</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">7</td><td>solid</td>
+<td class="id">640</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">8</td><td>solid</td>
+<td class="id">482</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">9</td><td>solid</td>
+<td class="id">481</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">10</td><td>solid</td>
+<td class="id">320</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">11</td><td>solid</td>
+<td class="id">319</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">12</td><td>solid</td>
+<td class="id">161</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">13</td><td>solid</td>
+<td class="id">162</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">14</td><td>solid</td>
+<td class="id">163</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">15</td><td>solid</td>
+<td class="id">164</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">16</td><td>solid</td>
+<td class="id">317</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">17</td><td>solid</td>
+<td class="id">318</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">18</td><td>solid</td>
+<td class="id">160</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">19</td><td>solid</td>
+<td class="id">2</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#0</td>
+</tr>
+<tr><td class="r">20</td><td>solid</td>
+<td class="id">3</td><td class="r">1</td>
+<td class="r mono">3.5298E-05</td>
+<td class="r">#0</td>
+</tr>
+</tbody></table>
+<h2>파트별 타임스텝 요약 (100 최소)</h2>
+<table><thead><tr>
+<th class="r">파트</th><th class="r">개수</th><th class="r">최소 dt</th><th class="r">최대 dt</th><th>타입</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td class="r">100</td>
+<td class="r mono">3.5298E-05</td><td class="r mono">3.5687E-05</td>
+<td>solid</td></tr>
+</tbody></table>
+<div class="note">TSSFAC: 0.9 | 초기 dt: 3.5298E-05 | 최종 dt: 1.4946E-05</div>
+<h2>타임스텝 제어 타임라인</h2>
+<table><thead><tr>
+<th class="r">사이클</th><th>시간 구간</th><th class="r">파트</th>
+<th class="r">요소</th><th>타입</th><th class="r">최소 dt</th><th class="r">스냅</th>
+</tr></thead><tbody>
+<tr><td class="r">1–1</td>
+<td class="mono">0.0000E+00 – 0.0000E+00</td>
+<td class="id">1</td><td class="r">480</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">29–114</td>
+<td class="mono">9.8835E-04 – 3.9887E-03</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">4</td></tr>
+<tr><td class="r">142–170</td>
+<td class="mono">4.9770E-03 – 5.9654E-03</td>
+<td class="id">1</td><td class="r">324</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">199–199</td>
+<td class="mono">6.9890E-03 – 6.9890E-03</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">227–255</td>
+<td class="mono">7.9773E-03 – 8.9657E-03</td>
+<td class="id">1</td><td class="r">324</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">284–312</td>
+<td class="mono">9.9893E-03 – 1.0978E-02</td>
+<td class="id">1</td><td class="r">160</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">340–573</td>
+<td class="mono">1.1966E-02 – 1.9985E-02</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">2.7116E-05</td>
+<td class="r">9</td></tr>
+<tr><td class="r">601–601</td>
+<td class="mono">2.0974E-02 – 2.0974E-02</td>
+<td class="id">1</td><td class="r">484</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">630–630</td>
+<td class="mono">2.1997E-02 – 2.1997E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">658–658</td>
+<td class="mono">2.2986E-02 – 2.2986E-02</td>
+<td class="id">1</td><td class="r">481</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">688–688</td>
+<td class="mono">2.3973E-02 – 2.3973E-02</td>
+<td class="id">1</td><td class="r">161</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">717–717</td>
+<td class="mono">2.4997E-02 – 2.4997E-02</td>
+<td class="id">1</td><td class="r">159</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">745–773</td>
+<td class="mono">2.5985E-02 – 2.6974E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">802–802</td>
+<td class="mono">2.7997E-02 – 2.7997E-02</td>
+<td class="id">1</td><td class="r">481</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">834–834</td>
+<td class="mono">2.8995E-02 – 2.8995E-02</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">862–862</td>
+<td class="mono">2.9983E-02 – 2.9983E-02</td>
+<td class="id">1</td><td class="r">484</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">890–890</td>
+<td class="mono">3.0972E-02 – 3.0972E-02</td>
+<td class="id">1</td><td class="r">477</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">919–919</td>
+<td class="mono">3.1995E-02 – 3.1995E-02</td>
+<td class="id">1</td><td class="r">478</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">947–947</td>
+<td class="mono">3.2984E-02 – 3.2984E-02</td>
+<td class="id">1</td><td class="r">161</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">975–1,004</td>
+<td class="mono">3.3972E-02 – 3.4995E-02</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">1,032–1,060</td>
+<td class="mono">3.5984E-02 – 3.6972E-02</td>
+<td class="id">1</td><td class="r">324</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">1,090–1,090</td>
+<td class="mono">3.7991E-02 – 3.7991E-02</td>
+<td class="id">1</td><td class="r">609</td>
+<td>solid</td><td class="r mono">3.4202E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,122–1,122</td>
+<td class="mono">3.8993E-02 – 3.8993E-02</td>
+<td class="id">1</td><td class="r">637</td>
+<td>solid</td><td class="r mono">2.2715E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,151–1,151</td>
+<td class="mono">3.9974E-02 – 3.9974E-02</td>
+<td class="id">1</td><td class="r">484</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,180–1,180</td>
+<td class="mono">4.0997E-02 – 4.0997E-02</td>
+<td class="id">1</td><td class="r">160</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,208–1,208</td>
+<td class="mono">4.1976E-02 – 4.1976E-02</td>
+<td class="id">1</td><td class="r">604</td>
+<td>solid</td><td class="r mono">3.4403E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,237–1,237</td>
+<td class="mono">4.2983E-02 – 4.2983E-02</td>
+<td class="id">1</td><td class="r">479</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,265–1,265</td>
+<td class="mono">4.3971E-02 – 4.3971E-02</td>
+<td class="id">1</td><td class="r">159</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,294–1,294</td>
+<td class="mono">4.4995E-02 – 4.4995E-02</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,322–1,350</td>
+<td class="mono">4.5983E-02 – 4.6972E-02</td>
+<td class="id">1</td><td class="r">324</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">1,379–1,435</td>
+<td class="mono">4.7995E-02 – 4.9972E-02</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">3</td></tr>
+<tr><td class="r">1,464–1,464</td>
+<td class="mono">5.0996E-02 – 5.0996E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,492–1,492</td>
+<td class="mono">5.1984E-02 – 5.1984E-02</td>
+<td class="id">1</td><td class="r">3</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,526–1,526</td>
+<td class="mono">5.2995E-02 – 5.2995E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,555–1,555</td>
+<td class="mono">5.3987E-02 – 5.3987E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,583–1,583</td>
+<td class="mono">5.4975E-02 – 5.4975E-02</td>
+<td class="id">1</td><td class="r">158</td>
+<td>solid</td><td class="r mono">3.5296E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,612–1,612</td>
+<td class="mono">5.5999E-02 – 5.5999E-02</td>
+<td class="id">1</td><td class="r">157</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,640–1,640</td>
+<td class="mono">5.6987E-02 – 5.6987E-02</td>
+<td class="id">1</td><td class="r">324</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,668–1,668</td>
+<td class="mono">5.7975E-02 – 5.7975E-02</td>
+<td class="id">1</td><td class="r">479</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,697–1,697</td>
+<td class="mono">5.8999E-02 – 5.8999E-02</td>
+<td class="id">1</td><td class="r">324</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,725–1,725</td>
+<td class="mono">5.9987E-02 – 5.9987E-02</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,753–1,782</td>
+<td class="mono">6.0976E-02 – 6.1999E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">1,810–1,810</td>
+<td class="mono">6.2988E-02 – 6.2988E-02</td>
+<td class="id">1</td><td class="r">161</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,838–1,838</td>
+<td class="mono">6.3976E-02 – 6.3976E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,867–1,895</td>
+<td class="mono">6.5000E-02 – 6.5988E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">1,926–1,926</td>
+<td class="mono">6.6991E-02 – 6.6991E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,958–1,958</td>
+<td class="mono">6.7994E-02 – 6.7994E-02</td>
+<td class="id">1</td><td class="r">159</td>
+<td>solid</td><td class="r mono">3.0680E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">1,986–1,986</td>
+<td class="mono">6.8976E-02 – 6.8976E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,015–2,015</td>
+<td class="mono">6.9999E-02 – 6.9999E-02</td>
+<td class="id">1</td><td class="r">478</td>
+<td>solid</td><td class="r mono">3.5295E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,043–2,043</td>
+<td class="mono">7.0988E-02 – 7.0988E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,071–2,071</td>
+<td class="mono">7.1976E-02 – 7.1976E-02</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,100–2,100</td>
+<td class="mono">7.3000E-02 – 7.3000E-02</td>
+<td class="id">1</td><td class="r">484</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,128–2,128</td>
+<td class="mono">7.3988E-02 – 7.3988E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,156–2,156</td>
+<td class="mono">7.4976E-02 – 7.4976E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,185–2,213</td>
+<td class="mono">7.6000E-02 – 7.6988E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">2,241–2,241</td>
+<td class="mono">7.7977E-02 – 7.7977E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5297E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,269–2,298</td>
+<td class="mono">7.8965E-02 – 7.9988E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5296E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">2,326–2,326</td>
+<td class="mono">8.0977E-02 – 8.0977E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5296E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,360–2,360</td>
+<td class="mono">8.1992E-02 – 8.1992E-02</td>
+<td class="id">1</td><td class="r">607</td>
+<td>solid</td><td class="r mono">2.9333E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,390–2,390</td>
+<td class="mono">8.2969E-02 – 8.2969E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5293E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,419–2,447</td>
+<td class="mono">8.3992E-02 – 8.4980E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5289E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">2,475–2,475</td>
+<td class="mono">8.5968E-02 – 8.5968E-02</td>
+<td class="id">1</td><td class="r">483</td>
+<td>solid</td><td class="r mono">3.5294E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,504–2,532</td>
+<td class="mono">8.6991E-02 – 8.7980E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5294E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">2,560–2,560</td>
+<td class="mono">8.8968E-02 – 8.8968E-02</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5294E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,589–2,846</td>
+<td class="mono">8.9991E-02 – 9.8967E-02</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5287E-05</td>
+<td class="r">10</td></tr>
+<tr><td class="r">2,880–2,880</td>
+<td class="mono">9.9998E-02 – 9.9998E-02</td>
+<td class="id">1</td><td class="r">482</td>
+<td>solid</td><td class="r mono">3.5283E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,908–2,908</td>
+<td class="mono">1.0099E-01 – 1.0099E-01</td>
+<td class="id">1</td><td class="r">477</td>
+<td>solid</td><td class="r mono">3.5273E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,940–2,940</td>
+<td class="mono">1.0199E-01 – 1.0199E-01</td>
+<td class="id">1</td><td class="r">479</td>
+<td>solid</td><td class="r mono">3.5276E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,969–2,969</td>
+<td class="mono">1.0300E-01 – 1.0300E-01</td>
+<td class="id">1</td><td class="r">318</td>
+<td>solid</td><td class="r mono">2.3053E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">2,998–2,998</td>
+<td class="mono">1.0399E-01 – 1.0399E-01</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5272E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,026–3,026</td>
+<td class="mono">1.0497E-01 – 1.0497E-01</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5282E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,055–3,055</td>
+<td class="mono">1.0600E-01 – 1.0600E-01</td>
+<td class="id">1</td><td class="r">483</td>
+<td>solid</td><td class="r mono">3.5277E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,083–3,111</td>
+<td class="mono">1.0698E-01 – 1.0797E-01</td>
+<td class="id">1</td><td class="r">163</td>
+<td>solid</td><td class="r mono">3.5279E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">3,140–3,196</td>
+<td class="mono">1.0900E-01 – 1.1097E-01</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5273E-05</td>
+<td class="r">3</td></tr>
+<tr><td class="r">3,227–3,227</td>
+<td class="mono">1.1200E-01 – 1.1200E-01</td>
+<td class="id">1</td><td class="r">158</td>
+<td>solid</td><td class="r mono">1.5982E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,260–3,260</td>
+<td class="mono">1.1297E-01 – 1.1297E-01</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5269E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,289–3,317</td>
+<td class="mono">1.1399E-01 – 1.1498E-01</td>
+<td class="id">1</td><td class="r">160</td>
+<td>solid</td><td class="r mono">3.5166E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">3,345–3,345</td>
+<td class="mono">1.1597E-01 – 1.1597E-01</td>
+<td class="id">1</td><td class="r">481</td>
+<td>solid</td><td class="r mono">3.5264E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,374–3,576</td>
+<td class="mono">1.1699E-01 – 1.2398E-01</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5235E-05</td>
+<td class="r">8</td></tr>
+<tr><td class="r">3,607–3,607</td>
+<td class="mono">1.2499E-01 – 1.2499E-01</td>
+<td class="id">1</td><td class="r">158</td>
+<td>solid</td><td class="r mono">3.5205E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,636–3,636</td>
+<td class="mono">1.2600E-01 – 1.2600E-01</td>
+<td class="id">1</td><td class="r">485</td>
+<td>solid</td><td class="r mono">3.5204E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,664–3,664</td>
+<td class="mono">1.2698E-01 – 1.2698E-01</td>
+<td class="id">1</td><td class="r">162</td>
+<td>solid</td><td class="r mono">3.5202E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,692–3,786</td>
+<td class="mono">1.2797E-01 – 1.3098E-01</td>
+<td class="id">1</td><td class="r">209</td>
+<td>solid</td><td class="r mono">3.0524E-05</td>
+<td class="r">4</td></tr>
+<tr><td class="r">3,819–3,819</td>
+<td class="mono">1.3199E-01 – 1.3199E-01</td>
+<td class="id">1</td><td class="r">529</td>
+<td>solid</td><td class="r mono">3.1013E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,851–3,884</td>
+<td class="mono">1.3298E-01 – 1.3399E-01</td>
+<td class="id">1</td><td class="r">205</td>
+<td>solid</td><td class="r mono">3.0478E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">3,916–3,916</td>
+<td class="mono">1.3500E-01 – 1.3500E-01</td>
+<td class="id">1</td><td class="r">202</td>
+<td>solid</td><td class="r mono">3.2260E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,947–3,947</td>
+<td class="mono">1.3599E-01 – 1.3599E-01</td>
+<td class="id">1</td><td class="r">201</td>
+<td>solid</td><td class="r mono">3.2034E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">3,977–3,977</td>
+<td class="mono">1.3698E-01 – 1.3698E-01</td>
+<td class="id">1</td><td class="r">198</td>
+<td>solid</td><td class="r mono">3.3445E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,007–4,007</td>
+<td class="mono">1.3798E-01 – 1.3798E-01</td>
+<td class="id">1</td><td class="r">197</td>
+<td>solid</td><td class="r mono">3.3304E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,037–4,037</td>
+<td class="mono">1.3900E-01 – 1.3900E-01</td>
+<td class="id">1</td><td class="r">193</td>
+<td>solid</td><td class="r mono">3.4053E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,069–4,069</td>
+<td class="mono">1.3999E-01 – 1.3999E-01</td>
+<td class="id">1</td><td class="r">158</td>
+<td>solid</td><td class="r mono">3.1690E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,100–4,100</td>
+<td class="mono">1.4099E-01 – 1.4099E-01</td>
+<td class="id">1</td><td class="r">516</td>
+<td>solid</td><td class="r mono">3.2047E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,130–4,130</td>
+<td class="mono">1.4199E-01 – 1.4199E-01</td>
+<td class="id">1</td><td class="r">188</td>
+<td>solid</td><td class="r mono">3.4135E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,159–4,188</td>
+<td class="mono">1.4298E-01 – 1.4397E-01</td>
+<td class="id">1</td><td class="r">196</td>
+<td>solid</td><td class="r mono">3.4118E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">4,218–4,218</td>
+<td class="mono">1.4500E-01 – 1.4500E-01</td>
+<td class="id">1</td><td class="r">192</td>
+<td>solid</td><td class="r mono">3.4155E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,247–4,247</td>
+<td class="mono">1.4599E-01 – 1.4599E-01</td>
+<td class="id">1</td><td class="r">185</td>
+<td>solid</td><td class="r mono">3.4322E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,276–4,276</td>
+<td class="mono">1.4699E-01 – 1.4699E-01</td>
+<td class="id">1</td><td class="r">182</td>
+<td>solid</td><td class="r mono">3.4421E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,305–4,305</td>
+<td class="mono">1.4799E-01 – 1.4799E-01</td>
+<td class="id">1</td><td class="r">178</td>
+<td>solid</td><td class="r mono">3.4459E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,339–4,339</td>
+<td class="mono">1.4898E-01 – 1.4898E-01</td>
+<td class="id">1</td><td class="r">479</td>
+<td>solid</td><td class="r mono">3.0373E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,369–4,369</td>
+<td class="mono">1.4998E-01 – 1.4998E-01</td>
+<td class="id">1</td><td class="r">184</td>
+<td>solid</td><td class="r mono">3.3934E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,400–4,400</td>
+<td class="mono">1.5099E-01 – 1.5099E-01</td>
+<td class="id">1</td><td class="r">158</td>
+<td>solid</td><td class="r mono">3.2453E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,433–4,433</td>
+<td class="mono">1.5197E-01 – 1.5197E-01</td>
+<td class="id">1</td><td class="r">512</td>
+<td>solid</td><td class="r mono">3.2005E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,463–4,463</td>
+<td class="mono">1.5298E-01 – 1.5298E-01</td>
+<td class="id">1</td><td class="r">172</td>
+<td>solid</td><td class="r mono">3.4425E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,492–4,521</td>
+<td class="mono">1.5398E-01 – 1.5497E-01</td>
+<td class="id">1</td><td class="r">501</td>
+<td>solid</td><td class="r mono">3.4021E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">4,551–4,581</td>
+<td class="mono">1.5598E-01 – 1.5699E-01</td>
+<td class="id">1</td><td class="r">181</td>
+<td>solid</td><td class="r mono">3.3450E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">4,611–4,611</td>
+<td class="mono">1.5799E-01 – 1.5799E-01</td>
+<td class="id">1</td><td class="r">184</td>
+<td>solid</td><td class="r mono">3.3322E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,641–4,641</td>
+<td class="mono">1.5900E-01 – 1.5900E-01</td>
+<td class="id">1</td><td class="r">177</td>
+<td>solid</td><td class="r mono">3.3458E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,670–4,670</td>
+<td class="mono">1.5997E-01 – 1.5997E-01</td>
+<td class="id">1</td><td class="r">173</td>
+<td>solid</td><td class="r mono">3.3681E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,700–4,700</td>
+<td class="mono">1.6098E-01 – 1.6098E-01</td>
+<td class="id">1</td><td class="r">176</td>
+<td>solid</td><td class="r mono">3.3771E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,730–4,730</td>
+<td class="mono">1.6200E-01 – 1.6200E-01</td>
+<td class="id">1</td><td class="r">169</td>
+<td>solid</td><td class="r mono">3.3870E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,764–4,799</td>
+<td class="mono">1.6298E-01 – 1.6400E-01</td>
+<td class="id">1</td><td class="r">489</td>
+<td>solid</td><td class="r mono">3.2369E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">4,829–4,860</td>
+<td class="mono">1.6498E-01 – 1.6598E-01</td>
+<td class="id">1</td><td class="r">497</td>
+<td>solid</td><td class="r mono">3.1845E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">4,891–4,891</td>
+<td class="mono">1.6698E-01 – 1.6698E-01</td>
+<td class="id">1</td><td class="r">173</td>
+<td>solid</td><td class="r mono">3.2150E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">4,922–4,953</td>
+<td class="mono">1.6798E-01 – 1.6899E-01</td>
+<td class="id">1</td><td class="r">169</td>
+<td>solid</td><td class="r mono">3.2627E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">4,983–4,983</td>
+<td class="mono">1.6999E-01 – 1.6999E-01</td>
+<td class="id">1</td><td class="r">165</td>
+<td>solid</td><td class="r mono">3.3279E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,013–5,013</td>
+<td class="mono">1.7099E-01 – 1.7099E-01</td>
+<td class="id">1</td><td class="r">481</td>
+<td>solid</td><td class="r mono">3.3771E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,047–5,047</td>
+<td class="mono">1.7197E-01 – 1.7197E-01</td>
+<td class="id">1</td><td class="r">157</td>
+<td>solid</td><td class="r mono">3.0206E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,082–5,082</td>
+<td class="mono">1.7297E-01 – 1.7297E-01</td>
+<td class="id">1</td><td class="r">477</td>
+<td>solid</td><td class="r mono">3.0134E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,113–5,113</td>
+<td class="mono">1.7397E-01 – 1.7397E-01</td>
+<td class="id">1</td><td class="r">489</td>
+<td>solid</td><td class="r mono">3.2818E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,145–5,176</td>
+<td class="mono">1.7500E-01 – 1.7599E-01</td>
+<td class="id">1</td><td class="r">165</td>
+<td>solid</td><td class="r mono">3.1610E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">5,207–5,207</td>
+<td class="mono">1.7699E-01 – 1.7699E-01</td>
+<td class="id">1</td><td class="r">164</td>
+<td>solid</td><td class="r mono">3.2536E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,237–5,237</td>
+<td class="mono">1.7797E-01 – 1.7797E-01</td>
+<td class="id">1</td><td class="r">160</td>
+<td>solid</td><td class="r mono">3.3300E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,267–5,267</td>
+<td class="mono">1.7897E-01 – 1.7897E-01</td>
+<td class="id">1</td><td class="r">157</td>
+<td>solid</td><td class="r mono">3.3525E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,301–5,301</td>
+<td class="mono">1.7998E-01 – 1.7998E-01</td>
+<td class="id">1</td><td class="r">548</td>
+<td>solid</td><td class="r mono">2.2017E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,336–5,336</td>
+<td class="mono">1.8098E-01 – 1.8098E-01</td>
+<td class="id">1</td><td class="r">161</td>
+<td>solid</td><td class="r mono">3.1422E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,366–5,395</td>
+<td class="mono">1.8198E-01 – 1.8297E-01</td>
+<td class="id">1</td><td class="r">153</td>
+<td>solid</td><td class="r mono">3.3894E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">5,424–5,424</td>
+<td class="mono">1.8397E-01 – 1.8397E-01</td>
+<td class="id">1</td><td class="r">149</td>
+<td>solid</td><td class="r mono">3.4560E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,453–5,482</td>
+<td class="mono">1.8498E-01 – 1.8599E-01</td>
+<td class="id">1</td><td class="r">145</td>
+<td>solid</td><td class="r mono">3.4872E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">5,513–5,513</td>
+<td class="mono">1.8698E-01 – 1.8698E-01</td>
+<td class="id">1</td><td class="r">165</td>
+<td>solid</td><td class="r mono">2.4979E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,545–5,545</td>
+<td class="mono">1.8798E-01 – 1.8798E-01</td>
+<td class="id">1</td><td class="r">473</td>
+<td>solid</td><td class="r mono">3.3749E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,575–5,575</td>
+<td class="mono">1.8898E-01 – 1.8898E-01</td>
+<td class="id">1</td><td class="r">469</td>
+<td>solid</td><td class="r mono">3.4831E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,606–5,606</td>
+<td class="mono">1.8999E-01 – 1.8999E-01</td>
+<td class="id">1</td><td class="r">473</td>
+<td>solid</td><td class="r mono">3.4279E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,636–5,636</td>
+<td class="mono">1.9100E-01 – 1.9100E-01</td>
+<td class="id">1</td><td class="r">149</td>
+<td>solid</td><td class="r mono">2.3286E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,668–5,668</td>
+<td class="mono">1.9199E-01 – 1.9199E-01</td>
+<td class="id">1</td><td class="r">291</td>
+<td>solid</td><td class="r mono">3.0011E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,699–5,699</td>
+<td class="mono">1.9298E-01 – 1.9298E-01</td>
+<td class="id">1</td><td class="r">469</td>
+<td>solid</td><td class="r mono">3.4104E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,728–5,728</td>
+<td class="mono">1.9397E-01 – 1.9397E-01</td>
+<td class="id">1</td><td class="r">149</td>
+<td>solid</td><td class="r mono">3.3968E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,757–5,757</td>
+<td class="mono">1.9497E-01 – 1.9497E-01</td>
+<td class="id">1</td><td class="r">145</td>
+<td>solid</td><td class="r mono">3.4469E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,789–5,789</td>
+<td class="mono">1.9598E-01 – 1.9598E-01</td>
+<td class="id">1</td><td class="r">469</td>
+<td>solid</td><td class="r mono">3.2025E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,820–5,820</td>
+<td class="mono">1.9699E-01 – 1.9699E-01</td>
+<td class="id">1</td><td class="r">461</td>
+<td>solid</td><td class="r mono">3.5060E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,849–5,878</td>
+<td class="mono">1.9799E-01 – 1.9898E-01</td>
+<td class="id">1</td><td class="r">145</td>
+<td>solid</td><td class="r mono">3.4067E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">5,907–5,907</td>
+<td class="mono">1.9997E-01 – 1.9997E-01</td>
+<td class="id">1</td><td class="r">141</td>
+<td>solid</td><td class="r mono">3.4408E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,936–5,936</td>
+<td class="mono">2.0097E-01 – 2.0097E-01</td>
+<td class="id">1</td><td class="r">137</td>
+<td>solid</td><td class="r mono">3.5135E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,965–5,965</td>
+<td class="mono">2.0199E-01 – 2.0199E-01</td>
+<td class="id">1</td><td class="r">457</td>
+<td>solid</td><td class="r mono">3.5133E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">5,998–5,998</td>
+<td class="mono">2.0299E-01 – 2.0299E-01</td>
+<td class="id">1</td><td class="r">145</td>
+<td>solid</td><td class="r mono">3.4500E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,028–6,028</td>
+<td class="mono">2.0398E-01 – 2.0398E-01</td>
+<td class="id">1</td><td class="r">137</td>
+<td>solid</td><td class="r mono">2.8118E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,060–6,060</td>
+<td class="mono">2.0497E-01 – 2.0497E-01</td>
+<td class="id">1</td><td class="r">141</td>
+<td>solid</td><td class="r mono">3.4654E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,089–6,089</td>
+<td class="mono">2.0599E-01 – 2.0599E-01</td>
+<td class="id">1</td><td class="r">4</td>
+<td>solid</td><td class="r mono">3.5298E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,121–6,121</td>
+<td class="mono">2.0699E-01 – 2.0699E-01</td>
+<td class="id">1</td><td class="r">141</td>
+<td>solid</td><td class="r mono">3.2137E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,152–6,152</td>
+<td class="mono">2.0800E-01 – 2.0800E-01</td>
+<td class="id">1</td><td class="r">457</td>
+<td>solid</td><td class="r mono">3.2624E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,181–6,181</td>
+<td class="mono">2.0898E-01 – 2.0898E-01</td>
+<td class="id">1</td><td class="r">461</td>
+<td>solid</td><td class="r mono">3.4465E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,210–6,240</td>
+<td class="mono">2.0997E-01 – 2.1098E-01</td>
+<td class="id">1</td><td class="r">141</td>
+<td>solid</td><td class="r mono">3.3230E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">6,271–6,346</td>
+<td class="mono">2.1198E-01 – 2.1398E-01</td>
+<td class="id">1</td><td class="r">145</td>
+<td>solid</td><td class="r mono">2.4248E-05</td>
+<td class="r">3</td></tr>
+<tr><td class="r">6,388–6,388</td>
+<td class="mono">2.1499E-01 – 2.1499E-01</td>
+<td class="id">1</td><td class="r">465</td>
+<td>solid</td><td class="r mono">2.4718E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,428–6,557</td>
+<td class="mono">2.1599E-01 – 2.1900E-01</td>
+<td class="id">1</td><td class="r">141</td>
+<td>solid</td><td class="r mono">2.2513E-05</td>
+<td class="r">4</td></tr>
+<tr><td class="r">6,597–6,718</td>
+<td class="mono">2.1999E-01 – 2.2300E-01</td>
+<td class="id">1</td><td class="r">137</td>
+<td>solid</td><td class="r mono">2.4168E-05</td>
+<td class="r">4</td></tr>
+<tr><td class="r">6,755–6,859</td>
+<td class="mono">2.2399E-01 – 2.2698E-01</td>
+<td class="id">1</td><td class="r">133</td>
+<td>solid</td><td class="r mono">2.6854E-05</td>
+<td class="r">4</td></tr>
+<tr><td class="r">6,896–6,896</td>
+<td class="mono">2.2797E-01 – 2.2797E-01</td>
+<td class="id">1</td><td class="r">449</td>
+<td>solid</td><td class="r mono">2.9819E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,931–6,931</td>
+<td class="mono">2.2900E-01 – 2.2900E-01</td>
+<td class="id">1</td><td class="r">453</td>
+<td>solid</td><td class="r mono">2.9382E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,963–6,963</td>
+<td class="mono">2.2998E-01 – 2.2998E-01</td>
+<td class="id">1</td><td class="r">132</td>
+<td>solid</td><td class="r mono">3.1902E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">6,999–6,999</td>
+<td class="mono">2.3100E-01 – 2.3100E-01</td>
+<td class="id">1</td><td class="r">445</td>
+<td>solid</td><td class="r mono">3.1640E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,030–7,062</td>
+<td class="mono">2.3198E-01 – 2.3299E-01</td>
+<td class="id">1</td><td class="r">125</td>
+<td>solid</td><td class="r mono">3.1297E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">7,093–7,093</td>
+<td class="mono">2.3397E-01 – 2.3397E-01</td>
+<td class="id">1</td><td class="r">128</td>
+<td>solid</td><td class="r mono">3.2366E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,127–7,127</td>
+<td class="mono">2.3498E-01 – 2.3498E-01</td>
+<td class="id">1</td><td class="r">125</td>
+<td>solid</td><td class="r mono">3.0198E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,161–7,161</td>
+<td class="mono">2.3597E-01 – 2.3597E-01</td>
+<td class="id">1</td><td class="r">121</td>
+<td>solid</td><td class="r mono">3.2252E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,198–7,198</td>
+<td class="mono">2.3700E-01 – 2.3700E-01</td>
+<td class="id">1</td><td class="r">129</td>
+<td>solid</td><td class="r mono">2.3240E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,237–7,278</td>
+<td class="mono">2.3799E-01 – 2.3899E-01</td>
+<td class="id">1</td><td class="r">125</td>
+<td>solid</td><td class="r mono">2.4757E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">7,317–7,395</td>
+<td class="mono">2.3999E-01 – 2.4198E-01</td>
+<td class="id">1</td><td class="r">121</td>
+<td>solid</td><td class="r mono">2.4710E-05</td>
+<td class="r">3</td></tr>
+<tr><td class="r">7,431–7,466</td>
+<td class="mono">2.4298E-01 – 2.4400E-01</td>
+<td class="id">1</td><td class="r">117</td>
+<td>solid</td><td class="r mono">2.8227E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">7,505–7,505</td>
+<td class="mono">2.4500E-01 – 2.4500E-01</td>
+<td class="id">1</td><td class="r">449</td>
+<td>solid</td><td class="r mono">2.5048E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,541–7,541</td>
+<td class="mono">2.4597E-01 – 2.4597E-01</td>
+<td class="id">1</td><td class="r">117</td>
+<td>solid</td><td class="r mono">2.9181E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,575–7,575</td>
+<td class="mono">2.4699E-01 – 2.4699E-01</td>
+<td class="id">1</td><td class="r">113</td>
+<td>solid</td><td class="r mono">3.0641E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,609–7,609</td>
+<td class="mono">2.4798E-01 – 2.4798E-01</td>
+<td class="id">1</td><td class="r">120</td>
+<td>solid</td><td class="r mono">3.1827E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,644–7,676</td>
+<td class="mono">2.4898E-01 – 2.5000E-01</td>
+<td class="id">1</td><td class="r">113</td>
+<td>solid</td><td class="r mono">3.1602E-05</td>
+<td class="r">2</td></tr>
+<tr><td class="r">7,706–7,706</td>
+<td class="mono">2.5097E-01 – 2.5097E-01</td>
+<td class="id">1</td><td class="r">109</td>
+<td>solid</td><td class="r mono">3.2634E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,743–7,743</td>
+<td class="mono">2.5198E-01 – 2.5198E-01</td>
+<td class="id">1</td><td class="r">433</td>
+<td>solid</td><td class="r mono">2.6068E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,777–7,777</td>
+<td class="mono">2.5297E-01 – 2.5297E-01</td>
+<td class="id">1</td><td class="r">109</td>
+<td>solid</td><td class="r mono">3.3154E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,806–7,806</td>
+<td class="mono">2.5399E-01 – 2.5399E-01</td>
+<td class="id">1</td><td class="r">323</td>
+<td>solid</td><td class="r mono">3.5294E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,842–7,842</td>
+<td class="mono">2.5499E-01 – 2.5499E-01</td>
+<td class="id">1</td><td class="r">105</td>
+<td>solid</td><td class="r mono">3.3321E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,886–7,886</td>
+<td class="mono">2.5600E-01 – 2.5600E-01</td>
+<td class="id">1</td><td class="r">592</td>
+<td>solid</td><td class="r mono">2.2056E-05</td>
+<td class="r">1</td></tr>
+<tr><td class="r">7,946–7,946</td>
+<td class="mono">2.5699E-01 – 2.5699E-01</td>
+<td class="id">1</td><td class="r">105</td>
+<td>solid</td><td class="r mono">1.4946E-05</td>
+<td class="r">1</td></tr>
+</tbody></table>
+<h2>성능 프로파일링</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">CPU (s)</th><th class="r">CPU %</th>
+<th class="r">Clock (s)</th><th class="r">Clock %</th><th style="min-width:150px">비율</th>
+</tr></thead><tbody>
+<tr><td>Keyword Processing</td>
+<td class="r mono">0.48</td><td class="r">12.4</td>
+<td class="r mono">0.74</td><td class="r">4.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:8%"></div></div></td></tr>
+<tr><td>KW Reading</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>KW Writing</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.03</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>MPP Decomposition</td>
+<td class="r mono">0.46</td><td class="r">12.0</td>
+<td class="r mono">1.98</td><td class="r">11.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:22%"></div></div></td></tr>
+<tr><td>Init Proc</td>
+<td class="r mono">0.24</td><td class="r">6.2</td>
+<td class="r mono">0.49</td><td class="r">2.7</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:5%"></div></div></td></tr>
+<tr><td>Decomposition</td>
+<td class="r mono">0.07</td><td class="r">1.8</td>
+<td class="r mono">0.13</td><td class="r">0.8</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Translation</td>
+<td class="r mono">0.15</td><td class="r">4.0</td>
+<td class="r mono">1.36</td><td class="r">7.6</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:15%"></div></div></td></tr>
+<tr><td>Initialization</td>
+<td class="r mono">0.21</td><td class="r">5.5</td>
+<td class="r mono">0.71</td><td class="r">3.9</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:7%"></div></div></td></tr>
+<tr><td>Init Proc Phase 1</td>
+<td class="r mono">0.01</td><td class="r">0.3</td>
+<td class="r mono">0.02</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init Proc Phase 2</td>
+<td class="r mono">0.02</td><td class="r">0.5</td>
+<td class="r mono">0.06</td><td class="r">0.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Init solver</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Element processing</td>
+<td class="r mono">0.94</td><td class="r">24.5</td>
+<td class="r mono">0.97</td><td class="r">5.4</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:10%"></div></div></td></tr>
+<tr><td>Solids</td>
+<td class="r mono">0.93</td><td class="r">24.1</td>
+<td class="r mono">0.95</td><td class="r">5.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:10%"></div></div></td></tr>
+<tr><td>E Other</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Binary databases</td>
+<td class="r mono">0.03</td><td class="r">0.7</td>
+<td class="r mono">0.04</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>ASCII database</td>
+<td class="r mono">1.36</td><td class="r">35.3</td>
+<td class="r mono">12.87</td><td class="r">71.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:142%"></div></div></td></tr>
+<tr><td>Contact algorithm</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Rigid Bodies</td>
+<td class="r mono">0.02</td><td class="r">0.4</td>
+<td class="r mono">0.02</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Mass Scaling</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force gather</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Kinematic Update</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Update nodes</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Time step size</td>
+<td class="r mono">0.12</td><td class="r">3.2</td>
+<td class="r mono">0.41</td><td class="r">2.3</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:4%"></div></div></td></tr>
+<tr><td>Time step Sharing</td>
+<td class="r mono">0.09</td><td class="r">2.3</td>
+<td class="r mono">0.09</td><td class="r">0.5</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Group force file</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Others</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Sharing</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 1</td>
+<td class="r mono">0.03</td><td class="r">0.9</td>
+<td class="r mono">0.04</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Scale Masses</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force Constraints</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Force to Accel</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.00</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 2</td>
+<td class="r mono">0.02</td><td class="r">0.4</td>
+<td class="r mono">0.02</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Geometry Update</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 3</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Sense Switch Share</td>
+<td class="r mono">0.02</td><td class="r">0.6</td>
+<td class="r mono">0.02</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Misc. 4</td>
+<td class="r mono">0.03</td><td class="r">0.7</td>
+<td class="r mono">0.04</td><td class="r">0.2</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Timestep Init</td>
+<td class="r mono">0.00</td><td class="r">0.1</td>
+<td class="r mono">0.01</td><td class="r">0.0</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Apply Loads</td>
+<td class="r mono">0.01</td><td class="r">0.2</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+<tr><td>Compute exwork</td>
+<td class="r mono">0.01</td><td class="r">0.3</td>
+<td class="r mono">0.01</td><td class="r">0.1</td>
+<td><div class="bar-container"><div class="bar-fill" style="width:2%"></div></div></td></tr>
+</tbody></table>
+<h2>부하 프로파일 요약 (2개 프로세서)</h2>
+<table><thead><tr>
+<th>컴포넌트</th><th class="r">최소 %</th><th class="r">최대 %</th><th class="r">평균 %</th><th class="r">편차</th>
+</tr></thead><tbody>
+<tr><td>솔리드</td><td class="r">5.2</td><td class="r">5.3</td>
+<td class="r">5.3</td><td class="r">0.0</td></tr>
+<tr><td>접촉</td><td class="r">0.0</td><td class="r">0.0</td>
+<td class="r">0.0</td><td class="r">0.0</td></tr>
+<tr><td>Force 공유</td><td class="r">0.0</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+<tr><td>Timestep 공유</td><td class="r">0.5</td><td class="r">0.5</td>
+<td class="r">0.5</td><td class="r">0.1</td></tr>
+<tr><td>Switch 공유</td><td class="r">0.0</td><td class="r">0.2</td>
+<td class="r">0.1</td><td class="r">0.2</td></tr>
+<tr><td>바이너리 DB</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+<tr><td>강체</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+<tr><td>기타</td><td class="r">0.1</td><td class="r">0.1</td>
+<td class="r">0.1</td><td class="r">0.0</td></tr>
+</tbody></table>
+<h2>MPI 스케일링 예측</h2>
+<table><thead><tr>
+<th class="r">코어 수</th><th class="r">예상 시간 (s)</th><th class="r">속도향상</th><th class="r">효율</th><th class="r">통신 비율</th>
+</tr></thead><tbody>
+<tr><td class="r">2 (현재)</td><td class="r">21</td>
+<td class="r">0.9x</td><td class="r">85%</td>
+<td class="r">1%</td></tr>
+<tr><td class="r">32</td><td class="r">19</td>
+<td class="r">0.9x</td><td class="r" class="eff-bad">6%</td>
+<td class="r">3%</td></tr>
+<tr><td class="r">64</td><td class="r">19</td>
+<td class="r">0.9x</td><td class="r" class="eff-bad">3%</td>
+<td class="r">4%</td></tr>
+<tr><td class="r">128</td><td class="r">19</td>
+<td class="r">0.9x</td><td class="r" class="eff-bad">1%</td>
+<td class="r">5%</td></tr>
+<tr><td class="r">256</td><td class="r">20</td>
+<td class="r">0.9x</td><td class="r" class="eff-bad">1%</td>
+<td class="r">7%</td></tr>
+</tbody></table>
+<h2>MPP 부하 균형</h2>
+<table><thead><tr>
+<th class="r">프로세서</th><th>호스트명</th><th class="r">CPU/평균</th><th class="r">CPU (s)</th>
+</tr></thead><tbody>
+<tr><td class="id">0</td><td>node002</td>
+<td class="r" class="eff-mid">0.40933</td><td class="r">1.58</td></tr>
+<tr><td class="id">1</td><td>node002</td>
+<td class="r" class="eff-bad">1.59067</td><td class="r">6.14</td></tr>
+</tbody></table>
+<div class="note">메모리 (최대 d-words): 최소=2,131,077 최대=2,156,398 (~16 MB) 평균=2,143,738 | 피크 랭크: #0</div>
+<h2>파트 정의</h2>
+<table><thead><tr>
+<th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>
+<th class="r">밀도</th><th class="r">탄성계수 (E)</th><th class="r">포아송비 (ν)</th><th class="c">ELFORM</th>
+</tr></thead><tbody>
+<tr><td class="id">1</td><td>FPCB_Cable_Viscoelastic</td>
+<td class="c">76</td><td>Linear Viscoelastic</td>
+<td class="r mono">2.9100E-06</td><td class="r mono">0</td>
+<td class="r"></td><td class="c">2</td></tr>
+</tbody></table>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, load_profile.csv, mes[0000-0001], slurm_20195.err</div>
+</body></html>

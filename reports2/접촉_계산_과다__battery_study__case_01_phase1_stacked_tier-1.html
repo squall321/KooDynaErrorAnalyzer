@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -188,7 +190,7 @@ tbody tr:hover { background: var(--bg3); }
 <div class="findings-summary">
 <span class="badge badge-critical">심각 5</span>
 <span class="badge badge-warning">경고 5</span>
-<span class="badge badge-info">정보 7</span>
+<span class="badge badge-info">정보 9</span>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -227,8 +229,8 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
-<span class="title">12 warnings detected (3 codes)</span>
-<div class="desc">Warning codes: 30210(10x), 30128(1x), 30131(1x)</div>
+<span class="title">22 warnings detected (4 codes)</span>
+<div class="desc">Warning codes: 21287(10x), 30210(10x), 30128(1x), 30131(1x)</div>
 <div class="rec">→ Review individual warning codes for details. Common tied contact warnings can often be resolved by improving mesh compatibility between contact surfaces.</div>
 </div>
 <div class="finding warning">
@@ -256,8 +258,8 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
-<span class="title">파트 1042 (NMC_Cathode_UC04_TShell)가 timestep 지배 (92%)</span>
-<div class="desc">파트 1042 (NMC_Cathode_UC04_TShell)가 가장 작은 timestep의 92%를 차지합니다 (92/100개). 최소 dt=9.865E-08. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<span class="title">파트 1042 (Part 1042)가 timestep 지배 (92%)</span>
+<div class="desc">파트 1042 (Part 1042)가 가장 작은 timestep의 92%를 차지합니다 (92/100개). 최소 dt=9.865E-08. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
 <div class="rec">→ 1. 파트 1042의 메시에서 가장 작은 요소 확인 및 재생성
 2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
 3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
@@ -273,7 +275,7 @@ tbody tr:hover { background: var(--bg3); }
 <div class="finding info">
 <span class="tag info">정보</span>
 <span class="title">Interface 2 dominates contact cost</span>
-<div class="desc">Interface 2 (Automatic Single Surface) uses 128.71s (97% of contact time). Total contact interfaces: 2.</div>
+<div class="desc">Interface 2 (Type 0) uses 128.71s (97% of contact time). Total contact interfaces: 2.</div>
 <div class="rec">→ Review Interface 2 for optimization. Consider bucket sort options or reducing segment count.</div>
 </div>
 <div class="finding info">
@@ -298,6 +300,18 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding info">
 <span class="tag info">정보</span>
+<span class="title">nodout 파일 없음 — 노드 속도 진단 불가</span>
+<div class="desc">nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. *DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. 수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다.</div>
+<div class="rec">→ *DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 관심 노드의 시계열 데이터를 출력하도록 설정</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">bndout 파일 없음 — 경계 반력 진단 불가</span>
+<div class="desc">bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. *DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. 과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다.</div>
+<div class="rec">→ *DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. DT=0 설정 시 매 사이클 저장 (파일 크기 주의)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
 <span class="title">접촉 안정성 dt 상한: 3.809E-08</span>
 <div class="desc">LS-DYNA 권장: dt ≤ 3.809E-08. 가장 작은 서프스 dt = 3.809E-08 (인터페이스 2, surfa, 파트 1001). 활성 서프스 3개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.</div>
 <div class="rec">→ 1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑
@@ -309,6 +323,9 @@ tbody tr:hover { background: var(--bg3); }
 <table><thead><tr>
 <th class="r">코드</th><th class="r">횟수</th><th class="c">심각도</th><th>설명</th><th>인터페이스</th>
 </tr></thead><tbody>
+<tr><td class="r id">21287</td><td class="r">10</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>Part ID 1002 uses thick shell formulation 1. The number of integration points ha</td><td></td></tr>
 <tr><td class="r id">30210</td><td class="r">10</td>
 <td class="c"><span class="tag warning">경고</span></td>
 <td>Stress vs. plastic strain load curve ID = 1001 of part ID = 1002 has a max. slop</td><td></td></tr>
@@ -318,17 +335,6 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td class="r id">30131</td><td class="r">1</td>
 <td class="c"><span class="tag warning">경고</span></td>
 <td>total number of massless nodes = 21   NOTE : For 2D axisymmetric problems the fo</td><td></td></tr>
-</tbody></table>
-<h2>접촉 인터페이스 요약</h2>
-<table><thead><tr>
-<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
-</tr></thead><tbody>
-<tr><td class="id">1</td><td>Auto S2S</td>
-<td>Impactor to Pouch</td><td class="r"></td>
-<td class="r mono">3.4345</td><td class="r">1.16</td></tr>
-<tr><td class="id">2</td><td>Auto Single Surface</td>
-<td>Cell Internal Self-Contact</td><td class="r"></td>
-<td class="r mono">128.7100</td><td class="r">43.54</td></tr>
 </tbody></table>
 <h2>에너지 수지</h2>
 <table><thead><tr>
@@ -817,19 +823,19 @@ tbody tr:hover { background: var(--bg3); }
 <table><thead><tr>
 <th class="r">인터페이스 ID</th><th>제목</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
 </tr></thead><tbody>
-<tr><td class="id">2</td><td>Cell Internal Self-Contact</td>
+<tr><td class="id">2</td><td></td>
 <td class="r mono">128.7100</td><td class="r">43.54</td></tr>
-<tr><td class="id">1</td><td>Impactor to Pouch</td>
+<tr><td class="id">1</td><td></td>
 <td class="r mono">3.4345</td><td class="r">1.16</td></tr>
 </tbody></table>
 <h2>접촉 프로파일 (인터페이스별 프로세서 분포)</h2>
 <table><thead><tr>
 <th class="r">인터페이스</th><th>제목</th><th class="r">최소 (s)</th><th class="r">최대 (s)</th><th class="r">평균 (s)</th><th class="r">불균형</th>
 </tr></thead><tbody>
-<tr><td class="id">1</td><td>Impactor to Pouch</td>
+<tr><td class="id">1</td><td></td>
 <td class="r mono">3.42</td><td class="r mono">3.45</td><td class="r mono">3.43</td>
 <td class="r">1%</td></tr>
-<tr><td class="id">2</td><td>Cell Internal Self-Contact</td>
+<tr><td class="id">2</td><td></td>
 <td class="r mono">128.69</td><td class="r mono">128.73</td><td class="r mono">128.71</td>
 <td class="r">0%</td></tr>
 </tbody></table>
@@ -862,6 +868,8 @@ tbody tr:hover { background: var(--bg3); }
 <td class="r mono">5.537E-07</td>
 <td class="r">17026</td><td class="r">12</td></tr>
 </tbody></table>
+<h2>Decomposition 부하 분포</h2>
+<div class="note">Min cost=1.000000 | Max cost=1.000000 | StdDev=0.000000 | Max/Min 비율: <span>1.00000</span></div>
 <h2>파트별 질량 특성</h2>
 <table><thead><tr>
 <th class="r">파트 ID</th><th class="r">총 질량</th>
@@ -1050,118 +1058,6 @@ tbody tr:hover { background: var(--bg3); }
 <td class="c">1</td><td>Elastic</td>
 <td class="r mono">1.2000E-09</td><td class="r mono">2000.0000</td>
 <td class="r">0.45</td><td class="c"></td></tr>
-<tr><td class="id">30</td><td>PCM_Positive_Solid</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7.8500E-09</td><td class="r mono">210000.0000</td>
-<td class="r">0.30</td><td class="c">1</td></tr>
-<tr><td class="id">31</td><td>PCM_Negative_Solid</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7.8500E-09</td><td class="r mono">210000.0000</td>
-<td class="r">0.30</td><td class="c">1</td></tr>
-<tr><td class="id">100</td><td>Impactor_Solid</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7.8500E-09</td><td class="r mono">210000.0000</td>
-<td class="r">0.30</td><td class="c">1</td></tr>
-<tr><td class="id">1001</td><td>Al_CC_UC00_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1002</td><td>NMC_Cathode_UC00_TShell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
-<td class="r">0.30</td><td class="c"></td></tr>
-<tr><td class="id">1003</td><td>PE_Separator_UC00_Shell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
-<td class="r">0.35</td><td class="c"></td></tr>
-<tr><td class="id">1004</td><td>Graphite_Anode_UC00_TShel</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
-<td class="r">0.28</td><td class="c"></td></tr>
-<tr><td class="id">1005</td><td>Cu_CC_UC00_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1011</td><td>Al_CC_UC01_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1012</td><td>NMC_Cathode_UC01_TShell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
-<td class="r">0.30</td><td class="c"></td></tr>
-<tr><td class="id">1013</td><td>PE_Separator_UC01_Shell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
-<td class="r">0.35</td><td class="c"></td></tr>
-<tr><td class="id">1014</td><td>Graphite_Anode_UC01_TShel</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
-<td class="r">0.28</td><td class="c"></td></tr>
-<tr><td class="id">1015</td><td>Cu_CC_UC01_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1021</td><td>Al_CC_UC02_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1022</td><td>NMC_Cathode_UC02_TShell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
-<td class="r">0.30</td><td class="c"></td></tr>
-<tr><td class="id">1023</td><td>PE_Separator_UC02_Shell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
-<td class="r">0.35</td><td class="c"></td></tr>
-<tr><td class="id">1024</td><td>Graphite_Anode_UC02_TShel</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
-<td class="r">0.28</td><td class="c"></td></tr>
-<tr><td class="id">1025</td><td>Cu_CC_UC02_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1031</td><td>Al_CC_UC03_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1032</td><td>NMC_Cathode_UC03_TShell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
-<td class="r">0.30</td><td class="c"></td></tr>
-<tr><td class="id">1033</td><td>PE_Separator_UC03_Shell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
-<td class="r">0.35</td><td class="c"></td></tr>
-<tr><td class="id">1034</td><td>Graphite_Anode_UC03_TShel</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
-<td class="r">0.28</td><td class="c"></td></tr>
-<tr><td class="id">1035</td><td>Cu_CC_UC03_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1041</td><td>Al_CC_UC04_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">2.7000E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
-<tr><td class="id">1042</td><td>NMC_Cathode_UC04_TShell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">2.5000E-09</td><td class="r mono">800.0000</td>
-<td class="r">0.30</td><td class="c"></td></tr>
-<tr><td class="id">1043</td><td>PE_Separator_UC04_Shell</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">9.5000E-10</td><td class="r mono">300.0000</td>
-<td class="r">0.35</td><td class="c"></td></tr>
-<tr><td class="id">1044</td><td>Graphite_Anode_UC04_TShel</td>
-<td class="c">24</td><td>Piecewise Linear Plastici</td>
-<td class="r mono">1.8000E-09</td><td class="r mono">500.0000</td>
-<td class="r">0.28</td><td class="c"></td></tr>
-<tr><td class="id">1045</td><td>Cu_CC_UC04_Shell</td>
-<td class="c">15</td><td>Type 15</td>
-<td class="r mono">8.9600E-09</td><td class="r mono">0</td>
-<td class="r"></td><td class="c"></td></tr>
 </tbody></table>
 <div class="footer">분석 파일: d3hsp, glstat, status.out, load_profile.csv, cont_profile.csv, mes[0000-0001], slurm_26.err</div>
 </body></html>

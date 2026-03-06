@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -183,8 +185,8 @@ tbody tr:hover { background: var(--bg3); }
 <h2>진단 결과</h2>
 <div class="findings-summary">
 <span class="badge badge-critical">심각 5</span>
-<span class="badge badge-warning">경고 2</span>
-<span class="badge badge-info">정보 0</span>
+<span class="badge badge-warning">경고 4</span>
+<span class="badge badge-info">정보 3</span>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -234,12 +236,49 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
+<span class="title">Part 2: timestep bottleneck (100%)</span>
+<div class="desc">파트 2가 100개의 최소 timestep 중 100개를 차지합니다 (100%). 최소 dt = 8.036E-07. 이 파트의 메시가 시뮬레이션 속도를 제한하고 있습니다.</div>
+<div class="rec">→ 파트 2의 메시를 조정하세요:
+1. 매우 작은 요소를 제거하거나 coarsen
+2. Mass scaling (DT2MS) 적용 고려
+3. 요소 품질(aspect ratio, warpage) 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
 <span class="title">접촉 안정성 dt 상한: 2.801E-07</span>
 <div class="desc">LS-DYNA 권장: dt ≤ 2.801E-07. 현재 최소 요소 dt(8.036E-07)가 권장 접촉 dt 상한(2.801E-07)을 초과합니다 — 접촉 불안정 위험이 있습니다. 가장 작은 서프스 dt = 2.801E-07 (인터페이스 1, surfb, 파트 1). 활성 서프스 4개 중 제어 인터페이스가 확인됨. Penalty 기반 접촉에서 접촉 강성(contact stiffness)은 k = (fs × K × A²) / V로 계산되며, 이 강성이 높을수록 접촉 안정성 dt가 작아집니다. 접촉 dt가 요소 dt보다 작으면 접촉이 전체 시뮬레이션의 timestep을 지배합니다.</div>
 <div class="rec">→ 1. Penalty scale factor(SLSFAC) 감소 → 접촉 강성 ↓ → 접촉 dt ↑
 2. Soft constraint (SOFT=1 또는 2) 사용 → 질량 기반으로 접촉 강성 자동 조절
 3. 해당 인터페이스의 접촉 두께(SHLTHK) 설정 확인
 4. 접촉면 메시 크기가 과도하게 작지 않은지 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">파트 2 (Rubber_SPH)가 timestep 지배 (100%)</span>
+<div class="desc">파트 2 (Rubber_SPH)가 가장 작은 timestep의 100%를 차지합니다 (100/100개). 최소 dt=8.036E-07. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<div class="rec">→ 1. 파트 2의 메시에서 가장 작은 요소 확인 및 재생성
+2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
+3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
+4. Mass scaling 적용: *CONTROL_TIMESTEP에서 DT2MS 설정
+   (주의: 추가 질량이 원래 질량의 5% 미만이어야 결과 신뢰)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Part 2 dominates timestep control</span>
+<div class="desc">Part 2 controls 100/100 of the 100 smallest timesteps (100%). Smallest dt: 8.0357E-07.</div>
+<div class="rec">→ Review mesh quality in Part 2. Coarsening very small elements or applying mass scaling (DT2MS in *CONTROL_TIMESTEP) could improve performance.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">nodout 파일 없음 — 노드 속도 진단 불가</span>
+<div class="desc">nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. *DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. 수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다.</div>
+<div class="rec">→ *DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 관심 노드의 시계열 데이터를 출력하도록 설정</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">bndout 파일 없음 — 경계 반력 진단 불가</span>
+<div class="desc">bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. *DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. 과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다.</div>
+<div class="rec">→ *DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. DT=0 설정 시 매 사이클 저장 (파일 크기 주의)</div>
 </div>
 <h2>경고/오류 요약</h2>
 <table><thead><tr>
@@ -272,6 +311,100 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">0.9969</td></tr>
 <tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">0.0%</td></tr>
 </tbody></table>
+<h2>최소 타임스텝 요소 (상위 20개)</h2>
+<table><thead><tr>
+<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>
+</tr></thead><tbody>
+<tr><td class="r">1</td><td>sph</td>
+<td class="id">2195</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">2</td><td>sph</td>
+<td class="id">2138</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">3</td><td>sph</td>
+<td class="id">2137</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">4</td><td>sph</td>
+<td class="id">2136</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">5</td><td>sph</td>
+<td class="id">2130</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">6</td><td>sph</td>
+<td class="id">2139</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">7</td><td>sph</td>
+<td class="id">2140</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">8</td><td>sph</td>
+<td class="id">2146</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">9</td><td>sph</td>
+<td class="id">2147</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">10</td><td>sph</td>
+<td class="id">2148</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">11</td><td>sph</td>
+<td class="id">2149</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">12</td><td>sph</td>
+<td class="id">2129</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">13</td><td>sph</td>
+<td class="id">2128</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">14</td><td>sph</td>
+<td class="id">2127</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">15</td><td>sph</td>
+<td class="id">2107</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">16</td><td>sph</td>
+<td class="id">2108</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">17</td><td>sph</td>
+<td class="id">2109</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">18</td><td>sph</td>
+<td class="id">2110</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">19</td><td>sph</td>
+<td class="id">2116</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+<tr><td class="r">20</td><td>sph</td>
+<td class="id">2117</td><td class="r">2</td>
+<td class="r mono">8.0357E-07</td>
+</tr>
+</tbody></table>
+<h2>파트별 타임스텝 요약 (100 최소)</h2>
+<table><thead><tr>
+<th class="r">파트</th><th class="r">개수</th><th class="r">최소 dt</th><th class="r">최대 dt</th><th>타입</th>
+</tr></thead><tbody>
+<tr><td class="id">2</td><td class="r">100</td>
+<td class="r mono">8.0357E-07</td><td class="r mono">8.0357E-07</td>
+<td>sph</td></tr>
+</tbody></table>
+<div class="note">TSSFAC: 0.67 | 초기 dt: 8.0357E-07 | 최종 dt: 8.0357E-07</div>
 <div class="note">메모리 (최대 d-words): 최소=2,131,426 최대=2,157,337 (~16 MB) 평균=2,144,382 | 피크 랭크: #0</div>
 <h2>접촉 서프스 타임스텝</h2>
 <div class="warn">접촉 안정성 dt 상한: 2.801E-07 — 이 값을 초과하면 접촉 불안정 발생 가능</div>

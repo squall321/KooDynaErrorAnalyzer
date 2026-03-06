@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -186,8 +188,8 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <h2>진단 결과</h2>
 <div class="findings-summary">
-<span class="badge badge-critical">심각 2</span>
-<span class="badge badge-warning">경고 4</span>
+<span class="badge badge-critical">심각 3</span>
+<span class="badge badge-warning">경고 5</span>
 <span class="badge badge-info">정보 5</span>
 </div>
 <div class="finding critical">
@@ -203,6 +205,14 @@ tbody tr:hover { background: var(--bg3); }
 <div class="rec">→ 1. 시간 1.998E-05s 전후의 접촉 관통 확인 — 후처리기에서 접촉 관통 깊이(penetration depth) 시각화
 2. Penalty factor 감소 — SLSFAC 값을 줄여 관통 시 반발력을 완화하고, SOFT=1(segment-based) 사용으로 양면 강성을 고려한 균형 잡힌 접촉력 적용
 3. Contact stiffness 재조정 — *CONTACT의 SFS/SFM (slave/master scale factor)로 접촉면별 강성 조절</div>
+</div>
+<div class="finding critical">
+<span class="tag critical">심각</span>
+<span class="title">재료별 Hourglass 에너지 과다 (21개 재료 &gt; 20%)</span>
+<div class="desc">Mat14(PKG\PKG 2): 25571.4%; Mat6(PKG\PKG 4): 15560.2%; Mat12(PKG\PKG 10): 15477.7%; Mat11(PKG\PKG 9): 13163.3%; Mat15(SUBPCB\SUBPBA): 12692.1% +16개. 해당 재료의 요소들에서 Hourglass 에너지가 내부에너지의 20%를 초과합니다. Reduced integration 요소(single-point)는 강성행렬 rank가 부족하여 zero-energy deformation mode(hourglass mode)가 존재합니다. 특정 재료/파트에 hourglass가 집중된다면 해당 영역의 요소 형상(종횡비, 왜곡)이나 하중 방향이 hourglass mode와 일치한다는 뜻입니다. 글로벌 HG/IE 비율이 낮아도 개별 재료에 집중된 hourglass는 해당 파트의 응력 결과를 왜곡시킵니다.</div>
+<div class="rec">→ 1. 해당 재료 파트의 요소 공식 변경 — ELFORM=16(shell 4-point full integration) 또는 ELFORM=2(solid selective reduced). Hourglass mode 원천 제거
+2. Hourglass control 강화 — *HOURGLASS에서 IHQ=4(stiffness-based Flanagan), QH=0.05~0.10으로 설정. 해당 파트에만 별도 *SECTION으로 적용 가능
+3. 메시 개선 — 해당 재료의 요소 종횡비(aspect ratio)를 5 미만으로 유지. 왜곡된 요소는 hourglass mode에 더 취약</div>
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
@@ -225,6 +235,12 @@ tbody tr:hover { background: var(--bg3); }
 2. Contact penalty 설정 검토 — penalty stiffness가 너무 높으면 관통-반발 사이클에서 과도한 에너지가 접촉면에 집중. SLSFAC &lt; 0.1 또는 SOFT=1 사용
 3. 초기 관통 제거 — 관통된 노드가 penalty force에 의해 튕겨나가면서 마찰 에너지가 비정상적으로 증가합니다
 4. Contact type 재검토 — sliding contact 대신 tied contact가 적합한 인터페이스는 *CONTACT_TIED_...로 변경</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">재료별 Hourglass 에너지 주의 (1개 재료 10~20%)</span>
+<div class="desc">Mat23(Mat 23): 11.1%. 해당 재료의 Hourglass 에너지 비율이 10~20% 범위입니다. 당장 결과를 무효화할 수준은 아니지만 시뮬레이션 진행에 따라 증가할 수 있습니다.</div>
+<div class="rec">→ Hourglass control 보강 (IHQ=4, QH 증가) 또는 해당 재료 파트의 메시 품질 점검</div>
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
@@ -383,6 +399,132 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td>총 에너지</td><td class="r mono">2653.3100</td><td class="r mono">2636.1200</td></tr>
 <tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">0.9935</td></tr>
 <tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">51.3%</td></tr>
+</tbody></table>
+<h2>재료별 Hourglass 에너지 (matsum)</h2>
+<table><thead><tr>
+<th class="r">재료 ID</th><th>이름</th><th class="r">최대 HG/IE</th>
+<th class="r">최종 내부에너지</th><th class="r">최종 HG에너지</th>
+</tr></thead><tbody>
+<tr class="critical-row">
+<td class="id">14</td><td>PKG\PKG 2</td>
+<td class="r">25571.4%</td>
+<td class="r mono">1.2028E-05</td>
+<td class="r mono">4.8584E-04</td>
+</tr>
+<tr class="critical-row">
+<td class="id">6</td><td>PKG\PKG 4</td>
+<td class="r">15560.2%</td>
+<td class="r mono">0.0018</td>
+<td class="r mono">0.0616</td>
+</tr>
+<tr class="critical-row">
+<td class="id">12</td><td>PKG\PKG 10</td>
+<td class="r">15477.7%</td>
+<td class="r mono">3.1819E-05</td>
+<td class="r mono">0.0014</td>
+</tr>
+<tr class="critical-row">
+<td class="id">11</td><td>PKG\PKG 9</td>
+<td class="r">13163.3%</td>
+<td class="r mono">4.9696E-04</td>
+<td class="r mono">0.0261</td>
+</tr>
+<tr class="critical-row">
+<td class="id">15</td><td>SUBPCB\SUBPBA</td>
+<td class="r">12692.1%</td>
+<td class="r mono">1.4184</td>
+<td class="r mono">13.2830</td>
+</tr>
+<tr class="critical-row">
+<td class="id">3</td><td>PCB\PCB</td>
+<td class="r">9725.2%</td>
+<td class="r mono">0.0577</td>
+<td class="r mono">2.4766</td>
+</tr>
+<tr class="critical-row">
+<td class="id">17</td><td>PKG\SUBPKG2</td>
+<td class="r">9562.2%</td>
+<td class="r mono">0.0680</td>
+<td class="r mono">0.9911</td>
+</tr>
+<tr class="critical-row">
+<td class="id">10</td><td>PKG\PKG 8</td>
+<td class="r">9272.0%</td>
+<td class="r mono">4.7576E-04</td>
+<td class="r mono">0.0074</td>
+</tr>
+<tr class="critical-row">
+<td class="id">9</td><td>PKG\PKG 7</td>
+<td class="r">8562.4%</td>
+<td class="r mono">5.1798E-05</td>
+<td class="r mono">0.0028</td>
+</tr>
+<tr class="critical-row">
+<td class="id">5</td><td>PKG\PKG 3</td>
+<td class="r">6858.5%</td>
+<td class="r mono">0.0016</td>
+<td class="r mono">0.0181</td>
+</tr>
+<tr class="critical-row">
+<td class="id">13</td><td>PKG\PKG 11</td>
+<td class="r">5436.6%</td>
+<td class="r mono">5.5173E-05</td>
+<td class="r mono">4.4767E-04</td>
+</tr>
+<tr class="critical-row">
+<td class="id">4</td><td>PKG\PKG 1</td>
+<td class="r">4770.0%</td>
+<td class="r mono">8.2229E-05</td>
+<td class="r mono">0.0015</td>
+</tr>
+<tr class="critical-row">
+<td class="id">7</td><td>PKG\PKG 5</td>
+<td class="r">4507.3%</td>
+<td class="r mono">1.4365E-04</td>
+<td class="r mono">0.0034</td>
+</tr>
+<tr class="critical-row">
+<td class="id">8</td><td>PKG\PKG 6</td>
+<td class="r">4454.3%</td>
+<td class="r mono">2.7788E-05</td>
+<td class="r mono">5.7385E-04</td>
+</tr>
+<tr class="critical-row">
+<td class="id">19</td><td>PKG\SUBPKG3</td>
+<td class="r">4321.7%</td>
+<td class="r mono">0.0297</td>
+<td class="r mono">0.1945</td>
+</tr>
+<tr class="critical-row">
+<td class="id">16</td><td>PKG\SUBPKG</td>
+<td class="r">3985.1%</td>
+<td class="r mono">0.0144</td>
+<td class="r mono">0.0816</td>
+</tr>
+<tr class="critical-row">
+<td class="id">2</td><td>Front\Wall</td>
+<td class="r">314.1%</td>
+<td class="r mono">3.5841</td>
+<td class="r mono">2.8850</td>
+</tr>
+<tr class="critical-row">
+<td class="id">20</td><td>Bond\Bond</td>
+<td class="r">159.0%</td>
+<td class="r mono">19.0780</td>
+<td class="r mono">20.2290</td>
+</tr>
+<tr class="critical-row">
+<td class="id">18</td><td>PKG\Motor</td>
+<td class="r">69.0%</td>
+<td class="r mono">0.6155</td>
+<td class="r mono">0.1069</td>
+</tr>
+<tr class="critical-row">
+<td class="id">22</td><td>Geom\</td>
+<td class="r">59.8%</td>
+<td class="r mono">64.6830</td>
+<td class="r mono">15.1500</td>
+</tr>
 </tbody></table>
 <h2>최소 타임스텝 요소 (상위 20개)</h2>
 <table><thead><tr>
@@ -1850,5 +1992,5 @@ tbody tr:hover { background: var(--bg3); }
 <td class="r mono">2700.0000</td><td class="r mono">7.0000E+10</td>
 <td class="r">0.30</td><td class="c">1</td></tr>
 </tbody></table>
-<div class="footer">분석 파일: d3hsp, glstat, status.out</div>
+<div class="footer">분석 파일: d3hsp, glstat, status.out, matsum</div>
 </body></html>

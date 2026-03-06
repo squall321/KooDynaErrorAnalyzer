@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -183,8 +185,8 @@ tbody tr:hover { background: var(--bg3); }
 <h2>진단 결과</h2>
 <div class="findings-summary">
 <span class="badge badge-critical">심각 8</span>
-<span class="badge badge-warning">경고 2</span>
-<span class="badge badge-info">정보 1</span>
+<span class="badge badge-warning">경고 5</span>
+<span class="badge badge-info">정보 4</span>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -255,11 +257,54 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
+<span class="title">2 warnings detected (1 codes)</span>
+<div class="desc">Warning codes: 40117(2x)</div>
+<div class="rec">→ Review individual warning codes for details. Common tied contact warnings can often be resolved by improving mesh compatibility between contact surfaces.</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">Part 2: timestep bottleneck (100%)</span>
+<div class="desc">파트 2가 100개의 최소 timestep 중 100개를 차지합니다 (100%). 최소 dt = 2.093E-07. 이 파트의 메시가 시뮬레이션 속도를 제한하고 있습니다.</div>
+<div class="rec">→ 파트 2의 메시를 조정하세요:
+1. 매우 작은 요소를 제거하거나 coarsen
+2. Mass scaling (DT2MS) 적용 고려
+3. 요소 품질(aspect ratio, warpage) 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
 <span class="title">Kinetic energy dominates (KE/IE = 47.1)</span>
 <div class="desc">운동 에너지가 내부 에너지의 47.1배입니다 (KE=2.011E+06, IE=4.267E+04). 준정적(quasi-static) 해석에서는 관성 효과가 무시될 수 있어야 하므로 KE/IE &lt; 0.1 (10% 미만)이 권장됩니다. 현재 KE/IE = 47.1은 동적 효과가 결과를 지배하고 있음을 의미합니다. 이는 하중 속도가 너무 빠르거나(loading rate), 구속 부족으로 rigid body mode가 발생했기 때문일 수 있습니다. 충격 해석(crash, impact)에서는 KE ≈ IE가 정상입니다.</div>
 <div class="rec">→ 1. 시뮬레이션 유형 확인 — 동적(crash/impact)이면 KE &gt; IE는 정상. 준정적(forming, squeeze)이면 아래 조치 필요
 2. 하중 속도(loading rate) 감소 — 준정적 해석에서 *BOUNDARY_PRESCRIBED_MOTION의 속도를 줄이거나 하중 시간을 늘려 관성 효과 최소화
 3. Rigid body mode 확인 — 구속이 부족하면(under-constrained) 자유 운동이 발생하여 KE가 증가합니다. 6개 자유도를 충분히 구속했는지 확인</div>
+</div>
+<div class="finding warning">
+<span class="tag warning">경고</span>
+<span class="title">파트 2 (ALE_Rubber_Region)가 timestep 지배 (100%)</span>
+<div class="desc">파트 2 (ALE_Rubber_Region)가 가장 작은 timestep의 100%를 차지합니다 (100/100개). 최소 dt=2.093E-07. 양해적 적분에서 dt = L/c이므로, 이 파트의 가장 작은 요소가 전체 시뮬레이션의 계산 속도를 결정합니다. 다른 파트 요소들은 더 큰 dt를 가질 수 있지만, 이 파트에 의해 전역적으로 제한됩니다.</div>
+<div class="rec">→ 1. 파트 2의 메시에서 가장 작은 요소 확인 및 재생성
+2. 과도하게 세밀한(over-refined) 메시 영역이 있는지 확인
+3. 재료 물성 확인: E↑ → c↑ → dt↓ (과도한 탄성계수가 dt를 줄임)
+4. Mass scaling 적용: *CONTROL_TIMESTEP에서 DT2MS 설정
+   (주의: 추가 질량이 원래 질량의 5% 미만이어야 결과 신뢰)</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Part 2 dominates timestep control</span>
+<div class="desc">Part 2 controls 100/100 of the 100 smallest timesteps (100%). Smallest dt: 2.0926E-07.</div>
+<div class="rec">→ Review mesh quality in Part 2. Coarsening very small elements or applying mass scaling (DT2MS in *CONTROL_TIMESTEP) could improve performance.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">nodout 파일 없음 — 노드 속도 진단 불가</span>
+<div class="desc">nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. *DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. 수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다.</div>
+<div class="rec">→ *DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 관심 노드의 시계열 데이터를 출력하도록 설정</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">bndout 파일 없음 — 경계 반력 진단 불가</span>
+<div class="desc">bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. *DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. 과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다.</div>
+<div class="rec">→ *DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. DT=0 설정 시 매 사이클 저장 (파일 크기 주의)</div>
 </div>
 <div class="finding info">
 <span class="tag info">정보</span>
@@ -269,6 +314,14 @@ tbody tr:hover { background: var(--bg3); }
 2. Contact 설정 재검토 — 관통/반발 사이클이 원인이면 contact damping(VDC) 추가하여 진동 감쇠
 3. Mass scaling 검토 — DT2MS 설정 시 dt 진동 영역의 요소에 과도한 질량이 추가되지 않는지 확인. m_added = m × ((dt_target/dt_element)² - 1)</div>
 </div>
+<h2>경고/오류 요약</h2>
+<table><thead><tr>
+<th class="r">코드</th><th class="r">횟수</th><th class="c">심각도</th><th>설명</th><th>인터페이스</th>
+</tr></thead><tbody>
+<tr><td class="r id">40117</td><td class="r">2</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>negative vol in advection redo cycle 62945  negative vol in advection redo cycle</td><td></td></tr>
+</tbody></table>
 <h2>에너지 수지</h2>
 <table><thead><tr>
 <th>항목</th><th class="r">초기값</th><th class="r">최종값</th>
@@ -281,6 +334,121 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td>에너지 비율</td><td class="r mono">1.0000</td><td class="r mono">1.0225</td></tr>
 <tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">74.1%</td></tr>
 </tbody></table>
+<h2>최소 타임스텝 요소 (상위 20개)</h2>
+<table><thead><tr>
+<th class="r">#</th><th>타입</th><th class="r">요소 ID</th><th class="r">파트</th><th class="r">dt</th>
+<th class="r">코어</th>
+</tr></thead><tbody>
+<tr><td class="r">1</td><td>solid</td>
+<td class="id">4068</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">2</td><td>solid</td>
+<td class="id">2493</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">3</td><td>solid</td>
+<td class="id">2268</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">4</td><td>solid</td>
+<td class="id">2043</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">5</td><td>solid</td>
+<td class="id">2718</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">6</td><td>solid</td>
+<td class="id">2943</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">7</td><td>solid</td>
+<td class="id">3168</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">8</td><td>solid</td>
+<td class="id">3393</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">9</td><td>solid</td>
+<td class="id">3618</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">10</td><td>solid</td>
+<td class="id">3843</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">11</td><td>solid</td>
+<td class="id">2224</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">12</td><td>solid</td>
+<td class="id">2225</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">13</td><td>solid</td>
+<td class="id">2234</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">14</td><td>solid</td>
+<td class="id">2235</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">15</td><td>solid</td>
+<td class="id">2236</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">16</td><td>solid</td>
+<td class="id">2237</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">17</td><td>solid</td>
+<td class="id">2238</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">18</td><td>solid</td>
+<td class="id">2239</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">19</td><td>solid</td>
+<td class="id">2223</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+<tr><td class="r">20</td><td>solid</td>
+<td class="id">2222</td><td class="r">2</td>
+<td class="r mono">2.0926E-07</td>
+<td class="r">#1</td>
+</tr>
+</tbody></table>
+<h2>파트별 타임스텝 요약 (100 최소)</h2>
+<table><thead><tr>
+<th class="r">파트</th><th class="r">개수</th><th class="r">최소 dt</th><th class="r">최대 dt</th><th>타입</th>
+</tr></thead><tbody>
+<tr><td class="id">2</td><td class="r">100</td>
+<td class="r mono">2.0926E-07</td><td class="r mono">2.0926E-07</td>
+<td>solid</td></tr>
+</tbody></table>
+<div class="note">TSSFAC: 0.67 | 초기 dt: 2.0926E-07 | 최종 dt: 5.4851E-08</div>
 <h2>타임스텝 제어 타임라인</h2>
 <table><thead><tr>
 <th class="r">사이클</th><th>시간 구간</th><th class="r">파트</th>
@@ -3128,6 +3296,25 @@ tbody tr:hover { background: var(--bg3); }
 </tr></thead><tbody>
 </tbody></table>
 <div class="note">메모리 (최대 d-words): 최소=2,195,671 최대=2,257,592 (~17 MB) 평균=2,226,632 | 피크 랭크: #0</div>
+<h2>Decomposition 부하 분포</h2>
+<div class="note">Min cost=0.999799 | Max cost=1.000201 | StdDev=0.000201 | Max/Min 비율: <span>1.00040</span></div>
+<h2>파트별 질량 특성</h2>
+<table><thead><tr>
+<th class="r">파트 ID</th><th class="r">총 질량</th>
+<th class="r">CG-X</th><th class="r">CG-Y</th><th class="r">CG-Z</th>
+<th class="r">I11</th><th class="r">I22</th><th class="r">I33</th><th class="r">I비율</th>
+</tr></thead><tbody>
+<tr><td class="id">2</td><td class="r mono">1.0890E-05</td>
+<td class="r mono">20.0000</td><td class="r mono">20.0000</td>
+<td class="r mono">7.5000</td>
+<td class="r mono">9.3560E-04</td><td class="r mono">9.3560E-04</td>
+<td class="r mono">0.0016</td><td class="r mono">2x</td></tr>
+<tr><td class="id">4</td><td class="r mono">0</td>
+<td class="r mono">20.0000</td><td class="r mono">20.0000</td>
+<td class="r mono">7.2086</td>
+<td class="r mono">0.0040</td><td class="r mono">0.0040</td>
+<td class="r mono">0.0064</td><td class="r mono">2x</td></tr>
+</tbody></table>
 <h2>파트 정의</h2>
 <table><thead><tr>
 <th class="r">ID</th><th>이름</th><th class="c">재료 타입</th><th>재료명</th>

@@ -128,6 +128,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -184,7 +186,7 @@ tbody tr:hover { background: var(--bg3); }
 <div class="findings-summary">
 <span class="badge badge-critical">심각 2</span>
 <span class="badge badge-warning">경고 1</span>
-<span class="badge badge-info">정보 0</span>
+<span class="badge badge-info">정보 1</span>
 </div>
 <div class="finding critical">
 <span class="tag critical">심각</span>
@@ -206,9 +208,14 @@ tbody tr:hover { background: var(--bg3); }
 </div>
 <div class="finding warning">
 <span class="tag warning">경고</span>
-<span class="title">3,031 warnings detected (4 codes)</span>
-<div class="desc">Warning codes: 30128(1x), 30131(1x), 40533(1,871x), 40540(1,158x)</div>
+<span class="title">3,035 warnings detected (5 codes)</span>
+<div class="desc">Warning codes: 20471(4x), 30128(1x), 30131(1x), 40533(1,871x), 40540(1,158x)</div>
 <div class="rec">→ Review individual warning codes for details. Common tied contact warnings can often be resolved by improving mesh compatibility between contact surfaces.</div>
+</div>
+<div class="finding info">
+<span class="tag info">정보</span>
+<span class="title">Implicit 시간 적분 감지 (수렴 오류 없음)</span>
+<div class="desc">이 해석은 암묵적(Implicit) 시간 적분을 사용합니다. 수렴 오류 없이 정상 완료되었습니다. 암묵적 해석은 명시적 해석보다 스텝당 비용이 크지만(선형 시스템 풀이), 타임스텝 제한이 없어 준정적(quasi-static) 및 저주파 동적 해석에 적합합니다.</div>
 </div>
 <h2>경고/오류 요약</h2>
 <table><thead><tr>
@@ -220,6 +227,9 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td class="r id">40540</td><td class="r">1,158</td>
 <td class="c"><span class="tag warning">경고</span></td>
 <td>Unconstrained node tracked node ID        = 228 tied interface #       = 4 Segme</td><td>4, 5</td></tr>
+<tr><td class="r id">20471</td><td class="r">4</td>
+<td class="c"><span class="tag warning">경고</span></td>
+<td>Hourglass formulation for part # 3 has been switched to type 6 since other formu</td><td></td></tr>
 <tr><td class="r id">60303</td><td class="r">1</td>
 <td class="c"><span class="tag critical">심각</span></td>
 <td>Using IGAP=1 may result in zero contact forces. If this occurs set IGAP=2. Numbe</td><td></td></tr>
@@ -232,20 +242,6 @@ tbody tr:hover { background: var(--bg3); }
 <tr><td class="r id">60174</td><td class="r">1</td>
 <td class="c"><span class="tag info">정보</span></td>
 <td>Attempt to apply local prescribed motion to globally constrained node. Prescribe</td><td></td></tr>
-</tbody></table>
-<h2>접촉 인터페이스 요약</h2>
-<table><thead><tr>
-<th class="r">ID</th><th>타입</th><th>제목</th><th class="r">경고 수</th><th class="r">Clock (s)</th><th class="r">Clock %</th>
-</tr></thead><tbody>
-<tr><td class="id">1</td><td>Auto S2S</td>
-<td>3toPushCylinderContact</td><td class="r"></td>
-<td class="r mono"></td><td class="r"></td></tr>
-<tr><td class="id">2</td><td>Auto S2S</td>
-<td>1toLeftSupportCylinderContact</td><td class="r"></td>
-<td class="r mono"></td><td class="r"></td></tr>
-<tr><td class="id">3</td><td>Auto S2S</td>
-<td>1toRightSupportCylinderContact</td><td class="r"></td>
-<td class="r mono"></td><td class="r"></td></tr>
 </tbody></table>
 <h2>파트별 질량 특성</h2>
 <table><thead><tr>
@@ -293,26 +289,6 @@ tbody tr:hover { background: var(--bg3); }
 <td class="c">17</td><td>Type 17</td>
 <td class="r mono">2500.0000</td><td class="r mono">7.0000E+10</td>
 <td class="r">0.22</td><td class="c">1</td></tr>
-<tr><td class="id">2</td><td>Stack1_BoxMesh10000_1</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7900.0000</td><td class="r mono">1.5920E+11</td>
-<td class="r">0.30</td><td class="c">1</td></tr>
-<tr><td class="id">3</td><td>Stack1_BoxMesh10000_2</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7900.0000</td><td class="r mono">1.5920E+11</td>
-<td class="r">0.30</td><td class="c">1</td></tr>
-<tr><td class="id">4</td><td>ThreePointBendingPushCyli</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7840.0000</td><td class="r mono">2.0000E+11</td>
-<td class="r">0.29</td><td class="c">1</td></tr>
-<tr><td class="id">5</td><td>ThreePointBendingSupportL</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7840.0000</td><td class="r mono">2.0000E+11</td>
-<td class="r">0.29</td><td class="c">1</td></tr>
-<tr><td class="id">6</td><td>ThreePointBendingSupportR</td>
-<td class="c">1</td><td>Elastic</td>
-<td class="r mono">7840.0000</td><td class="r mono">2.0000E+11</td>
-<td class="r">0.29</td><td class="c">1</td></tr>
 </tbody></table>
 <div class="footer">분석 파일: d3hsp</div>
 </body></html>

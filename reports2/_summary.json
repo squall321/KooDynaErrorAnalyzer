@@ -3,7 +3,7 @@
     "category": "Hourglass_CRITICAL",
     "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
     "termination": "ERROR",
-    "crit": 9,
+    "crit": 10,
     "warn": 4,
     "top_finding": "해석 에러 종료"
   },
@@ -12,7 +12,7 @@
     "case": "alt_ale/ex01_ale_f500",
     "termination": "INCOMPLETE",
     "crit": 8,
-    "warn": 2,
+    "warn": 5,
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
@@ -20,23 +20,23 @@
     "case": "shield_can_forming_study/form_sus304_t010",
     "termination": "NORMAL",
     "crit": 6,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "Total energy is increasing (divergence)"
   },
   {
     "category": "Hourglass_WARNING",
     "case": "phase1_efg_benchmark/case06_efg41_m181",
-    "termination": "INCOMPLETE",
+    "termination": "ERROR",
     "crit": 5,
-    "warn": 3,
-    "top_finding": "해석 미완료 (출력 불완전)"
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
   },
   {
     "category": "KE_폭발",
     "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
     "termination": "ERROR",
     "crit": 10,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -44,7 +44,7 @@
     "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
     "termination": "ERROR",
     "crit": 10,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -52,7 +52,7 @@
     "case": "level_study/ex08_tet10_ef17_dt0",
     "termination": "INCOMPLETE",
     "crit": 4,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
@@ -60,31 +60,31 @@
     "case": "results/level_study_ex08_tet10_ef17_dt0",
     "termination": "INCOMPLETE",
     "crit": 4,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
     "category": "MPP_불균형_CRITICAL",
-    "case": "group1a_dynamic/case1a1",
-    "termination": "NORMAL",
-    "crit": 6,
-    "warn": 1,
-    "top_finding": "Energy balance severely violated"
+    "case": "viscoelasticityTest_3D_YZforce/viscoelastic_YZdir",
+    "termination": "ERROR",
+    "crit": 8,
+    "warn": 3,
+    "top_finding": "해석 에러 종료"
   },
   {
     "category": "MPP_불균형_CRITICAL",
-    "case": "group1b_quasistatic/case1b1",
-    "termination": "NORMAL",
-    "crit": 6,
-    "warn": 4,
-    "top_finding": "Energy balance severely violated"
+    "case": "viscoelasticityTest_3D_YZforce/viscoelastic_YZdir_slack",
+    "termination": "ERROR",
+    "crit": 8,
+    "warn": 3,
+    "top_finding": "해석 에러 종료"
   },
   {
     "category": "MPP_불균형_WARNING",
     "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
     "termination": "ERROR",
     "crit": 10,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -92,7 +92,7 @@
     "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
     "termination": "ERROR",
     "crit": 10,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -100,7 +100,7 @@
     "case": "level_study/ex06_tet4_ef60_dt0",
     "termination": "ERROR",
     "crit": 9,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -108,7 +108,7 @@
     "case": "results/level_study_ex06_tet4_ef60_dt0",
     "termination": "ERROR",
     "crit": 9,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -116,7 +116,7 @@
     "case": "alt_spg/ex02_sph_f1000",
     "termination": "NORMAL",
     "crit": 6,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "Energy balance severely violated"
   },
   {
@@ -124,31 +124,31 @@
     "case": "alt_spg/ex04_sph_f5000",
     "termination": "NORMAL",
     "crit": 6,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "Energy balance severely violated"
   },
   {
     "category": "Negative_Volume_40509",
     "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
     "termination": "ERROR",
-    "crit": 9,
+    "crit": 10,
     "warn": 4,
     "top_finding": "해석 에러 종료"
   },
   {
     "category": "Negative_Volume_40509",
     "case": "viscoelasticityTest_3D_YZforce/viscoelastic_YZdir",
-    "termination": "INCOMPLETE",
-    "crit": 7,
-    "warn": 1,
-    "top_finding": "해석 미완료 (출력 불완전)"
+    "termination": "ERROR",
+    "crit": 8,
+    "warn": 3,
+    "top_finding": "해석 에러 종료"
   },
   {
     "category": "Segfault_Signal11",
     "case": "alt_sph/ex03_sph_f2000",
     "termination": "INCOMPLETE",
     "crit": 7,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
@@ -156,12 +156,12 @@
     "case": "alt_sph/ex01_sph_f500",
     "termination": "INCOMPLETE",
     "crit": 5,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
     "category": "Tied_Contact_50135",
-    "case": "output/Run_20260210_022052_e4ac3e",
+    "case": "output/Run_20260207_212447_f1e2c8",
     "termination": "NORMAL",
     "crit": 4,
     "warn": 5,
@@ -169,9 +169,17 @@
   },
   {
     "category": "Tied_Contact_50135",
-    "case": "output/Run_20260210_023157_5b9f6b",
+    "case": "output/Run_20260207_215848_375fcb",
     "termination": "NORMAL",
     "crit": 4,
+    "warn": 6,
+    "top_finding": "Hourglass energy critically high"
+  },
+  {
+    "category": "Warning_40533",
+    "case": "5.SimulationModify/DynamicRelaxation",
+    "termination": "NORMAL",
+    "crit": 3,
     "warn": 5,
     "top_finding": "Hourglass energy critically high"
   },
@@ -184,75 +192,67 @@
     "top_finding": "해석 미완료 (출력 불완전)"
   },
   {
-    "category": "Warning_40533",
+    "category": "Warning_40538",
     "case": "5.SimulationModify/DynamicRelaxation",
     "termination": "NORMAL",
-    "crit": 2,
-    "warn": 4,
+    "crit": 3,
+    "warn": 5,
     "top_finding": "Hourglass energy critically high"
   },
   {
     "category": "Warning_40538",
-    "case": "5.SimulationModify/DynamicRelaxation",
+    "case": "results/MinimumModel",
     "termination": "NORMAL",
-    "crit": 2,
+    "crit": 3,
     "warn": 4,
     "top_finding": "Hourglass energy critically high"
   },
   {
-    "category": "Warning_40538",
-    "case": "DisplayImpactImplicit/3ptBending_1_00000001",
-    "termination": "INCOMPLETE",
-    "crit": 2,
+    "category": "에너지_발산",
+    "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에너지_발산",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에너지_비율_폭주",
+    "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에너지_비율_폭주",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에러_종료_exit3",
+    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
+    "warn": 4,
+    "top_finding": "해석 에러 종료"
+  },
+  {
+    "category": "에러_종료_exit3",
+    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
+    "termination": "ERROR",
+    "crit": 10,
     "warn": 3,
-    "top_finding": "해석 미완료 (출력 불완전)"
-  },
-  {
-    "category": "에너지_발산",
-    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
-    "termination": "ERROR",
-    "crit": 10,
-    "warn": 2,
-    "top_finding": "해석 에러 종료"
-  },
-  {
-    "category": "에너지_발산",
-    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
-    "termination": "ERROR",
-    "crit": 10,
-    "warn": 1,
-    "top_finding": "해석 에러 종료"
-  },
-  {
-    "category": "에너지_비율_폭주",
-    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
-    "termination": "ERROR",
-    "crit": 10,
-    "warn": 2,
-    "top_finding": "해석 에러 종료"
-  },
-  {
-    "category": "에너지_비율_폭주",
-    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
-    "termination": "ERROR",
-    "crit": 10,
-    "warn": 1,
-    "top_finding": "해석 에러 종료"
-  },
-  {
-    "category": "에러_종료_exit3",
-    "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
-    "termination": "ERROR",
-    "crit": 10,
-    "warn": 2,
-    "top_finding": "해석 에러 종료"
-  },
-  {
-    "category": "에러_종료_exit3",
-    "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
-    "termination": "ERROR",
-    "crit": 10,
-    "warn": 1,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -260,7 +260,7 @@
     "case": "alt_tet_elform60/ex05_ef60_f2000_mortar",
     "termination": "ERROR",
     "crit": 10,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -268,7 +268,7 @@
     "case": "alt_tet_elform60/ex06_ef60_f5000_mortar",
     "termination": "ERROR",
     "crit": 10,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 에러 종료"
   },
   {
@@ -284,7 +284,7 @@
     "case": "phase4_bushing/case03_m181_biaxial",
     "termination": "NORMAL",
     "crit": 5,
-    "warn": 3,
+    "warn": 5,
     "top_finding": "Energy balance severely violated"
   },
   {
@@ -292,7 +292,7 @@
     "case": "group1a_dynamic/case1a1",
     "termination": "NORMAL",
     "crit": 6,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "Energy balance severely violated"
   },
   {
@@ -300,7 +300,7 @@
     "case": "alt_tet_elform15/ex06_ef15_f5000_mortar",
     "termination": "NORMAL",
     "crit": 5,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "Energy balance severely violated"
   },
   {
@@ -308,7 +308,7 @@
     "case": "alt_spg/ex02_sph_f1000",
     "termination": "NORMAL",
     "crit": 6,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "Energy balance severely violated"
   },
   {
@@ -316,14 +316,14 @@
     "case": "alt_spg/ex04_sph_f5000",
     "termination": "NORMAL",
     "crit": 6,
-    "warn": 2,
+    "warn": 4,
     "top_finding": "Energy balance severely violated"
   },
   {
     "category": "타임스텝_붕괴",
     "case": "1.DisplayImpactBallPeridynamics/Impact_1_00000001",
     "termination": "ERROR",
-    "crit": 9,
+    "crit": 10,
     "warn": 4,
     "top_finding": "해석 에러 종료"
   },
@@ -332,7 +332,7 @@
     "case": "level_study/ex06_tet4_ef60_dt0",
     "termination": "ERROR",
     "crit": 9,
-    "warn": 1,
+    "warn": 3,
     "top_finding": "해석 에러 종료"
   }
 ]
