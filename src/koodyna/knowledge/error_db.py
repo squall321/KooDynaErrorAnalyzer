@@ -1221,6 +1221,290 @@ ERROR_DATABASE: dict[int, ErrorInfo] = {
         ),
     ),
 
+    # ===== Contact Warnings — 새로 추가 (50xxx) =====
+    50134: ErrorInfo(
+        code=50134,
+        severity=Severity.WARNING,
+        title="Tied contact: slave node projected to edge/corner",
+        description=(
+            "Warning 50134: Tied contact에서 slave 노드가 master segment의 내부가 아닌 "
+            "가장자리(edge) 또는 모서리(corner)에 투영되었습니다. "
+            "이 경우 구속 조건이 불안정하여 인터페이스 노드의 거동이 비정상적일 수 있습니다. "
+            "경계 투영은 tied contact 알고리즘에서 허용 범위 바깥 노드를 "
+            "가장 가까운 경계점에 강제 투영할 때 발생합니다. "
+            "주요 원인: slave/master 메시 불일치, master surface가 너무 작거나, "
+            "초기 형상에서 slave 노드가 master 경계 근방에 위치."
+        ),
+        recommendation=(
+            "1. 메시 일치 확인 — slave/master 파트 경계면의 메시 크기 일치도 향상. "
+            "특히 모서리 근방에서 노드 위치 조정\n"
+            "2. Master surface 확장 — master segment가 slave 노드를 완전히 포함하도록 "
+            "범위 확장 또는 *CONTACT_TIED_... 의 SLDTHK/MSHTHK 파라미터 조정\n"
+            "3. SOFT=2(penalty-based tied) 사용 — 경계 투영 문제가 심각하면 "
+            "projection 기반에서 penalty 기반으로 전환"
+        ),
+    ),
+
+    # ===== Contact Warnings (40xxx) — 새로 추가 =====
+    40534: ErrorInfo(
+        code=40534,
+        severity=Severity.WARNING,
+        title="Contact: slave node velocity exceeds limit after release",
+        description=(
+            "Warning 40534: 접촉 해제(release) 후 slave 노드의 속도가 허용 한계를 초과했습니다. "
+            "접촉 충돌 후 두 표면이 분리될 때 penalty force가 급격히 0으로 떨어지며 "
+            "에너지가 노드 속도로 변환됩니다. 이 과정에서 수치적으로 과도한 반발 속도가 "
+            "발생하면 시뮬레이션 불안정의 전조가 될 수 있습니다."
+        ),
+        recommendation=(
+            "1. Contact damping 추가 — *CONTACT의 VDC(viscous damping) 파라미터로 "
+            "접촉 해제 시 속도 감소. VDC=20~40 권장\n"
+            "2. Penalty stiffness 감소 — SLSFAC를 낮춰 접촉력 크기 완화\n"
+            "3. 재료 물성 확인 — 고속 충격에서 strain rate 의존 재료 사용 권장"
+        ),
+    ),
+    40540: ErrorInfo(
+        code=40540,
+        severity=Severity.WARNING,
+        title="Contact: node deletion due to extreme penetration",
+        description=(
+            "Warning 40540: 과도한 관통(extreme penetration)으로 인해 접촉 노드가 삭제되었습니다. "
+            "접촉 관통이 요소 크기보다 훨씬 크면 penalty force 계산이 불안정해지고, "
+            "LS-DYNA는 해당 노드를 접촉 알고리즘에서 제거합니다. "
+            "이는 접촉 안정성보다 시뮬레이션 지속을 우선할 때의 임시방편입니다. "
+            "요소 파괴(erosion) 없이 발생하면 물리적으로 부정확한 결과를 의미합니다."
+        ),
+        recommendation=(
+            "1. 초기 관통 제거 — *CONTACT의 IGNORE=2로 자동 초기 관통 해소. "
+            "모델 형상을 재검토하여 겹치는 파트 수정\n"
+            "2. 타임스텝 감소 — TSSFAC를 줄여 큰 관통이 발생하기 전에 접촉력 적용\n"
+            "3. Eroding contact 사용 — 대변형이 예상되는 경우 *CONTACT_ERODING으로 "
+            "요소 삭제와 연계하여 관통 방지"
+        ),
+    ),
+    40565: ErrorInfo(
+        code=40565,
+        severity=Severity.WARNING,
+        title="Contact: segment normal inconsistency",
+        description=(
+            "Warning 40565: 접촉 세그먼트의 법선 방향이 일관되지 않습니다. "
+            "접촉 알고리즘은 세그먼트 법선을 사용하여 관통 방향을 결정하는데, "
+            "법선이 잘못된 방향을 가리키면 접촉력이 반대 방향으로 작용하거나 "
+            "관통 감지에 실패합니다. 주요 원인: 요소 연결성(connectivity)이 "
+            "일관되지 않거나 메시 생성 시 법선 방향이 반전된 경우."
+        ),
+        recommendation=(
+            "1. 메시 법선 확인 — 프리프로세서에서 모든 쉘/솔리드 요소의 "
+            "법선 방향 시각화 및 수정\n"
+            "2. *CONTACT에서 SSID/MSID 방향 확인 — slave/master 정의 시 "
+            "접촉 면이 서로 마주보는지 확인\n"
+            "3. AUTO_SINGLE_SURFACE 사용 — 법선 방향 자동 처리 접촉 타입으로 전환"
+        ),
+    ),
+    40864: ErrorInfo(
+        code=40864,
+        severity=Severity.WARNING,
+        title="Contact: beam-to-beam contact initialization warning",
+        description=(
+            "Warning 40864: 빔-빔(beam-to-beam) 접촉 초기화 중 경고가 발생했습니다. "
+            "빔 요소 간 접촉은 선-선(line-to-line) 검색 알고리즘을 사용하며, "
+            "빔의 방향, 반지름 정의, 또는 인접 빔의 초기 근접도에 따라 "
+            "초기화 문제가 발생할 수 있습니다."
+        ),
+        recommendation=(
+            "1. 빔 단면 반지름 확인 — *SECTION_BEAM에서 반지름(D1, D2)이 "
+            "올바르게 정의되어 있는지 확인. 너무 큰 반지름은 초기 접촉을 유발\n"
+            "2. 접촉 검색 범위 조정 — *CONTACT_BEAM_EDGE의 SFAC 파라미터로 "
+            "접촉 거리 배율 조정\n"
+            "3. 초기 간격 확인 — 빔 간 초기 거리가 접촉 두께보다 작지 않은지 확인"
+        ),
+    ),
+
+    # ===== Initialization Warnings (30xxx) — 새로 추가 =====
+    30060: ErrorInfo(
+        code=30060,
+        severity=Severity.WARNING,
+        title="Part initialization: section/material mismatch",
+        description=(
+            "Warning 30060: 파트 초기화 중 section과 material 정의 간 불일치가 감지되었습니다. "
+            "LS-DYNA에서 파트는 *PART 카드로 section ID, material ID, hourglass ID를 "
+            "연결하는데, 이 중 하나가 정의되지 않았거나 다른 요소 타입과 호환되지 않으면 "
+            "경고가 발생합니다. 예: shell section에 solid material 적용."
+        ),
+        recommendation=(
+            "1. *PART 카드 점검 — SID(section), MID(material) 가 올바른 ID를 "
+            "참조하는지 확인\n"
+            "2. 요소 타입 일치 — 쉘 요소는 shell section, 솔리드는 solid section 사용\n"
+            "3. *SECTION_*/MAT_* 존재 확인 — 참조된 ID가 실제로 정의되어 있는지 검토"
+        ),
+    ),
+    30210: ErrorInfo(
+        code=30210,
+        severity=Severity.WARNING,
+        title="Constraint: SPC node not found in model",
+        description=(
+            "Warning 30210: *BOUNDARY_SPC에서 참조한 노드 ID가 모델에 존재하지 않습니다. "
+            "이 경우 해당 경계 조건이 적용되지 않아 구조가 예상과 다르게 거동할 수 있습니다. "
+            "특히 rigid body motion이 허용되거나 암묵적 해석에서 singular matrix가 발생할 수 있습니다."
+        ),
+        recommendation=(
+            "1. 노드 ID 확인 — *BOUNDARY_SPC 또는 *BOUNDARY_PRESCRIBED_MOTION에서 "
+            "참조하는 NID가 *NODE 섹션에 정의되어 있는지 확인\n"
+            "2. 단위계 일치 — 다른 파일에서 include할 때 노드 ID 충돌 여부 확인\n"
+            "3. 프리프로세서에서 경계 조건 시각화 — 의도한 노드에 SPC가 적용되는지 확인"
+        ),
+    ),
+    30364: ErrorInfo(
+        code=30364,
+        severity=Severity.WARNING,
+        title="Rigid body: extra node not found",
+        description=(
+            "Warning 30364: *CONSTRAINED_EXTRA_NODES_SET 또는 유사 카드에서 "
+            "참조한 노드가 모델에 없거나 이미 다른 rigid body에 속해 있습니다. "
+            "rigid body에 extra node를 추가하면 그 노드는 rigid body의 운동에 따라 "
+            "구속되는데, 잘못된 참조는 구속이 적용되지 않습니다."
+        ),
+        recommendation=(
+            "1. *CONSTRAINED_EXTRA_NODES에서 NID/NSID 확인\n"
+            "2. 동일 노드가 여러 rigid body에 중복 정의되지 않았는지 확인\n"
+            "3. 파트 ID와 노드 ID가 같은 단위계/ID 범위를 사용하는지 확인"
+        ),
+    ),
+
+    # ===== Curve/Table Warnings (21xxx) — 새로 추가 =====
+    21287: ErrorInfo(
+        code=21287,
+        severity=Severity.WARNING,
+        title="Curve: ordinate value out of expected range",
+        description=(
+            "Warning 21287: 재료/접촉 커브의 종좌표(y값)가 예상 범위를 벗어났습니다. "
+            "LS-DYNA는 특정 커브 타입(응력-변형률, 하중-변위 등)에서 "
+            "물리적으로 합리적인 값 범위를 내부적으로 점검합니다. "
+            "범위를 벗어난 값은 재료 비물리적 거동이나 수치 불안정의 원인이 됩니다."
+        ),
+        recommendation=(
+            "1. 커브 단위 확인 — 응력은 [Pa] 또는 [MPa], 변형률은 무차원인지 확인. "
+            "단위계 혼용으로 발생하는 경우가 많음\n"
+            "2. 커브 형상 점검 — 재료 소프트닝 구간에서 음의 기울기(negative stiffness)가 "
+            "있으면 수치 불안정 유발 가능\n"
+            "3. *DEFINE_CURVE 포인트 순서 확인 — 종좌표가 단조 증가인지 확인"
+        ),
+    ),
+
+    # ===== Material Warnings (20xxx) — 새로 추가 =====
+    20661: ErrorInfo(
+        code=20661,
+        severity=Severity.WARNING,
+        title="Material: negative pressure detected (tension cutoff)",
+        description=(
+            "Warning 20661: 재료에서 음의 압력(인장 상태)이 감지되어 tension cutoff가 적용되었습니다. "
+            "유체, 발포체, 고무류 재료에서 인장 상태에서의 압력이 cutoff 값을 초과하면 "
+            "LS-DYNA가 압력을 cutoff 값으로 제한합니다. "
+            "이는 공동화(cavitation) 방지나 재료 물성의 한계를 표현합니다."
+        ),
+        recommendation=(
+            "1. Tension cutoff 값 확인 — *EOS_* 또는 *MAT_*에서 PMIN/TENSCUT 파라미터 검토. "
+            "너무 작은 cutoff는 비물리적 에너지 해방을 일으킴\n"
+            "2. 음의 압력 영역 시각화 — d3plot에서 pressure 필드를 확인하여 "
+            "cavitation 위치 파악\n"
+            "3. ALE/EFG 사용 — 극단적 변형에서 인장 불안정이 지속되면 "
+            "mesh-free 방법 고려"
+        ),
+    ),
+    20471: ErrorInfo(
+        code=20471,
+        severity=Severity.WARNING,
+        title="Material: strain rate exceeds tabulated range",
+        description=(
+            "Warning 20471: 현재 변형률 속도(strain rate)가 재료 커브에 정의된 최대 범위를 초과했습니다. "
+            "변형률 속도 의존 재료(*MAT_024 등)는 다양한 변형률 속도에서의 "
+            "응력-변형률 커브를 테이블로 정의하는데, 실제 변형률 속도가 이 범위를 "
+            "벗어나면 외삽(extrapolation)이 적용되어 결과가 부정확해집니다."
+        ),
+        recommendation=(
+            "1. 변형률 속도 커브 범위 확장 — 시뮬레이션에서 발생하는 최대 변형률 속도를 "
+            "사전 분석하고, 해당 범위까지 재료 데이터 확장\n"
+            "2. 로그 스케일 커브 — 변형률 속도가 10^0~10^4/s 범위라면 "
+            "로그 스케일로 커브 정의 권장\n"
+            "3. Cowper-Symonds 모델 사용 — 고속 충격에서 해석적 변형률 속도 모델로 "
+            "외삽 문제 회피"
+        ),
+    ),
+
+    # ===== Contact Errors (40xxx) — 새로 추가 =====
+    40024: ErrorInfo(
+        code=40024,
+        severity=Severity.CRITICAL,
+        title="Contact: interface energy goes negative (contact instability)",
+        description=(
+            "Error 40024: 접촉 인터페이스 에너지가 음수로 전환되었습니다. "
+            "접촉 에너지는 물리적으로 항상 비음수여야 하며, 음수 접촉 에너지는 "
+            "접촉 알고리즘의 수치적 불안정을 나타냅니다. "
+            "원인: 과도한 초기 관통, penalty stiffness가 너무 커 비물리적 반발력 발생, "
+            "또는 접촉 타입과 메시 형태의 불일치."
+        ),
+        recommendation=(
+            "1. Penalty stiffness 감소 — *CONTROL_CONTACT의 SLSFAC를 0.01~0.05로 낮춤. "
+            "과도한 penalty가 에너지 발산의 주원인\n"
+            "2. 초기 관통 제거 — IGNORE=2로 자동 초기 관통 해소\n"
+            "3. SOFT=1(segment-based contact) 사용 — 양측 강성을 고려한 "
+            "더 안정적인 penalty 계산. 에너지 보존에 유리\n"
+            "4. 타임스텝 감소 — 충격 단계에서 TSSFAC를 줄여 접촉력 급증 방지"
+        ),
+    ),
+
+    # ===== Contact Warnings (41xxx) — 새로 추가 =====
+    41234: ErrorInfo(
+        code=41234,
+        severity=Severity.WARNING,
+        title="Contact: rigid body contact slave node warning",
+        description=(
+            "Warning 41234: Rigid body와 deformable body 간 접촉에서 slave 노드 처리 경고입니다. "
+            "Rigid body는 모든 노드가 강체 운동하므로 접촉 penalty가 rigid body 전체에 "
+            "균등하게 분배됩니다. slave 노드 수가 너무 많거나 적으면 "
+            "접촉력 분배가 비균형해질 수 있습니다."
+        ),
+        recommendation=(
+            "1. Contact 타입 확인 — *CONTACT_AUTOMATIC_*가 rigid body에 적합한지 확인\n"
+            "2. RBDOK 파라미터 설정 — rigid body 접촉에서 RBDOK=1로 설정하여 "
+            "rigid body slave 노드 처리 방식 최적화\n"
+            "3. Master/Slave 방향 확인 — rigid body가 master, deformable이 slave가 되도록 설정"
+        ),
+    ),
+    41213: ErrorInfo(
+        code=41213,
+        severity=Severity.WARNING,
+        title="Contact: self-contact node removed (penetration too deep)",
+        description=(
+            "Warning 41213: Self-contact에서 과도한 관통으로 노드가 접촉 처리에서 제거되었습니다. "
+            "Shell 또는 solid 자기 접촉(*CONTACT_SINGLE_SURFACE)에서 "
+            "관통 깊이가 임계값을 초과하면 해당 노드를 제거하여 "
+            "더 이상의 수치 불안정을 방지합니다."
+        ),
+        recommendation=(
+            "1. Automatic single surface contact 사용 — *CONTACT_AUTOMATIC_SINGLE_SURFACE는 "
+            "자기 접촉에 더 robust한 알고리즘 사용\n"
+            "2. 메시 크기 증가 — 접촉 문제가 발생한 영역의 요소를 세분화하여 관통 방지\n"
+            "3. Thickness scaling — *CONTACT의 SST/MST 파라미터로 접촉 두께 조정"
+        ),
+    ),
+    40515: ErrorInfo(
+        code=40515,
+        severity=Severity.WARNING,
+        title="Contact: shell thickness offset causes initial penetration",
+        description=(
+            "Warning 40515: Shell 요소의 두께 오프셋으로 인해 초기 관통이 발생했습니다. "
+            "Shell 요소는 중립면을 기준으로 두께 방향으로 오프셋을 적용하는데, "
+            "이 오프셋이 인접 파트와 겹치면 시작부터 접촉 관통이 발생합니다."
+        ),
+        recommendation=(
+            "1. Shell offset 옵션 확인 — *SECTION_SHELL의 OFFST 파라미터 또는 "
+            "*CONTACT의 SSTHK/MSTHK로 두께 고려 방식 조정\n"
+            "2. 모델 형상 수정 — 인접 파트 간 초기 간격을 shell 두께/2 이상으로 확보\n"
+            "3. IGNORE=2 사용 — 초기 관통을 자동으로 해소하는 옵션 적용"
+        ),
+    ),
+
     # ===== License / System =====
     90001: ErrorInfo(
         code=90001,

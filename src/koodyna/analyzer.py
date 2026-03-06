@@ -322,43 +322,11 @@ class Analyzer:
             if self.verbose:
                 print(f"    Checking for high-frequency oscillations...")
             numerical_findings.extend(detect_high_frequency_oscillation(nodout_path))
-        else:
-            # Suggest enabling nodout for deeper nodal diagnostics
-            numerical_findings.append(Finding(
-                severity=Severity.INFO,
-                category="output",
-                title="nodout 파일 없음 — 노드 속도 진단 불가",
-                description=(
-                    "nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. "
-                    "*DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. "
-                    "수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다."
-                ),
-                recommendation=(
-                    "*DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 "
-                    "관심 노드의 시계열 데이터를 출력하도록 설정"
-                ),
-            ))
 
         if bndout_path:
             if self.verbose:
                 print(f"    Checking for excessive reaction forces...")
             numerical_findings.extend(detect_excessive_reaction_force(bndout_path))
-        else:
-            # Suggest enabling bndout for boundary force diagnostics
-            numerical_findings.append(Finding(
-                severity=Severity.INFO,
-                category="output",
-                title="bndout 파일 없음 — 경계 반력 진단 불가",
-                description=(
-                    "bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. "
-                    "*DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. "
-                    "과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다."
-                ),
-                recommendation=(
-                    "*DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. "
-                    "DT=0 설정 시 매 사이클 저장 (파일 크기 주의)"
-                ),
-            ))
 
         # glstat-based instability checks
         if energy_snapshots:

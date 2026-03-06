@@ -86,17 +86,7 @@ def analyze_performance(
                     "모델 크기 대비 과도한 MPI 프로세스 수를 줄이는 것을 고려하세요."
                 ),
             ))
-        else:
-            findings.append(Finding(
-                severity=Severity.INFO,
-                category="performance",
-                title=f"MPP load balance: good (imbalance {imbalance:.1%})",
-                description=(
-                    f"CPU ratio range: [{min_ratio:.4f}, {max_ratio:.4f}] "
-                    f"across {len(mpp_timing)} processors."
-                ),
-                recommendation="",
-            ))
+        # No finding for good load balance — only report problems
 
     # Load profile variation across processors
     if load_profile_pct:
