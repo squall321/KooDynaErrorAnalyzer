@@ -180,6 +180,8 @@ tbody td.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size
 tbody tr:hover { background: var(--bg3); }
 .warn-high { color: var(--yellow); font-weight: 600; }
 .eff-bad { color: var(--red); font-weight: 600; }
+.critical-row { background: rgba(247,118,142,0.08) !important; }
+.warning-row { background: rgba(224,175,104,0.08) !important; }
 .eff-mid { color: var(--yellow); font-weight: 600; }
 .bar-container { width: 100%; background: var(--bg3); border-radius: 3px; height: 16px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--green); border-radius: 3px; min-width: 2px; }
@@ -363,6 +365,31 @@ def write_html_report(report: Report, filepath: Path):
             _w(f'<tr><td>{lbl}</td><td class="r mono">{_fmt_sci(iv)}</td><td class="r mono">{_fmt_sci(fv)}</td></tr>')
         _w(f'<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">{energy.max_hourglass_ratio:.1%}</td></tr>')
         _w("</tbody></table>")
+
+    # === Material Hourglass (matsum) ===
+    if report.matsum_hg_entries:
+        # Show only materials with non-trivial HG ratio
+        hg_entries = [e for e in report.matsum_hg_entries if e.max_hg_ratio > 0.001]
+        if hg_entries:
+            _w("<h2>재료별 Hourglass 에너지 (matsum)</h2>")
+            _w("<table><thead><tr>")
+            _w('<th class="r">재료 ID</th><th>이름</th><th class="r">최대 HG/IE</th>')
+            _w('<th class="r">최종 내부에너지</th><th class="r">최종 HG에너지</th>')
+            _w("</tr></thead><tbody>")
+            for e in hg_entries[:20]:
+                if e.max_hg_ratio > 0.20:
+                    row_cls = ' class="critical-row"'
+                elif e.max_hg_ratio > 0.10:
+                    row_cls = ' class="warning-row"'
+                else:
+                    row_cls = ''
+                _w(f'<tr{row_cls}>')
+                _w(f'<td class="id">{e.mat_id}</td><td>{_esc(e.name[:30])}</td>')
+                _w(f'<td class="r">{e.max_hg_ratio:.1%}</td>')
+                _w(f'<td class="r mono">{_fmt_sci(e.final_ie)}</td>')
+                _w(f'<td class="r mono">{_fmt_sci(e.final_hg)}</td>')
+                _w("</tr>")
+            _w("</tbody></table>")
 
     # === Smallest Timestep Elements ===
     ts = report.timestep

@@ -47,6 +47,8 @@ venv/bin/pyinstaller --onefile \
     --hidden-import=koodyna.analysis.diagnostics \
     --hidden-import=koodyna.analysis.numerical_instability \
     --hidden-import=koodyna.analysis.failure_analysis \
+    --hidden-import=koodyna.analysis.matsum_analysis \
+    --hidden-import=koodyna.analysis.implicit_diagnostics \
     --hidden-import=koodyna.report \
     --hidden-import=koodyna.report.terminal \
     --hidden-import=koodyna.report.json_report \

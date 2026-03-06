@@ -258,6 +258,16 @@ class DecompMetrics:
 
 
 @dataclass
+class MaterialHGEntry:
+    mat_id: int = 0
+    name: str = ""
+    max_hg_ratio: float = 0.0
+    max_hg_energy: float = 0.0
+    final_ie: float = 0.0
+    final_hg: float = 0.0
+
+
+@dataclass
 class MassProperty:
     part_id: int = 0
     total_mass: float = 0.0
@@ -319,3 +329,5 @@ class Report:
     keyword_counts: dict[str, int] = field(default_factory=dict)
     slurm_info: Optional[SlurmJobInfo] = None
     files_found: list[str] = field(default_factory=list)
+    matsum_hg_entries: list[MaterialHGEntry] = field(default_factory=list)
+    is_implicit: bool = False

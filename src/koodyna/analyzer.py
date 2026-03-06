@@ -8,6 +8,8 @@ from koodyna.parsers.glstat import GlstatParser
 from koodyna.parsers.status import StatusParser
 from koodyna.parsers.profile import ProfileParser, ContProfileParser
 from koodyna.parsers.messag import parse_all_mes_files
+from koodyna.parsers.matsum import MatsumParser
+from koodyna.parsers.element_mapper import find_and_parse_input_deck
 from koodyna.analysis.energy import analyze_energy
 from koodyna.analysis.timestep import analyze_timestep
 from koodyna.analysis.warnings import analyze_warnings
@@ -15,6 +17,8 @@ from koodyna.analysis.contact import analyze_contacts
 from koodyna.analysis.performance import analyze_performance, project_scaling
 from koodyna.analysis.diagnostics import run_diagnostics
 from koodyna.analysis.failure_analysis import analyze_failure_source
+from koodyna.analysis.matsum_analysis import analyze_matsum
+from koodyna.analysis.implicit_diagnostics import analyze_implicit_solver, is_implicit_simulation
 from koodyna.analysis.numerical_instability import (
     detect_shooting_nodes,
     detect_high_frequency_oscillation,
@@ -120,6 +124,22 @@ class Analyzer:
         if slurm_info:
             files_found.append(f"slurm_{slurm_info.job_id}.err")
 
+        matsum_materials = {}
+        if "matsum" in discovered:
+            if self.verbose:
+                print(f"  Parsing matsum...")
+            matsum_materials = MatsumParser(discovered["matsum"]).parse()
+            files_found.append("matsum")
+
+        # Element→part mapping from input deck (.k / .dyn files)
+        elem_to_part_deck: dict[int, int] = {}
+        try:
+            elem_to_part_deck = find_and_parse_input_deck(self.result_dir)
+            if elem_to_part_deck and self.verbose:
+                print(f"  element_mapper: {len(elem_to_part_deck)} elem→part mappings")
+        except Exception:
+            pass
+
         report.files_found = files_found
 
         # --- Phase 3: Populate report from d3hsp ---
@@ -223,6 +243,13 @@ class Analyzer:
                 if key in elem_to_proc:
                     ts.processor_id = elem_to_proc[key]
 
+        # Enrich smallest_timesteps with part_number from input deck (element_mapper)
+        # Only fill in where part_number is unknown (0)
+        if elem_to_part_deck:
+            for ts in report.timestep.smallest_timesteps:
+                if ts.part_number == 0 and ts.element_number in elem_to_part_deck:
+                    ts.part_number = elem_to_part_deck[ts.element_number]
+
         if self.verbose:
             print(f"  Running warning analysis...")
         warning_entries, warning_findings = analyze_warnings(
@@ -295,11 +322,43 @@ class Analyzer:
             if self.verbose:
                 print(f"    Checking for high-frequency oscillations...")
             numerical_findings.extend(detect_high_frequency_oscillation(nodout_path))
+        else:
+            # Suggest enabling nodout for deeper nodal diagnostics
+            numerical_findings.append(Finding(
+                severity=Severity.INFO,
+                category="output",
+                title="nodout 파일 없음 — 노드 속도 진단 불가",
+                description=(
+                    "nodout 파일이 없어 shooting node 및 고주파 진동 검출을 수행할 수 없습니다. "
+                    "*DATABASE_NODOUT 키워드를 추가하면 노드별 변위/속도/가속도 이력을 출력합니다. "
+                    "수치 불안정이 의심될 때 이상 속도 노드를 정확히 식별하는 데 필수적입니다."
+                ),
+                recommendation=(
+                    "*DATABASE_NODOUT와 *DATABASE_HISTORY_NODE를 추가하여 "
+                    "관심 노드의 시계열 데이터를 출력하도록 설정"
+                ),
+            ))
 
         if bndout_path:
             if self.verbose:
                 print(f"    Checking for excessive reaction forces...")
             numerical_findings.extend(detect_excessive_reaction_force(bndout_path))
+        else:
+            # Suggest enabling bndout for boundary force diagnostics
+            numerical_findings.append(Finding(
+                severity=Severity.INFO,
+                category="output",
+                title="bndout 파일 없음 — 경계 반력 진단 불가",
+                description=(
+                    "bndout 파일이 없어 경계 조건 반력 급등(force spike) 및 진동 검출을 수행할 수 없습니다. "
+                    "*DATABASE_BNDOUT 키워드를 추가하면 SPC/구속 경계에서의 반력 이력을 출력합니다. "
+                    "과도한 반력은 접촉 불안정 또는 경계 조건 충돌의 첫 번째 징후입니다."
+                ),
+                recommendation=(
+                    "*DATABASE_BNDOUT를 추가하여 경계 노드 반력 이력 출력. "
+                    "DT=0 설정 시 매 사이클 저장 (파일 크기 주의)"
+                ),
+            ))
 
         # glstat-based instability checks
         if energy_snapshots:
@@ -333,6 +392,28 @@ class Analyzer:
                 print(f"    Diagnosing slurm failures...")
             numerical_findings.extend(diagnose_slurm_failures(slurm_info))
 
+        # --- Phase 5c: matsum analysis ---
+        matsum_hg_entries, matsum_findings = [], []
+        if matsum_materials:
+            if self.verbose:
+                print(f"  Analyzing matsum ({len(matsum_materials)} materials)...")
+            matsum_hg_entries, matsum_findings = analyze_matsum(matsum_materials)
+            report.matsum_hg_entries = matsum_hg_entries
+
+        # --- Phase 5d: Implicit solver diagnostics ---
+        implicit_findings: list = []
+        kw_counts = d3hsp_data.keyword_counts if d3hsp_data else {}
+        report.is_implicit = is_implicit_simulation(kw_counts)
+        if report.is_implicit:
+            if self.verbose:
+                print(f"  Analyzing implicit solver...")
+            implicit_findings = analyze_implicit_solver(
+                keyword_counts=kw_counts,
+                error_counts=merged_error_counts,
+                error_messages=merged_error_messages,
+                energy_snapshots=energy_snapshots,
+            )
+
         # --- Phase 6: Diagnostics ---
         if self.verbose:
             print(f"  Running diagnostics...")
@@ -342,7 +423,7 @@ class Analyzer:
             timestep_findings=timestep_analysis.findings,
             warning_findings=warning_findings,
             contact_findings=contact_findings,
-            performance_findings=perf_findings + failure_findings + numerical_findings,
+            performance_findings=perf_findings + failure_findings + numerical_findings + matsum_findings + implicit_findings,
             contact_dt_limit=report.contact_dt_limit,
             min_dt=timestep_analysis.min_dt,
             interface_surface_timesteps=report.interface_surface_timesteps,
@@ -363,7 +444,7 @@ class Analyzer:
         d = self.result_dir
         files: dict = {}
 
-        for name in ["d3hsp", "glstat", "status.out", "load_profile.csv", "cont_profile.csv"]:
+        for name in ["d3hsp", "glstat", "status.out", "load_profile.csv", "cont_profile.csv", "matsum"]:
             p = d / name
             if p.exists() and p.stat().st_size > 0:
                 files[name] = p

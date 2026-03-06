@@ -49,6 +49,8 @@ $HiddenImports = @(
     "koodyna.analysis.diagnostics",
     "koodyna.analysis.numerical_instability",
     "koodyna.analysis.failure_analysis",
+    "koodyna.analysis.matsum_analysis",
+    "koodyna.analysis.implicit_diagnostics",
     "koodyna.report", "koodyna.report.terminal",
     "koodyna.report.json_report", "koodyna.report.html_report",
     "koodyna.knowledge", "koodyna.knowledge.warning_db",
