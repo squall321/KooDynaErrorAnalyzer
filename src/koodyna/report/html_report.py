@@ -4,6 +4,7 @@ import html
 from pathlib import Path
 
 from koodyna.models import Report, Severity, TerminationStatus
+from koodyna.report.svg_chart import make_energy_charts, make_rcforc_charts
 
 # Contact type code resolution (Korean)
 _CONTACT_TYPE_KR = {
@@ -366,6 +367,12 @@ def write_html_report(report: Report, filepath: Path):
         _w(f'<tr><td>최대 HG/내부에너지 비율</td><td class="r"></td><td class="r">{energy.max_hourglass_ratio:.1%}</td></tr>')
         _w("</tbody></table>")
 
+        # Energy time-series charts (SVG)
+        energy_svg = make_energy_charts(energy.snapshots)
+        if energy_svg:
+            _w('<h2>에너지 시계열 그래프</h2>')
+            _w(energy_svg)
+
     # === Material Hourglass (matsum) ===
     if report.matsum_hg_entries:
         # Show only materials with non-trivial HG ratio
@@ -655,6 +662,13 @@ def write_html_report(report: Report, filepath: Path):
             _w(f'<td class="r mono">{_fmt_sci(mp.i11)}</td><td class="r mono">{_fmt_sci(mp.i22)}</td>')
             _w(f'<td class="r mono">{_fmt_sci(mp.i33)}</td><td{ratio_cls}>{ratio:.0f}x</td></tr>')
         _w("</tbody></table>")
+
+    # === Contact Force Charts (rcforc) ===
+    if hasattr(report, 'rcforc_interfaces') and report.rcforc_interfaces:
+        rcforc_svg = make_rcforc_charts(report.rcforc_interfaces)
+        if rcforc_svg:
+            _w('<h2>접촉 반력 시계열 (rcforc)</h2>')
+            _w(rcforc_svg)
 
     # === Part Definitions ===
     if report.parts:

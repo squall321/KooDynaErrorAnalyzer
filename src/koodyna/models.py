@@ -331,3 +331,4 @@ class Report:
     files_found: list[str] = field(default_factory=list)
     matsum_hg_entries: list[MaterialHGEntry] = field(default_factory=list)
     is_implicit: bool = False
+    rcforc_interfaces: dict = field(default_factory=dict)  # int → RcforcInterface

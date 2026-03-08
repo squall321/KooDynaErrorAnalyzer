@@ -36,6 +36,7 @@ venv/bin/pyinstaller --onefile \
     --hidden-import=koodyna.parsers.bndout \
     --hidden-import=koodyna.parsers.matsum \
     --hidden-import=koodyna.parsers.element_mapper \
+    --hidden-import=koodyna.parsers.rcforc \
     --hidden-import=koodyna.parsers.slurm \
     --hidden-import=koodyna.scanner \
     --hidden-import=koodyna.analysis \
@@ -53,6 +54,7 @@ venv/bin/pyinstaller --onefile \
     --hidden-import=koodyna.report.terminal \
     --hidden-import=koodyna.report.json_report \
     --hidden-import=koodyna.report.html_report \
+    --hidden-import=koodyna.report.svg_chart \
     --hidden-import=koodyna.knowledge \
     --hidden-import=koodyna.knowledge.warning_db \
     --hidden-import=koodyna.knowledge.error_db \

@@ -10,6 +10,7 @@ from koodyna.parsers.profile import ProfileParser, ContProfileParser
 from koodyna.parsers.messag import parse_all_mes_files
 from koodyna.parsers.matsum import MatsumParser
 from koodyna.parsers.element_mapper import find_and_parse_input_deck
+from koodyna.parsers.rcforc import RcforcParser
 from koodyna.analysis.energy import analyze_energy
 from koodyna.analysis.timestep import analyze_timestep
 from koodyna.analysis.warnings import analyze_warnings
@@ -130,6 +131,19 @@ class Analyzer:
                 print(f"  Parsing matsum...")
             matsum_materials = MatsumParser(discovered["matsum"]).parse()
             files_found.append("matsum")
+
+        # rcforc parsing
+        rcforc_interfaces = {}
+        if "rcforc" in discovered:
+            if self.verbose:
+                print(f"  Parsing rcforc...")
+            try:
+                rcforc_interfaces = RcforcParser(discovered["rcforc"]).parse()
+                files_found.append("rcforc")
+                if self.verbose:
+                    print(f"  rcforc: {len(rcforc_interfaces)} interfaces")
+            except Exception:
+                pass
 
         # Element→part mapping from input deck (.k / .dyn files)
         elem_to_part_deck: dict[int, int] = {}
@@ -368,6 +382,10 @@ class Analyzer:
             matsum_hg_entries, matsum_findings = analyze_matsum(matsum_materials)
             report.matsum_hg_entries = matsum_hg_entries
 
+        # Assign rcforc data to report
+        if rcforc_interfaces:
+            report.rcforc_interfaces = rcforc_interfaces
+
         # --- Phase 5d: Implicit solver diagnostics ---
         implicit_findings: list = []
         kw_counts = d3hsp_data.keyword_counts if d3hsp_data else {}
@@ -412,7 +430,7 @@ class Analyzer:
         d = self.result_dir
         files: dict = {}
 
-        for name in ["d3hsp", "glstat", "status.out", "load_profile.csv", "cont_profile.csv", "matsum"]:
+        for name in ["d3hsp", "glstat", "status.out", "load_profile.csv", "cont_profile.csv", "matsum", "rcforc"]:
             p = d / name
             if p.exists() and p.stat().st_size > 0:
                 files[name] = p
