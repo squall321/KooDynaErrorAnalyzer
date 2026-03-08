@@ -1431,6 +1431,48 @@ ERROR_DATABASE: dict[int, ErrorInfo] = {
         ),
     ),
 
+    # ===== Material/Section Errors (20xxx) — 새로 추가 =====
+    20385: ErrorInfo(
+        code=20385,
+        severity=Severity.CRITICAL,
+        title="Material type incompatible with element formulation",
+        description=(
+            "Error 20385: 파트에 지정된 재료 타입이 해당 요소 공식(element formulation)과 "
+            "호환되지 않습니다. 예를 들어, thick shell (formulation 2)에 지원되지 않는 "
+            "재료 모델(*MAT_063 등)을 적용하면 이 오류가 발생합니다. "
+            "LS-DYNA의 각 요소 공식은 특정 재료 모델만 지원하며, "
+            "미지원 조합은 초기화 단계에서 시뮬레이션을 중단시킵니다."
+        ),
+        recommendation=(
+            "1. 재료-요소 호환성 확인 — LS-DYNA 매뉴얼에서 해당 MAT 타입이 "
+            "지원하는 ELFORM 목록 확인. 예: *MAT_063(Crushable Foam)은 "
+            "solid 전용이며 thick shell에서 사용 불가\n"
+            "2. 요소 공식 변경 — *SECTION_TSHELL의 ELFORM을 재료가 지원하는 형식으로 변경\n"
+            "3. 재료 모델 변경 — thick shell 지원 재료(*MAT_024, *MAT_058 등)로 교체"
+        ),
+    ),
+    20430: ErrorInfo(
+        code=20430,
+        severity=Severity.CRITICAL,
+        title="Hardening modulus exceeds Young's modulus (MAT_024)",
+        description=(
+            "Error 20430: *MAT_PIECEWISE_LINEAR_PLASTICITY(MAT_024)에서 경화 계수(ETAN)가 "
+            "영 계수(E)보다 크거나 같습니다. 탄소성 재료에서 hardening modulus는 "
+            "항복 후 접선 강성(tangent modulus)으로, 물리적으로 E보다 작아야 합니다. "
+            "H = E × ETAN / (E - ETAN) 관계에서 ETAN ≥ E이면 H가 무한대 또는 음수가 되어 "
+            "수치적으로 의미가 없습니다. 이는 재료 파라미터 입력 오류(단위 불일치)가 "
+            "가장 흔한 원인입니다."
+        ),
+        recommendation=(
+            "1. ETAN 값 확인 — ETAN은 항복 후 접선 기울기로, 반드시 E보다 작아야 함. "
+            "일반적으로 ETAN = 0.001×E ~ 0.1×E 범위\n"
+            "2. 단위계 확인 — E와 ETAN이 동일한 단위(Pa, MPa 등)인지 확인. "
+            "mm-ton-s 단위에서 E=210000 MPa, ETAN=1000 MPa 등\n"
+            "3. 응력-변형률 커브 사용 — ETAN 대신 *DEFINE_CURVE로 경화 곡선을 직접 정의하면 "
+            "더 정확한 비선형 거동 표현 가능 (LCSS 필드 활용)"
+        ),
+    ),
+
     # ===== Contact Errors (40xxx) — 새로 추가 =====
     40024: ErrorInfo(
         code=40024,

@@ -626,24 +626,70 @@ def run_diagnostics(
             ),
         ))
     elif termination.status == TerminationStatus.INCOMPLETE:
-        all_findings.append(Finding(
-            severity=Severity.CRITICAL,
-            category="termination",
-            title="해석 미완료 (출력 불완전)",
-            description=(
-                "정상 종료 또는 에러 종료 표시가 발견되지 않았습니다. "
-                "출력 파일이 불완전하며, 시뮬레이션이 외부에서 강제 종료되었거나 "
-                "클린 종료 없이 크래시된 것으로 보입니다. "
-                "일반적 원인: HPC walltime 초과, OOM(Out Of Memory) kill, "
-                "라이선스 만료, 파일시스템 오류."
-            ),
-            recommendation=(
-                "1. 시스템 로그에서 OOM kill 또는 walltime 초과 확인\n"
-                "2. mes0000 파일의 마지막 줄에서 진행 상태 확인\n"
-                "3. 코어 덤프(core dump) 또는 signal 파일 확인\n"
-                "4. HPC의 경우 walltime 증가 또는 restart 파일 활용"
-            ),
-        ))
+        # Distinguish initialization failure vs runtime crash
+        if termination.actual_time == 0.0 and termination.target_time == 0.0:
+            all_findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="termination",
+                title="초기화 단계에서 종료 (시뮬레이션 미시작)",
+                description=(
+                    "시뮬레이션이 초기화 단계에서 종료되어 time step이 한 번도 진행되지 않았습니다. "
+                    "d3hsp에 target_time과 actual_time이 모두 0이며, 종료 메시지도 없습니다. "
+                    "주요 원인: 요소 연결성 오류(Error 10133), 재료-요소 호환성 오류(Error 20385), "
+                    "재료 파라미터 오류(Error 20430), 메모리 부족, 또는 라이선스 실패."
+                ),
+                recommendation=(
+                    "1. d3hsp 파일에서 *** Error 메시지 직접 확인 — 초기화 오류의 정확한 코드 확인\n"
+                    "2. 요소/재료 호환성 — *SECTION의 ELFORM과 *MAT 타입이 호환되는지 매뉴얼 확인\n"
+                    "3. 모델 형상 — 프리프로세서에서 요소 연결성(connectivity) 및 중복 노드 점검\n"
+                    "4. 메모리 — MPP 분해에 필요한 메모리가 충분한지 확인 (MEMORY 키워드 조정)"
+                ),
+            ))
+        elif termination.actual_time == 0.0:
+            all_findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="termination",
+                title="초기화 직후 종료 (첫 사이클 미도달)",
+                description=(
+                    f"목표 시간 {termination.target_time:.4E}이 설정되었으나, "
+                    f"실제 진행 시간은 0입니다. 초기화는 완료되었지만 "
+                    f"첫 번째 사이클을 수행하기 전에 종료되었습니다. "
+                    f"주요 원인: 초기 관통으로 인한 즉시 negative volume, "
+                    f"초기 요소 품질 불량(jacobian ≤ 0), "
+                    f"MPI 통신 실패, 또는 segmentation fault."
+                ),
+                recommendation=(
+                    "1. d3hsp에서 *** Error 메시지 확인 — 첫 사이클 전 발생한 오류 코드\n"
+                    "2. 초기 관통 확인 — *CONTACT의 IGNORE=2로 초기 관통 자동 해소\n"
+                    "3. 요소 품질 — jacobian 비율이 0 이하인 요소 검색 및 수정\n"
+                    "4. slurm/MPI 로그 확인 — segfault 또는 MPI_ABORT 여부"
+                ),
+            ))
+        else:
+            # Runtime crash
+            progress_pct = 0.0
+            if termination.target_time > 0:
+                progress_pct = termination.actual_time / termination.target_time * 100
+            all_findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="termination",
+                title=f"해석 미완료 — 실행 중 크래시 ({progress_pct:.1f}% 진행)",
+                description=(
+                    f"정상 종료 또는 에러 종료 표시가 발견되지 않았습니다. "
+                    f"시뮬레이션이 {termination.actual_time:.4E}초까지 진행 후 "
+                    f"(목표 {termination.target_time:.4E}초의 {progress_pct:.1f}%) "
+                    f"출력 파일이 불완전하게 종료되었습니다. "
+                    f"외부에서 강제 종료되었거나 클린 종료 없이 크래시된 것으로 보입니다. "
+                    f"일반적 원인: HPC walltime 초과, OOM(Out Of Memory) kill, "
+                    f"라이선스 만료, 파일시스템 오류."
+                ),
+                recommendation=(
+                    "1. 시스템 로그에서 OOM kill 또는 walltime 초과 확인\n"
+                    "2. mes0000 파일의 마지막 줄에서 진행 상태 확인\n"
+                    "3. 코어 덤프(core dump) 또는 signal 파일 확인\n"
+                    "4. HPC의 경우 walltime 증가 또는 restart 파일 활용"
+                ),
+            ))
     else:
         # Normal termination
         if termination.actual_time > 0 and termination.target_time > 0:
