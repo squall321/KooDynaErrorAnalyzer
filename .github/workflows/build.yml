@@ -18,6 +18,9 @@ jobs:
       - name: Install dependencies
         run: pip install rich pyinstaller
 
+      - name: Stamp build date
+        run: sed -i "s/^BUILD_DATE = .*/BUILD_DATE = \"$(date +%Y-%m-%d)\"/" src/koodyna/__init__.py
+
       - name: Build Linux executable
         run: |
           export PYTHONPATH="$(pwd)/src"
@@ -82,6 +85,12 @@ jobs:
 
       - name: Install dependencies
         run: pip install rich pyinstaller
+
+      - name: Stamp build date
+        run: |
+          $today = Get-Date -Format "yyyy-MM-dd"
+          (Get-Content src/koodyna/__init__.py) -replace '^BUILD_DATE = .*', "BUILD_DATE = `"$today`"" | Set-Content src/koodyna/__init__.py
+        shell: pwsh
 
       - name: Build Windows executable
         run: |

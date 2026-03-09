@@ -16,6 +16,10 @@ echo "[1/2] PyInstaller 설치 중..."
 venv/bin/pip install pyinstaller
 echo ""
 
+echo "[1.5/2] BUILD_DATE 갱신..."
+sed -i "s/^BUILD_DATE = .*/BUILD_DATE = \"$(date +%Y-%m-%d)\"/" src/koodyna/__init__.py
+echo ""
+
 echo "[2/2] 빌드 중..."
 echo ""
 export PYTHONPATH="$(pwd)/src"
