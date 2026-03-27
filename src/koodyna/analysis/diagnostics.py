@@ -552,6 +552,111 @@ def _diagnose_warning_patterns(
             ),
         ))
 
+    # --- Warning 조합 패턴 분석 (763 케이스 기반 failure signature) ---
+    warning_codes = {w.code: w.count for w in warnings}
+
+    # 패턴 1: 40509 + 40491 = 요소 반전 진행 중 (ERROR 케이스에서 다빈도)
+    if warning_codes.get(40509, 0) > 0 and warning_codes.get(40491, 0) > 0:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="warning",
+            title="Warning 조합 패턴: 요소 반전 진행 (40509+40491)",
+            description=(
+                f"Negative volume(40509) {warning_codes[40509]}회 + "
+                f"Element distortion(40491) {warning_codes[40491]}회가 동시 발생. "
+                f"요소가 심하게 왜곡되다가(40491) 최종적으로 체적이 반전(40509)되는 "
+                f"전형적인 실패 진행 패턴입니다. ERROR 종료의 주요 원인입니다."
+            ),
+            recommendation=(
+                "1. *MAT_ADD_EROSION으로 왜곡 요소를 반전 전에 삭제\n"
+                "2. *CONTROL_TIMESTEP ERODE=1로 dt 기준 삭제 활성화\n"
+                "3. 해당 영역의 메시 품질 개선 (초기 jacobian > 0.3)"
+            ),
+        ))
+
+    # 패턴 2: 50134 대량 = 초기 tied contact 설정 문제 (INCOMPLETE에서 다빈도)
+    if warning_codes.get(50134, 0) > 10000:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="warning",
+            title=f"Tied contact 대량 경고 (50134: {warning_codes[50134]:,}회)",
+            description=(
+                f"Warning 50134가 {warning_codes[50134]:,}회 발생 — "
+                f"tied contact 인터페이스에서 대량의 노드 투영 문제가 있습니다. "
+                f"이는 메시 간 불일치가 심각함을 의미하며, "
+                f"인터페이스 분리로 인한 비정상 종료의 주요 원인입니다."
+            ),
+            recommendation=(
+                "1. Tied contact 대신 일반 contact(AUTOMATIC) 사용 검토\n"
+                "2. 메시 호환성 확인 — slave/master 요소 크기 비율 < 3\n"
+                "3. *CONTACT의 SBOPT=3, DEPTH=5 설정\n"
+                "4. 불가피하면 merge nodes로 직접 결합"
+            ),
+        ))
+
+    # 패턴 3: 40379(관통) 반복 = 접촉 강성 부족
+    if warning_codes.get(40379, 0) > 100:
+        findings.append(Finding(
+            severity=Severity.WARNING,
+            category="warning",
+            title=f"접촉 관통 반복 (40379: {warning_codes[40379]:,}회)",
+            description=(
+                f"접촉 관통 경고가 {warning_codes[40379]:,}회 반복 발생. "
+                f"penalty 접촉에서 매 사이클 관통이 보정되지만, "
+                f"반복 발생은 접촉 강성이 부족하거나 메시가 조밀하지 않음을 의미합니다."
+            ),
+            recommendation=(
+                "1. SOFT=2(segment-based) 접촉으로 변경\n"
+                "2. SLSFAC(접촉 강성 스케일) 증가\n"
+                "3. 접촉면 메시 세밀화"
+            ),
+        ))
+
+    # 패턴 4: 초기화 경고 vs 런타임 경고 분류
+    init_warning_codes = {50134, 50135, 50136, 30131, 30128, 10133, 10246, 20018}
+    runtime_warning_codes = {40509, 40491, 40379, 40500, 40487, 20545, 41240}
+    init_total = sum(warning_codes.get(c, 0) for c in init_warning_codes)
+    runtime_total = sum(warning_codes.get(c, 0) for c in runtime_warning_codes)
+    total_warnings = sum(w.count for w in warnings)
+
+    if total_warnings > 100 and init_total > 0 and runtime_total > 0:
+        init_pct = init_total / total_warnings * 100
+        runtime_pct = runtime_total / total_warnings * 100
+        if runtime_pct > 50:
+            findings.append(Finding(
+                severity=Severity.INFO,
+                category="warning",
+                title=f"런타임 경고 비중 {runtime_pct:.0f}% — 해석 중 문제 발생",
+                description=(
+                    f"전체 {total_warnings:,}회 경고 중 런타임 경고가 {runtime_pct:.0f}% "
+                    f"({runtime_total:,}회)를 차지합니다. "
+                    f"모델 설정 문제(초기화 경고 {init_pct:.0f}%)보다 해석 진행 중 "
+                    f"발생하는 수치적 문제가 지배적입니다."
+                ),
+                recommendation=(
+                    "1. 하중/경계조건이 과도한 변형을 유발하는지 확인\n"
+                    "2. dt 추세 차트에서 문제 시작 시점 확인\n"
+                    "3. d3plot 애니메이션으로 변형 영역 시각적 확인"
+                ),
+            ))
+        elif init_pct > 80:
+            findings.append(Finding(
+                severity=Severity.INFO,
+                category="warning",
+                title=f"초기화 경고 비중 {init_pct:.0f}% — 모델 설정 검토 필요",
+                description=(
+                    f"전체 {total_warnings:,}회 경고 중 초기화 경고가 {init_pct:.0f}% "
+                    f"({init_total:,}회)를 차지합니다. "
+                    f"Tied contact 설정, 메시 호환성, 재료/단면 정의에 "
+                    f"개선이 필요합니다."
+                ),
+                recommendation=(
+                    "1. Tied contact 인터페이스의 메시 호환성 확인\n"
+                    "2. 재료/단면 정의의 파라미터 값 검토\n"
+                    "3. *CONTROL_CONTACT 설정 최적화"
+                ),
+            ))
+
     if warning_50136 and warning_50136.count > 100:
         interface_desc = f"인터페이스 {', '.join(map(str, warning_50136.affected_interfaces[:10]))}"
         if len(warning_50136.affected_interfaces) > 10:
