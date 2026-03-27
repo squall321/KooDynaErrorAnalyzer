@@ -142,6 +142,7 @@ def _diagnose_timestep_collapse(
     energy_snapshots: list[EnergySnapshot] | None = None,
     smallest_timesteps: list[TimestepEntry] | None = None,
     parts: list[PartDefinition] | None = None,
+    mass_properties: list[MassProperty] | None = None,
 ) -> list[Finding]:
     """Detect timestep collapse - simulation becoming impractical due to tiny timestep.
 
@@ -151,6 +152,12 @@ def _diagnose_timestep_collapse(
     dt < 1e-11이면 목표 시간 도달에 필요한 사이클 수가 비실용적입니다.
     """
     findings: list[Finding] = []
+
+    # 파트 → 질량중심 좌표 매핑
+    part_coords = {}
+    for mp in (mass_properties or []):
+        if mp.part_id and (mp.cx != 0 or mp.cy != 0 or mp.cz != 0):
+            part_coords[mp.part_id] = (mp.cx, mp.cy, mp.cz)
 
     # 원인 요소/파트 식별 (공통 헬퍼)
     def _build_culprit_info() -> str:
@@ -165,9 +172,13 @@ def _diagnose_timestep_collapse(
                 label = f"Part {last.controlling_part}"
                 if pname:
                     label += f" ({pname})"
+                coord_str = ""
+                if last.controlling_part in part_coords:
+                    cx, cy, cz = part_coords[last.controlling_part]
+                    coord_str = f" [파트 질량중심: ({cx:.4g}, {cy:.4g}, {cz:.4g})]"
                 lines.append(
                     f"마지막 사이클(cycle {last.cycle})에서 dt를 제어한 요소: "
-                    f"{last.controlling_element_type} {last.controlling_element}, {label}"
+                    f"{last.controlling_element_type} {last.controlling_element}, {label}{coord_str}"
                 )
 
         # 2) smallest_timesteps에서 최소 dt 요소
@@ -177,9 +188,13 @@ def _diagnose_timestep_collapse(
             label = f"Part {worst.part_number}"
             if pname:
                 label += f" ({pname})"
+            coord_str = ""
+            if worst.part_number in part_coords:
+                cx, cy, cz = part_coords[worst.part_number]
+                coord_str = f" [파트 질량중심: ({cx:.4g}, {cy:.4g}, {cz:.4g})]"
             lines.append(
                 f"가장 작은 dt 요소: {worst.element_type} {worst.element_number}, "
-                f"{label}, dt={worst.timestep:.3E}"
+                f"{label}, dt={worst.timestep:.3E}{coord_str}"
             )
 
         if lines:
@@ -797,6 +812,7 @@ def run_diagnostics(
         energy_snapshots=energy_snapshots,
         smallest_timesteps=smallest_timesteps,
         parts=parts,
+        mass_properties=mass_properties,
     ))
     all_findings.extend(_diagnose_energy_instability(
         energy_snapshots or [],
