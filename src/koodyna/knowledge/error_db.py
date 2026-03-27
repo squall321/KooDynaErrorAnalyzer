@@ -1570,6 +1570,661 @@ ERROR_DATABASE: dict[int, ErrorInfo] = {
             "만료 여부 확인"
         ),
     ),
+
+    # ===== 763 케이스 배치 분석에서 새로 발견된 코드 (2026-03-27) =====
+
+    # --- Element / Solid Warnings (40xxx) ---
+    40041: ErrorInfo(
+        code=40041,
+        severity=Severity.INFO,
+        title="Initial penetration in contact",
+        description=(
+            "접촉 초기화 시 관통(initial penetration)이 감지되었습니다. "
+            "모델 조립 시 부품 간 간섭이 있으면 접촉 알고리즘이 이를 감지합니다. "
+            "소량의 초기 관통은 허용 가능하지만, 과도한 관통은 초기 에너지 "
+            "불균형을 유발합니다."
+        ),
+        recommendation=(
+            "1. 전처리기에서 부품 간 간섭 체크(interference check) 수행\n"
+            "2. *CONTROL_CONTACT의 IGNORE=1로 초기 관통 무시 옵션 사용\n"
+            "3. 과도한 관통 시 모델 형상 수정으로 간섭 제거"
+        ),
+    ),
+    40117: ErrorInfo(
+        code=40117,
+        severity=Severity.WARNING,
+        title="Contact segment normals inconsistent",
+        description=(
+            "접촉 세그먼트의 법선 방향이 비일관적입니다. "
+            "shell 요소의 법선이 접촉 상대면을 향해야 하는데, "
+            "일부 세그먼트의 법선이 반대 방향을 가리키고 있습니다. "
+            "이로 인해 접촉 감지가 실패하거나 비물리적 반력이 발생할 수 있습니다."
+        ),
+        recommendation=(
+            "1. *CONTACT에서 SOFT=2 사용 — 세그먼트 기반 접촉으로 법선 의존도 감소\n"
+            "2. 전처리기에서 shell 법선 방향 통일(normals consistency check)\n"
+            "3. AUTOMATIC 접촉 타입 사용 — 법선 자동 판별"
+        ),
+    ),
+    40148: ErrorInfo(
+        code=40148,
+        severity=Severity.WARNING,
+        title="Contact interface force limit exceeded",
+        description=(
+            "접촉 인터페이스의 힘 제한값이 초과되었습니다. "
+            "접촉력이 비정상적으로 크다는 것을 의미하며, "
+            "과도한 관통이나 불안정한 접촉 조건에서 발생합니다."
+        ),
+        recommendation=(
+            "1. 접촉 강성(SFS, SFM) 조정 — 과도한 접촉 강성이 원인일 수 있음\n"
+            "2. SOFT=1 또는 SOFT=2 접촉 알고리즘으로 변경\n"
+            "3. 메시 세밀화로 접촉면 해상도 개선"
+        ),
+    ),
+    40300: ErrorInfo(
+        code=40300,
+        severity=Severity.WARNING,
+        title="Element degeneration detected",
+        description=(
+            "요소 형상이 퇴화(degeneration)되었습니다. "
+            "Jacobian이 0에 가까워지거나 음수가 되어 요소의 기하학적 "
+            "유효성이 상실되고 있습니다. 과도한 변형이 원인입니다."
+        ),
+        recommendation=(
+            "1. *MAT_ADD_EROSION으로 과도 변형 요소 자동 삭제\n"
+            "2. Adaptive remeshing(*CONTROL_ADAPTIVE) 적용\n"
+            "3. 해당 영역의 초기 메시 품질 개선"
+        ),
+    ),
+    40355: ErrorInfo(
+        code=40355,
+        severity=Severity.INFO,
+        title="Contact damping applied",
+        description=(
+            "접촉 인터페이스에 감쇠(damping)가 적용되었습니다. "
+            "VDC(viscous damping coefficient) 설정에 의해 접촉면에서 "
+            "에너지가 소산됩니다. 정상적인 설정 확인 메시지입니다."
+        ),
+        recommendation=(
+            "1. VDC 값이 의도한 범위(보통 0~40%)인지 확인\n"
+            "2. 과도한 접촉 진동 시 VDC 증가 검토"
+        ),
+    ),
+    40359: ErrorInfo(
+        code=40359,
+        severity=Severity.WARNING,
+        title="Contact thickness offset applied",
+        description=(
+            "접촉 두께 오프셋이 적용되었습니다. Shell 요소의 접촉 두께가 "
+            "실제 두께와 다르게 설정되어 접촉 감지 거리가 조정됩니다."
+        ),
+        recommendation=(
+            "1. SST/MST(shell thickness scale)가 의도한 값인지 확인\n"
+            "2. AUTOMATIC 접촉에서 SHLTHK 옵션 확인"
+        ),
+    ),
+    40379: ErrorInfo(
+        code=40379,
+        severity=Severity.WARNING,
+        title="Contact penetration detected",
+        description=(
+            "접촉면에서 관통(penetration)이 감지되었습니다. "
+            "접촉 알고리즘이 매 사이클마다 관통을 보정하지만, "
+            "관통이 지속적으로 발생하면 접촉 강성이 부족하거나 "
+            "메시 해상도가 불충분함을 의미합니다. "
+            "839회/18케이스에서 발생 — 비교적 흔한 경고입니다."
+        ),
+        recommendation=(
+            "1. 접촉 강성 증가 — SFS/SFM 값을 높여 관통 저항력 강화\n"
+            "2. SOFT=2(segment-based) 접촉으로 변경 — 관통 방지 성능 우수\n"
+            "3. 메시 세밀화 — 접촉면의 요소 크기를 줄여 해상도 개선\n"
+            "4. *CONTROL_CONTACT의 SLSFAC(접촉 강성 스케일) 증가"
+        ),
+    ),
+    40380: ErrorInfo(
+        code=40380,
+        severity=Severity.WARNING,
+        title="Contact friction energy check",
+        description=(
+            "접촉 마찰 에너지 계산 관련 경고입니다. "
+            "마찰 계수(FS, FD)와 접촉 조건에 따라 "
+            "마찰 에너지 소산이 예상 범위를 벗어났습니다."
+        ),
+        recommendation=(
+            "1. 마찰 계수 확인 — FS(정적), FD(동적) 값이 현실적인지 검토\n"
+            "2. glstat의 sliding interface energy 추이 확인"
+        ),
+    ),
+    40390: ErrorInfo(
+        code=40390,
+        severity=Severity.INFO,
+        title="Contact bucket sort update",
+        description=(
+            "접촉 검색을 위한 bucket sort 알고리즘이 업데이트되었습니다. "
+            "대변형 해석에서 요소 이동에 따라 접촉 검색 구조가 갱신됩니다. "
+            "정상적인 정보 메시지입니다."
+        ),
+        recommendation=(
+            "1. 빈번한 업데이트는 대변형을 의미 — 정상적인 동작\n"
+            "2. *CONTROL_CONTACT의 BSORT 값으로 갱신 빈도 조절 가능"
+        ),
+    ),
+    40455: ErrorInfo(
+        code=40455,
+        severity=Severity.WARNING,
+        title="Rigid body constraint issue",
+        description=(
+            "강체(rigid body) 구속 조건에 문제가 있습니다. "
+            "강체 파트 간 또는 강체-변형체 간 구속이 충돌하거나 "
+            "과다 구속(over-constraint) 상태입니다."
+        ),
+        recommendation=(
+            "1. *CONSTRAINED_RIGID_BODIES 정의 확인\n"
+            "2. 강체 파트에 중복 구속(*BOUNDARY_SPC 등)이 없는지 확인\n"
+            "3. 강체 전환(*MAT_RIGID) 시 기존 경계조건과 충돌 확인"
+        ),
+    ),
+    40456: ErrorInfo(
+        code=40456,
+        severity=Severity.WARNING,
+        title="Rigid body inertia issue",
+        description=(
+            "강체의 관성 특성(질량, 관성 모멘트)에 문제가 있습니다. "
+            "질량이 0이거나 관성 모멘트가 비정상적으로 작은 경우 "
+            "강체 운동 계산에 수치적 불안정이 발생할 수 있습니다."
+        ),
+        recommendation=(
+            "1. *PART_INERTIA로 강체 질량/관성 명시적 지정\n"
+            "2. *MAT_RIGID의 밀도(RO) 값 확인\n"
+            "3. 매우 작은 강체 파트의 경우 질량 스케일링 고려"
+        ),
+    ),
+    40487: ErrorInfo(
+        code=40487,
+        severity=Severity.WARNING,
+        title="Element distortion warning (formulation specific)",
+        description=(
+            "특정 요소 포뮬레이션에서 요소 왜곡(distortion)이 감지되었습니다. "
+            "200회/4케이스 발생. 고차 요소나 특수 포뮬레이션(EFG, SPH 등)에서 "
+            "형상 품질이 떨어질 때 발생합니다."
+        ),
+        recommendation=(
+            "1. 해당 요소의 aspect ratio 확인 및 메시 개선\n"
+            "2. 요소 포뮬레이션 변경 검토 (예: ELFORM 변경)\n"
+            "3. 적응적 재메싱(*CONTROL_ADAPTIVE) 고려"
+        ),
+    ),
+    40491: ErrorInfo(
+        code=40491,
+        severity=Severity.WARNING,
+        title="Element quality degradation (severe distortion)",
+        description=(
+            "요소 품질이 심각하게 저하되었습니다. "
+            "4,138회/4케이스 발생 — 높은 빈도로 요소 왜곡이 축적되고 있습니다. "
+            "Jacobian 비율이 허용치를 초과했거나 요소 내부 각도가 극단적입니다. "
+            "이 상태가 지속되면 negative volume(40509)으로 진행될 수 있습니다."
+        ),
+        recommendation=(
+            "1. *MAT_ADD_EROSION으로 과도 변형 요소 자동 삭제 (MXEPS 설정)\n"
+            "2. *CONTROL_TIMESTEP의 ERODE 옵션으로 최소 dt 이하 요소 삭제\n"
+            "3. 초기 메시 품질 개선 — aspect ratio < 5, jacobian > 0.3 목표\n"
+            "4. ALE 또는 SPH 포뮬레이션으로 전환 검토 (극한 변형 영역)"
+        ),
+    ),
+    40500: ErrorInfo(
+        code=40500,
+        severity=Severity.WARNING,
+        title="Hourglass energy excessive in element",
+        description=(
+            "특정 요소에서 hourglass 에너지가 과도합니다. "
+            "90회/7케이스 발생. Reduced integration 요소(ELFORM=1 등)에서 "
+            "zero-energy mode가 활성화되어 비물리적 변형이 발생하고 있습니다."
+        ),
+        recommendation=(
+            "1. Hourglass 제어 타입 변경 — IHQ=4(Flanagan-Belytschko stiffness) 권장\n"
+            "2. QM 값 증가 (기본 0.1 → 0.15~0.3)\n"
+            "3. Fully integrated 요소(ELFORM=2 또는 -1)로 변경\n"
+            "4. 메시 세밀화로 hourglass mode 억제"
+        ),
+    ),
+    40501: ErrorInfo(
+        code=40501,
+        severity=Severity.WARNING,
+        title="Hourglass viscosity warning",
+        description=(
+            "Hourglass 점성(viscosity) 제어에서 경고가 발생했습니다. "
+            "Hourglass 제어 강성이 안정 한계에 근접했습니다."
+        ),
+        recommendation=(
+            "1. QM(hourglass coefficient) 값 감소 검토\n"
+            "2. Stiffness 기반 hourglass 제어(IHQ=4,5)로 전환\n"
+            "3. Fully integrated 요소 포뮬레이션 사용"
+        ),
+    ),
+    40515: ErrorInfo(
+        code=40515,
+        severity=Severity.WARNING,
+        title="Element erosion by timestep criterion",
+        description=(
+            "Timestep 기준에 의해 요소가 삭제(erosion)되었습니다. "
+            "*CONTROL_TIMESTEP의 ERODE 옵션이 활성화되어 있고, "
+            "요소의 안정 timestep이 TSMIN 이하로 떨어져 삭제되었습니다."
+        ),
+        recommendation=(
+            "1. 정상적인 erosion 동작 — ERODE/TSMIN 값이 적절한지 확인\n"
+            "2. 삭제된 요소 수가 과도하면 메시 품질 또는 하중 조건 검토\n"
+            "3. *DATABASE_ELOUT으로 삭제 전 요소 상태 모니터링"
+        ),
+    ),
+    41190: ErrorInfo(
+        code=41190,
+        severity=Severity.INFO,
+        title="Shell element thickness change",
+        description=(
+            "Shell 요소의 두께가 변형에 의해 변화했습니다. "
+            "대변형 shell 해석에서 막(membrane) 변형에 따른 "
+            "두께 갱신이 수행되었습니다."
+        ),
+        recommendation=(
+            "1. 정상적인 동작 — 대변형 시 두께 갱신은 물리적으로 올바름\n"
+            "2. *CONTROL_SHELL의 ISTUPD 옵션으로 두께 갱신 제어"
+        ),
+    ),
+    41233: ErrorInfo(
+        code=41233,
+        severity=Severity.WARNING,
+        title="Shell element warping detected",
+        description=(
+            "Shell 요소의 뒤틀림(warping)이 감지되었습니다. "
+            "4노드 shell 요소의 네 노드가 동일 평면에 있지 않아 "
+            "수치 정확도가 저하됩니다."
+        ),
+        recommendation=(
+            "1. 메시 품질 검사 — warping angle < 15° 권장\n"
+            "2. 삼각형(tria) 요소로 분할 또는 메시 재생성\n"
+            "3. *CONTROL_SHELL의 WRPANG 설정으로 warping 허용치 조정"
+        ),
+    ),
+    41240: ErrorInfo(
+        code=41240,
+        severity=Severity.WARNING,
+        title="Solid element formulation issue",
+        description=(
+            "Solid 요소 포뮬레이션에서 문제가 감지되었습니다. "
+            "313회/2케이스 발생. 특수 포뮬레이션(tet ELFORM=60 등)에서 "
+            "안정성 또는 정확도 관련 경고입니다."
+        ),
+        recommendation=(
+            "1. 요소 포뮬레이션 확인 — ELFORM 값이 해석 유형에 적합한지 검토\n"
+            "2. Tet 요소의 경우 ELFORM=13(nodal pressure tet) 또는 "
+            "ELFORM=17(10-node tet) 검토\n"
+            "3. 메시 품질 개선 — tet 요소의 aspect ratio 확인"
+        ),
+    ),
+    41434: ErrorInfo(
+        code=41434,
+        severity=Severity.WARNING,
+        title="Thick shell element issue",
+        description=(
+            "Thick shell(tshell) 요소에서 경고가 발생했습니다. "
+            "두께 방향 적분 또는 요소 포뮬레이션 관련 문제입니다."
+        ),
+        recommendation=(
+            "1. Thick shell ELFORM 확인 (1: 기본, 2: fully integrated)\n"
+            "2. 두께 방향 적분점 수(NIP) 확인\n"
+            "3. 두께 대비 면적이 극단적이지 않은지 확인"
+        ),
+    ),
+    41438: ErrorInfo(
+        code=41438,
+        severity=Severity.WARNING,
+        title="Thick shell strain calculation warning",
+        description=(
+            "Thick shell 요소의 변형률 계산에서 경고입니다. "
+            "두께 방향 변형률이 비정상적이거나 수치 오류가 감지되었습니다."
+        ),
+        recommendation=(
+            "1. 요소의 초기 형상(aspect ratio) 확인\n"
+            "2. Thick shell 포뮬레이션을 solid 요소로 대체 검토\n"
+            "3. *CONTROL_SHELL의 관련 파라미터 검토"
+        ),
+    ),
+    41530: ErrorInfo(
+        code=41530,
+        severity=Severity.WARNING,
+        title="SPH/SPG particle interaction warning",
+        description=(
+            "SPH 또는 SPG 입자법에서 입자 상호작용 경고입니다. "
+            "인접 입자 검색에서 문제가 발생했거나 입자 간격이 "
+            "비균일하여 수치 정확도가 저하될 수 있습니다."
+        ),
+        recommendation=(
+            "1. 입자 간격(particle spacing) 균일성 확인\n"
+            "2. *CONTROL_SPH의 NCBS(bucket sort 빈도) 조정\n"
+            "3. 커널 함수 영향 반경(CSLH) 값 확인"
+        ),
+    ),
+
+    # --- Material / Definition Warnings (20xxx, 21xxx) ---
+    20211: ErrorInfo(
+        code=20211,
+        severity=Severity.WARNING,
+        title="Material parameter out of expected range",
+        description=(
+            "재료 모델의 파라미터가 예상 범위를 벗어났습니다. "
+            "입력된 값이 물리적으로 비현실적이거나 해당 재료 모델의 "
+            "유효 범위를 초과합니다."
+        ),
+        recommendation=(
+            "1. 재료 파라미터 값 재확인 — 단위 체계 일관성 확인\n"
+            "2. 재료 모델 매뉴얼에서 파라미터 유효 범위 확인\n"
+            "3. 실험 데이터 기반 파라미터 fitting 검토"
+        ),
+    ),
+    20386: ErrorInfo(
+        code=20386,
+        severity=Severity.WARNING,
+        title="Equation of state parameter warning",
+        description=(
+            "상태 방정식(EOS) 파라미터에서 경고가 발생했습니다. "
+            "EOS 정의의 압력-체적 관계가 비물리적이거나 "
+            "파라미터 조합이 불안정할 수 있습니다."
+        ),
+        recommendation=(
+            "1. EOS 파라미터 확인 — 실험 데이터와 비교\n"
+            "2. *EOS_TABULATED 사용 시 압력-체적 커브 단조성 확인\n"
+            "3. 단위 체계 일관성 확인"
+        ),
+    ),
+    20446: ErrorInfo(
+        code=20446,
+        severity=Severity.WARNING,
+        title="Load curve definition issue",
+        description=(
+            "하중 곡선(*DEFINE_CURVE) 정의에 문제가 있습니다. "
+            "16회/8케이스 발생. 곡선의 시간 범위가 해석 시간을 "
+            "포함하지 않거나, 값이 비단조적일 수 있습니다."
+        ),
+        recommendation=(
+            "1. 하중 곡선의 시간 범위가 해석 종료 시간을 포함하는지 확인\n"
+            "2. 곡선 값의 단조성(monotonicity) 확인\n"
+            "3. *DEFINE_CURVE의 SIDR(stress initialization) 옵션 검토"
+        ),
+    ),
+    20545: ErrorInfo(
+        code=20545,
+        severity=Severity.WARNING,
+        title="Material model convergence issue",
+        description=(
+            "재료 모델의 내부 반복(iteration)이 수렴하지 않았습니다. "
+            "737회/1케이스에서 집중 발생. 복잡한 재료 모델(점탄성, 초탄성, "
+            "손상 모델 등)에서 응력 업데이트 반복이 수렴 기준을 만족하지 못했습니다."
+        ),
+        recommendation=(
+            "1. 재료 파라미터 검토 — 극단적 비선형성이 수렴 실패를 유발\n"
+            "2. Timestep 감소(TSSFAC 줄이기)로 증분(increment) 크기 축소\n"
+            "3. 재료 모델 변경 검토 — 더 안정적인 대안 모델 탐색\n"
+            "4. *CONTROL_ACCURACY의 관련 수렴 파라미터 조정"
+        ),
+    ),
+    20660: ErrorInfo(
+        code=20660,
+        severity=Severity.INFO,
+        title="Section property notification",
+        description=(
+            "단면(section) 특성 관련 정보 메시지입니다. "
+            "19케이스에서 발생하며, 단면 정의의 특정 속성이 "
+            "기본값으로 설정되었거나 자동 계산되었음을 알립니다."
+        ),
+        recommendation=(
+            "1. 정보 메시지 — 일반적으로 무시 가능\n"
+            "2. 의도한 단면 속성이 올바르게 적용되었는지 확인"
+        ),
+    ),
+
+    # --- Constraint / Boundary Warnings (30xxx) ---
+    30105: ErrorInfo(
+        code=30105,
+        severity=Severity.WARNING,
+        title="Constraint equation conflict",
+        description=(
+            "구속 방정식 간 충돌이 감지되었습니다. "
+            "동일 노드에 여러 구속(*CONSTRAINED, *BOUNDARY_SPC, "
+            "tied contact 등)이 중복 적용되어 과다 구속 상태입니다."
+        ),
+        recommendation=(
+            "1. 해당 노드의 모든 구속 조건 목록 확인\n"
+            "2. 중복 구속 제거 — tied contact + SPC 동시 적용 회피\n"
+            "3. *CONSTRAINED_NODAL_RIGID_BODY와 SPC 간 충돌 확인"
+        ),
+    ),
+    30106: ErrorInfo(
+        code=30106,
+        severity=Severity.WARNING,
+        title="Joint definition warning",
+        description=(
+            "조인트(*CONSTRAINED_JOINT) 정의에서 경고입니다. "
+            "조인트의 기하학적 조건이 초기 상태에서 만족되지 않거나, "
+            "파라미터가 부적절합니다."
+        ),
+        recommendation=(
+            "1. 조인트의 노드/좌표계 정의 확인\n"
+            "2. 조인트 축 방향과 초기 형상 일치 확인\n"
+            "3. 조인트 간격(clearance)이 허용치 내인지 확인"
+        ),
+    ),
+    30107: ErrorInfo(
+        code=30107,
+        severity=Severity.WARNING,
+        title="Joint stiffness/damping parameter",
+        description=(
+            "조인트의 강성 또는 감쇠 파라미터 관련 경고입니다. "
+            "조인트 자유도의 강성/감쇠 값이 0이거나 비물리적입니다."
+        ),
+        recommendation=(
+            "1. 조인트 강성/감쇠 커브 확인\n"
+            "2. 적절한 *DEFINE_CURVE로 비선형 강성 정의\n"
+            "3. 단위 체계 일관성 확인"
+        ),
+    ),
+    30120: ErrorInfo(
+        code=30120,
+        severity=Severity.INFO,
+        title="Rigid body merge notification",
+        description=(
+            "강체 파트 간 병합(merge)이 수행되었습니다. "
+            "*CONSTRAINED_RIGID_BODIES로 연결된 강체들이 "
+            "단일 강체로 병합됩니다."
+        ),
+        recommendation=(
+            "1. 정보 메시지 — 의도한 강체 병합인지 확인\n"
+            "2. 병합된 강체의 질량/관성 특성이 올바른지 확인"
+        ),
+    ),
+    30580: ErrorInfo(
+        code=30580,
+        severity=Severity.WARNING,
+        title="Prescribed motion conflict",
+        description=(
+            "지정 운동(*BOUNDARY_PRESCRIBED_MOTION) 간 충돌입니다. "
+            "동일 노드/노드셋에 여러 지정 운동이 중복 적용되었습니다."
+        ),
+        recommendation=(
+            "1. 해당 노드의 모든 지정 운동 정의 확인\n"
+            "2. 동일 자유도에 대한 중복 정의 제거\n"
+            "3. 강체 파트의 경우 *BOUNDARY_PRESCRIBED_MOTION_RIGID 사용"
+        ),
+    ),
+
+    # --- Input / Definition Warnings (10xxx, 11xxx) ---
+    10141: ErrorInfo(
+        code=10141,
+        severity=Severity.INFO,
+        title="Keyword option not recognized",
+        description=(
+            "키워드 카드의 옵션이 인식되지 않았습니다. "
+            "LS-DYNA 버전에서 지원하지 않는 옵션이거나 오타가 있습니다."
+        ),
+        recommendation=(
+            "1. 키워드 철자 확인\n"
+            "2. 사용 중인 LS-DYNA 버전에서 해당 옵션 지원 여부 확인\n"
+            "3. LS-DYNA 매뉴얼 참조"
+        ),
+    ),
+    10144: ErrorInfo(
+        code=10144,
+        severity=Severity.INFO,
+        title="Duplicate keyword definition",
+        description=(
+            "동일한 키워드가 중복 정의되었습니다. "
+            "나중에 정의된 값이 사용되며, 이전 정의는 무시됩니다."
+        ),
+        recommendation=(
+            "1. 입력 파일에서 중복 키워드 제거\n"
+            "2. *INCLUDE 파일 간 중복 여부 확인"
+        ),
+    ),
+    10307: ErrorInfo(
+        code=10307,
+        severity=Severity.INFO,
+        title="Parameter substitution warning",
+        description=(
+            "*PARAMETER 치환에서 경고가 발생했습니다. "
+            "정의되지 않은 파라미터가 참조되었거나 값이 비어있습니다."
+        ),
+        recommendation=(
+            "1. *PARAMETER 정의 목록과 사용처 대조 확인\n"
+            "2. *INCLUDE 순서에 따른 파라미터 정의 시점 확인"
+        ),
+    ),
+    10346: ErrorInfo(
+        code=10346,
+        severity=Severity.INFO,
+        title="Database output interval adjusted",
+        description=(
+            "데이터베이스 출력 간격이 자동 조정되었습니다. "
+            "*DATABASE 카드의 출력 간격이 해석 조건에 맞게 수정됩니다."
+        ),
+        recommendation=(
+            "1. 정보 메시지 — 일반적으로 무시 가능\n"
+            "2. 의도한 출력 빈도가 유지되는지 확인"
+        ),
+    ),
+    10439: ErrorInfo(
+        code=10439,
+        severity=Severity.INFO,
+        title="Coordinate system definition note",
+        description=(
+            "좌표계(*DEFINE_COORDINATE_SYSTEM) 정의 관련 참고 사항입니다."
+        ),
+        recommendation=(
+            "1. 정보 메시지 — 좌표계 정의가 올바른지 확인"
+        ),
+    ),
+    10786: ErrorInfo(
+        code=10786,
+        severity=Severity.INFO,
+        title="ALE/Euler mesh initialization note",
+        description=(
+            "ALE 또는 Euler 메시 초기화 관련 참고 사항입니다. "
+            "다중 물질 그룹 또는 유체-구조 연성 설정이 초기화되었습니다."
+        ),
+        recommendation=(
+            "1. ALE 그룹 정의(*ALE_MULTI-MATERIAL_GROUP) 확인\n"
+            "2. 초기 물질 충전(*INITIAL_VOLUME_FRACTION) 확인"
+        ),
+    ),
+    11087: ErrorInfo(
+        code=11087,
+        severity=Severity.INFO,
+        title="Implicit/explicit switching note",
+        description=(
+            "Implicit-explicit 전환 해석 관련 참고 사항입니다. "
+            "*CONTROL_IMPLICIT_GENERAL의 설정에 따라 "
+            "솔버 전환이 수행되었습니다."
+        ),
+        recommendation=(
+            "1. 전환 시점과 조건이 의도한 대로인지 확인\n"
+            "2. 전환 시 에너지 밸런스 확인"
+        ),
+    ),
+    11533: ErrorInfo(
+        code=11533,
+        severity=Severity.INFO,
+        title="Thermal solver initialization",
+        description=(
+            "열해석(thermal) 솔버 초기화 관련 참고 사항입니다. "
+            "열-구조 연성(coupled thermal-structural) 해석이 설정되었습니다."
+        ),
+        recommendation=(
+            "1. 열전달 경계조건 확인\n"
+            "2. 열-구조 연성 타임스텝 확인"
+        ),
+    ),
+
+    # --- Implicit Solver (60xxx) ---
+    60078: ErrorInfo(
+        code=60078,
+        severity=Severity.WARNING,
+        title="Implicit solver matrix conditioning",
+        description=(
+            "Implicit 솔버의 강성 행렬 조건수(condition number)가 "
+            "높아 수렴 안정성이 저하될 수 있습니다."
+        ),
+        recommendation=(
+            "1. 모델의 강성 대비(stiffness ratio) 확인 — "
+            "극단적으로 다른 강성이 공존하면 행렬 조건이 악화\n"
+            "2. *CONTROL_IMPLICIT_SOLUTION의 솔버 파라미터 조정\n"
+            "3. 메시 품질 개선으로 행렬 조건 개선"
+        ),
+    ),
+    60302: ErrorInfo(
+        code=60302,
+        severity=Severity.WARNING,
+        title="Implicit convergence slow (contact related)",
+        description=(
+            "Implicit 해석에서 접촉에 의한 수렴 지연이 발생했습니다. "
+            "42회/1케이스 발생. 접촉 상태 변화(open/close)가 반복되어 "
+            "Newton-Raphson 반복이 수렴하지 못합니다."
+        ),
+        recommendation=(
+            "1. 접촉 안정화(contact stabilization) 적용\n"
+            "2. *CONTROL_IMPLICIT_AUTO의 DTMIN 조정\n"
+            "3. 접촉 강성(penalty stiffness) 조정\n"
+            "4. Mortar 접촉으로 변경 — implicit에서 더 안정적"
+        ),
+    ),
+
+    # --- SPH / Particle (70xxx) ---
+    70011: ErrorInfo(
+        code=70011,
+        severity=Severity.INFO,
+        title="SPH neighbor list update",
+        description=(
+            "SPH 입자의 인접 리스트가 갱신되었습니다. "
+            "4회/4케이스 발생. 입자 이동에 따라 주기적으로 "
+            "인접 입자 검색이 수행됩니다."
+        ),
+        recommendation=(
+            "1. 정상적인 정보 메시지\n"
+            "2. *CONTROL_SPH의 NCBS로 갱신 빈도 조절 가능"
+        ),
+    ),
+
+    # --- Misc Definition (21xxx) ---
+    21267: ErrorInfo(
+        code=21267,
+        severity=Severity.INFO,
+        title="Cross-section definition note",
+        description=(
+            "*DATABASE_CROSS_SECTION 정의 관련 참고 사항입니다. "
+            "단면력 측정을 위한 단면 정의가 처리되었습니다."
+        ),
+        recommendation=(
+            "1. 정보 메시지 — 단면 정의가 올바른지 확인\n"
+            "2. 단면의 노드셋/세그먼트셋이 올바른지 확인"
+        ),
+    ),
 }
 
 

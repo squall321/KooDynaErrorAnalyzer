@@ -139,6 +139,9 @@ def _diagnose_timestep_collapse(
     min_dt: float,
     warnings: list[WarningEntry],
     termination: TerminationInfo,
+    energy_snapshots: list[EnergySnapshot] | None = None,
+    smallest_timesteps: list[TimestepEntry] | None = None,
+    parts: list[PartDefinition] | None = None,
 ) -> list[Finding]:
     """Detect timestep collapse - simulation becoming impractical due to tiny timestep.
 
@@ -149,12 +152,74 @@ def _diagnose_timestep_collapse(
     """
     findings: list[Finding] = []
 
-    # Check for extreme timestep reduction
-    if min_dt < 1e-11 and min_dt > 0:
-        # Count negative volume warnings
-        neg_vol_warnings = [w for w in warnings if w.code == 40509]
-        neg_vol_count = sum(w.count for w in neg_vol_warnings)
+    # 원인 요소/파트 식별 (공통 헬퍼)
+    def _build_culprit_info() -> str:
+        part_names = {p.part_id: p.name for p in (parts or [])}
+        lines = []
 
+        # 1) energy_snapshots에서 마지막 dt 제어 요소
+        if energy_snapshots:
+            last = energy_snapshots[-1]
+            if last.controlling_element and last.controlling_part:
+                pname = part_names.get(last.controlling_part, "")
+                label = f"Part {last.controlling_part}"
+                if pname:
+                    label += f" ({pname})"
+                lines.append(
+                    f"마지막 사이클(cycle {last.cycle})에서 dt를 제어한 요소: "
+                    f"{last.controlling_element_type} {last.controlling_element}, {label}"
+                )
+
+        # 2) smallest_timesteps에서 최소 dt 요소
+        if smallest_timesteps:
+            worst = min(smallest_timesteps, key=lambda t: t.timestep)
+            pname = part_names.get(worst.part_number, "")
+            label = f"Part {worst.part_number}"
+            if pname:
+                label += f" ({pname})"
+            lines.append(
+                f"가장 작은 dt 요소: {worst.element_type} {worst.element_number}, "
+                f"{label}, dt={worst.timestep:.3E}"
+            )
+
+        if lines:
+            return "\n\n▶ 원인 요소:\n" + "\n".join(f"  • {l}" for l in lines)
+        return ""
+
+    # Count negative volume warnings
+    neg_vol_warnings = [w for w in warnings if w.code == 40509]
+    neg_vol_count = sum(w.count for w in neg_vol_warnings)
+
+    # Case 1: 에러 종료 — 원인 요소/파트를 즉시 표시
+    is_error = termination.status == TerminationStatus.ERROR
+    is_incomplete = termination.status == TerminationStatus.INCOMPLETE
+
+    if is_error or is_incomplete:
+        culprit_info = _build_culprit_info()
+        if culprit_info:
+            status_label = "에러 종료" if is_error else "비정상 종료(incomplete)"
+            findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="timestep",
+                title=f"시뮬레이션 {status_label} — timestep 제어 요소 확인",
+                description=(
+                    f"시뮬레이션이 {status_label}되었습니다. "
+                    f"최소 dt = {min_dt:.3E}. "
+                    + (f"Negative volume warning(40509)이 {neg_vol_count}회 발생했습니다. "
+                       if neg_vol_count > 0 else "")
+                    + culprit_info
+                ),
+                recommendation=(
+                    "1. 위 요소/파트의 메시 품질 확인 (초기 aspect ratio, jacobian)\n"
+                    "2. *MAT_ADD_EROSION으로 파손 요소 자동 제거\n"
+                    "3. *CONTROL_TIMESTEP에서 ERODE=1, TSMIN 설정\n"
+                    "4. 해당 파트의 경계조건/접촉 설정 검토"
+                ),
+            ))
+
+    # Case 2: 극소 timestep (정상 종료여도 dt가 너무 작은 경우)
+    if min_dt < 1e-11 and min_dt > 0:
+        culprit_info = _build_culprit_info()
         severity = Severity.CRITICAL if neg_vol_count > 50 else Severity.WARNING
         findings.append(Finding(
             severity=severity,
@@ -168,6 +233,7 @@ def _diagnose_timestep_collapse(
                 + (f"Negative volume warning(40509)이 {neg_vol_count}회 발생하여 "
                    f"요소 반전(element inversion)이 확인됩니다."
                    if neg_vol_count > 0 else "")
+                + culprit_info
             ),
             recommendation=(
                 "1. *MAT_ADD_EROSION으로 파손/반전 요소 자동 제거 (MXEPS, MNEPS 설정)\n"
@@ -728,6 +794,9 @@ def run_diagnostics(
     # Advanced diagnostics based on test case analysis
     all_findings.extend(_diagnose_timestep_collapse(
         min_dt, warnings or [], termination,
+        energy_snapshots=energy_snapshots,
+        smallest_timesteps=smallest_timesteps,
+        parts=parts,
     ))
     all_findings.extend(_diagnose_energy_instability(
         energy_snapshots or [],

@@ -19,10 +19,12 @@ class Series:
 
 def _nice_ticks(vmin: float, vmax: float, n: int = 5) -> list[float]:
     """Generate human-friendly tick values."""
+    if not math.isfinite(vmin) or not math.isfinite(vmax):
+        return [0.0]
     if vmax <= vmin:
         return [vmin]
     raw = (vmax - vmin) / max(n - 1, 1)
-    if raw == 0:
+    if raw == 0 or not math.isfinite(raw):
         return [vmin]
     mag = 10 ** math.floor(math.log10(abs(raw)))
     norm = raw / mag
@@ -90,6 +92,13 @@ def make_line_chart(
     legend_h = 25
     pw = width - ml - mr
     ph = height - mt - mb - legend_h
+
+    # Filter out non-finite values
+    for s in series_list:
+        s.values = [(x, y) for x, y in s.values if math.isfinite(x) and math.isfinite(y)]
+    series_list = [s for s in series_list if s.values]
+    if not series_list:
+        return ""
 
     # Data bounds
     all_x = [x for s in series_list for x, _ in s.values]
