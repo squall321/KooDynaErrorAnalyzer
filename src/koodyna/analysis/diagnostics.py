@@ -261,6 +261,114 @@ def _diagnose_timestep_collapse(
     return findings
 
 
+def _diagnose_dt_trend(
+    energy_snapshots: list[EnergySnapshot],
+) -> list[Finding]:
+    """Analyze timestep history trend to detect when and how dt degrades.
+
+    dt 이력의 추세를 분석하여:
+    1. dt가 감소하기 시작한 시점 (cycle, time)
+    2. 감소 속도: 급격(1 사이클에 50% 이상 감소) vs 점진적
+    3. 최종 dt / 초기 dt 비율
+    """
+    findings: list[Finding] = []
+
+    # timestep이 있는 스냅샷만 필터
+    snaps = [s for s in energy_snapshots if s.timestep > 0]
+    if len(snaps) < 3:
+        return findings
+
+    initial_dt = snaps[0].timestep
+    final_dt = snaps[-1].timestep
+    dt_ratio = final_dt / initial_dt if initial_dt > 0 else 1.0
+
+    # dt가 의미 있게 감소했는지 (5% 이상)
+    if dt_ratio > 0.95:
+        return findings
+
+    # dt 감소 시작 시점 찾기: 초기 dt의 95% 이하로 처음 떨어진 시점
+    drop_start_idx = None
+    for i, s in enumerate(snaps):
+        if s.timestep < initial_dt * 0.95:
+            drop_start_idx = i
+            break
+
+    # 급격한 dt drop 찾기: 연속 스냅샷 간 50% 이상 감소
+    sudden_drops = []
+    for i in range(1, len(snaps)):
+        if snaps[i].timestep < snaps[i-1].timestep * 0.5:
+            sudden_drops.append(i)
+
+    # 진단 메시지 구성
+    desc_parts = []
+    desc_parts.append(
+        f"dt가 초기값 {initial_dt:.3E}에서 최종값 {final_dt:.3E}로 감소했습니다 "
+        f"(잔여 {dt_ratio:.1%})."
+    )
+
+    if drop_start_idx is not None:
+        s = snaps[drop_start_idx]
+        progress = s.time / snaps[-1].time * 100 if snaps[-1].time > 0 else 0
+        desc_parts.append(
+            f"dt 감소 시작: cycle {s.cycle}, time={s.time:.4E} "
+            f"(해석 진행률 {progress:.0f}%)."
+        )
+
+    if sudden_drops:
+        first_drop = snaps[sudden_drops[0]]
+        desc_parts.append(
+            f"급격한 dt drop {len(sudden_drops)}회 발생. "
+            f"첫 발생: cycle {first_drop.cycle}, "
+            f"dt={first_drop.timestep:.3E} (이전 대비 50% 이상 감소)."
+        )
+
+    # dt 감소 패턴 분류
+    if sudden_drops:
+        pattern = "급격한 감소 (sudden drop)"
+        desc_parts.append(
+            "패턴: 급격한 dt 감소 — 특정 요소에서 갑작스러운 변형 또는 관통 발생 시사."
+        )
+    elif dt_ratio < 0.1:
+        pattern = "점진적 붕괴 (gradual collapse)"
+        desc_parts.append(
+            "패턴: 점진적 dt 붕괴 — 요소가 서서히 찌그러지며 dt가 지속 감소. "
+            "mass scaling 없이는 계산 시간이 급격히 증가합니다."
+        )
+    else:
+        pattern = "경미한 감소 (mild reduction)"
+        desc_parts.append(
+            "패턴: 경미한 dt 감소 — 일부 요소 변형에 의한 자연스러운 dt 조정."
+        )
+
+    # 심각도 결정
+    if dt_ratio < 0.05:  # 95% 이상 감소
+        severity = Severity.CRITICAL
+        title = f"Severe timestep drop detected"
+    elif dt_ratio < 0.3:  # 70% 이상 감소
+        severity = Severity.WARNING
+        title = f"Significant timestep drop detected"
+    else:
+        severity = Severity.INFO
+        title = f"Timestep reduction detected"
+
+    title += f" ({pattern})"
+
+    findings.append(Finding(
+        severity=severity,
+        category="timestep",
+        title=title,
+        description="\n".join(desc_parts),
+        recommendation=(
+            "1. dt 감소 시작 시점의 변형 상태를 d3plot에서 확인\n"
+            "2. 급격한 drop이면: *MAT_ADD_EROSION으로 파손 요소 삭제\n"
+            "3. 점진적 붕괴면: mass scaling(*CONTROL_TIMESTEP DT2MS) 검토\n"
+            "4. *DATABASE_GLSTAT 출력 간격을 줄여 dt 변화를 더 세밀하게 추적"
+        ),
+    ))
+
+    return findings
+
+
 def _diagnose_energy_instability(
     energy_snapshots: list[EnergySnapshot],
 ) -> list[Finding]:
@@ -813,6 +921,9 @@ def run_diagnostics(
         smallest_timesteps=smallest_timesteps,
         parts=parts,
         mass_properties=mass_properties,
+    ))
+    all_findings.extend(_diagnose_dt_trend(
+        energy_snapshots or [],
     ))
     all_findings.extend(_diagnose_energy_instability(
         energy_snapshots or [],
