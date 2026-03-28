@@ -96,4 +96,92 @@ def analyze_matsum(
             ),
         ))
 
+    # --- 파트별 에너지 이상 감지 ---
+
+    # 1) 음수 내부 에너지 감지
+    for mat_id, ts in sorted(materials.items()):
+        if not ts.snapshots:
+            continue
+        for snap in ts.snapshots:
+            if snap.internal_energy < -1e-10:
+                name = ts.material_name or f"Mat {mat_id}"
+                findings.append(Finding(
+                    severity=Severity.CRITICAL,
+                    category="material",
+                    title=f"재료 {mat_id} ({name}): 음수 내부 에너지 (IE={snap.internal_energy:.3E})",
+                    description=(
+                        f"재료 {mat_id} ({name})에서 내부 에너지가 {snap.internal_energy:.3E}로 "
+                        f"음수입니다 (time={snap.time:.4E}). "
+                        f"내부 에너지(IE)는 요소의 변형 에너지 합으로, 물리적으로 항상 ≥ 0이어야 합니다. "
+                        f"음수 IE는 재료 모델의 응력-변형률 관계가 비물리적이거나, "
+                        f"과도한 인위적 에너지 추출(접촉 penalty, 제약조건)이 원인입니다."
+                    ),
+                    recommendation=(
+                        "1. 해당 재료의 *MAT 파라미터 검토 — softening 곡선이 과도한지 확인\n"
+                        "2. 접촉/제약 설정 확인 — 해당 파트의 접촉에서 과도한 penalty 에너지 추출\n"
+                        "3. *MAT_ADD_EROSION으로 과도 변형 요소 삭제 검토"
+                    ),
+                ))
+                break  # 재료당 한 번만
+
+    # 2) 에너지 집중 파트 감지 (한 파트가 전체 IE의 90% 이상)
+    total_final_ie = 0.0
+    part_ie: dict[int, float] = {}
+    for mat_id, ts in materials.items():
+        if ts.snapshots:
+            ie = ts.snapshots[-1].internal_energy
+            part_ie[mat_id] = ie
+            if ie > 0:
+                total_final_ie += ie
+
+    if total_final_ie > 1e-10 and len(part_ie) >= 3:
+        for mat_id, ie in sorted(part_ie.items(), key=lambda x: -x[1]):
+            ratio = ie / total_final_ie
+            if ratio > 0.90:
+                name = materials[mat_id].material_name or f"Mat {mat_id}"
+                findings.append(Finding(
+                    severity=Severity.INFO,
+                    category="material",
+                    title=f"재료 {mat_id} ({name})에 에너지 집중 ({ratio:.0%})",
+                    description=(
+                        f"재료 {mat_id} ({name})가 전체 내부 에너지의 {ratio:.0%}를 "
+                        f"차지합니다 (IE={ie:.3E} / 전체={total_final_ie:.3E}). "
+                        f"에너지가 한 파트에 집중되면 해당 파트에서 과도한 변형이 발생하고 있거나, "
+                        f"다른 파트가 거의 변형되지 않는(강체에 가까운) 상태일 수 있습니다."
+                    ),
+                    recommendation=(
+                        "1. 해당 파트의 변형 상태를 d3plot에서 확인\n"
+                        "2. 다른 파트가 rigid로 설정되어 있다면 정상적인 현상\n"
+                        "3. 비정상적 집중이면 하중 경로와 경계조건 검토"
+                    ),
+                ))
+            break  # 최대 1개만
+
+    # 3) KE 급증 파트 감지 (특정 파트의 KE가 갑자기 폭증)
+    for mat_id, ts in sorted(materials.items()):
+        if len(ts.snapshots) < 3:
+            continue
+        name = ts.material_name or f"Mat {mat_id}"
+        for i in range(2, len(ts.snapshots)):
+            prev_ke = ts.snapshots[i-1].kinetic_energy
+            curr_ke = ts.snapshots[i].kinetic_energy
+            if prev_ke > 1e-10 and curr_ke > prev_ke * 100:
+                findings.append(Finding(
+                    severity=Severity.WARNING,
+                    category="material",
+                    title=f"재료 {mat_id} ({name}): KE 급증 ({curr_ke/prev_ke:.0f}배)",
+                    description=(
+                        f"재료 {mat_id} ({name})의 운동 에너지가 "
+                        f"time={ts.snapshots[i].time:.4E}에서 {curr_ke/prev_ke:.0f}배 급증 "
+                        f"(KE: {prev_ke:.3E} → {curr_ke:.3E}). "
+                        f"특정 파트에서 노드가 비정상적으로 가속되었습니다 (shooting node 가능성)."
+                    ),
+                    recommendation=(
+                        "1. 해당 시점의 d3plot에서 비정상 고속 노드 확인\n"
+                        "2. 접촉 설정 검토 — 관통에 의한 과도한 반력\n"
+                        "3. *CONTROL_CONTACT의 RWPNAL(접촉력 제한) 설정 검토"
+                    ),
+                ))
+                break  # 재료당 한 번만
+
     return hg_entries, findings
