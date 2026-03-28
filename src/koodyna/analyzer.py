@@ -420,6 +420,7 @@ class Analyzer:
             performance=report.performance,
             smallest_timesteps=timestep_analysis.smallest_timesteps,
             parts=report.parts,
+            contact_definitions=report.contact_definitions,
         )
         report.findings = _deduplicate_findings(all_findings)
 

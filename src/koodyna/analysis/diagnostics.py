@@ -4,7 +4,7 @@ from koodyna.models import (
     TerminationInfo, TerminationStatus, Finding, Severity,
     DecompMetrics, MassProperty, InterfaceSurfaceTimestep,
     WarningEntry, EnergySnapshot, PerformanceTiming,
-    TimestepEntry, PartDefinition,
+    TimestepEntry, PartDefinition, ContactDefinition,
 )
 
 
@@ -873,6 +873,122 @@ def _diagnose_problematic_parts(
     return findings
 
 
+def _diagnose_keyword_compatibility(
+    parts: list[PartDefinition],
+    contact_definitions: list[ContactDefinition],
+) -> list[Finding]:
+    """Check for known incompatible keyword combinations.
+
+    d3hsp에서 파싱된 파트/접촉 정의를 기반으로 흔한 비호환 조합을 감지합니다.
+    763개 /data 배치 분석에서 발견된 실패 패턴을 기반으로 합니다.
+    """
+    findings: list[Finding] = []
+
+    if not parts:
+        return findings
+
+    for p in parts:
+        # 1) Tet ELFORM=60 + explicit = 알려진 불안정 조합
+        #    (alt_tet_elform60 6/6 ERROR)
+        if p.solid_formulation == 60:
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="compatibility",
+                title=f"Part {p.part_id} ({p.name}): Tet ELFORM=60 사용 (불안정 가능)",
+                description=(
+                    f"파트 {p.part_id}에서 solid ELFORM=60(1-point nodal pressure tet)을 사용합니다. "
+                    f"이 포뮬레이션은 explicit 해석에서 불안정할 수 있으며, "
+                    f"/data 테스트에서 6/6 케이스가 ERROR로 종료되었습니다. "
+                    f"ELFORM=60은 locking-free이지만 hourglass 제어가 필요하고, "
+                    f"대변형 시 안정성이 떨어집니다."
+                ),
+                recommendation=(
+                    "1. ELFORM=13(nodal pressure tet, 더 안정적) 또는 "
+                    "ELFORM=17(10-node tet, 정확도 우수)로 변경 검토\n"
+                    "2. ELFORM=60 유지 시 mortar 접촉(SOFT=2) 필수\n"
+                    "3. TSSFAC를 0.5~0.7로 낮춰 안정성 확보"
+                ),
+            ))
+
+        # 2) Reduced integration solid(ELFORM=1) + HG type 0 = hourglass 미제어
+        if p.solid_formulation == 1 and p.hourglass_type == 0:
+            findings.append(Finding(
+                severity=Severity.INFO,
+                category="compatibility",
+                title=f"Part {p.part_id} ({p.name}): Reduced integration + HG 미설정",
+                description=(
+                    f"파트 {p.part_id}에서 ELFORM=1(constant stress solid)을 사용하지만 "
+                    f"hourglass type이 0(미설정)입니다. "
+                    f"1-point integration 요소는 zero-energy mode(hourglass)에 취약하며, "
+                    f"별도의 hourglass 제어가 필요합니다."
+                ),
+                recommendation=(
+                    "1. *HOURGLASS에서 IHQ=4(Flanagan-Belytschko stiffness) 설정\n"
+                    "2. 또는 ELFORM=2(selective reduced, -1(fully integrated)로 변경"
+                ),
+            ))
+
+        # 3) MAT_RIGID(type 20) + 변형체 요소 포뮬레이션 = 불필요한 계산
+        if p.material_type == 20 and p.solid_formulation not in (0, 1):
+            findings.append(Finding(
+                severity=Severity.INFO,
+                category="compatibility",
+                title=f"Part {p.part_id} ({p.name}): Rigid body + 비기본 ELFORM",
+                description=(
+                    f"파트 {p.part_id}는 MAT_RIGID(type 20)이지만 "
+                    f"ELFORM={p.solid_formulation}을 사용합니다. "
+                    f"강체에서는 요소 응력 계산이 불필요하므로 ELFORM=1이 충분합니다. "
+                    f"고차 포뮬레이션은 불필요한 계산 비용만 추가합니다."
+                ),
+                recommendation=(
+                    "1. *SECTION에서 ELFORM=1로 변경 — 강체에서는 충분\n"
+                    "2. 성능 향상: fully integrated 요소 불필요"
+                ),
+            ))
+
+        # 4) 매우 낮은 hourglass coefficient (< 0.01) + reduced integration
+        if p.solid_formulation in (1,) and p.hourglass_coefficient > 0 and p.hourglass_coefficient < 0.01:
+            findings.append(Finding(
+                severity=Severity.INFO,
+                category="compatibility",
+                title=f"Part {p.part_id}: Hourglass coefficient 매우 낮음 ({p.hourglass_coefficient})",
+                description=(
+                    f"파트 {p.part_id}의 hourglass coefficient가 {p.hourglass_coefficient}로 "
+                    f"매우 낮습니다. 기본값은 0.10이며, 0.01 미만에서는 hourglass 제어가 "
+                    f"사실상 비활성 상태입니다."
+                ),
+                recommendation=(
+                    "1. QM/QH 값을 0.05~0.15 범위로 조정\n"
+                    "2. 또는 fully integrated 요소로 변경"
+                ),
+            ))
+
+    # 5) 접촉 타입 호환성: tet 요소 + penalty contact (mortar가 더 적합)
+    has_tet = any(p.solid_formulation in (4, 10, 13, 15, 16, 17, 60)
+                  for p in parts if p.solid_formulation)
+    has_penalty_only = (contact_definitions and
+                        all(cd.type_prefix != 'o' for cd in contact_definitions))
+    if has_tet and has_penalty_only and len(contact_definitions) > 0:
+        findings.append(Finding(
+            severity=Severity.INFO,
+            category="compatibility",
+            title="Tet 요소 + Penalty 접촉: Mortar 접촉 권장",
+            description=(
+                "모델에 tetrahedral 요소가 포함되어 있으나 mortar 접촉이 사용되지 않습니다. "
+                "Tet 요소는 불규칙한 면 형상으로 인해 penalty 접촉에서 "
+                "관통/진동 문제가 발생하기 쉽습니다. "
+                "Mortar(segment-based) 접촉은 tet 요소와의 호환성이 우수합니다."
+            ),
+            recommendation=(
+                "1. *CONTACT에서 SOFT=2(mortar/segment-based) 옵션 추가\n"
+                "2. 또는 접촉 타입명에 _MORTAR 접미사 사용\n"
+                "3. Mortar 접촉 시 SBOPT=4 권장 (tet 최적화)"
+            ),
+        ))
+
+    return findings
+
+
 def run_diagnostics(
     termination: TerminationInfo,
     energy_findings: list[Finding],
@@ -890,6 +1006,7 @@ def run_diagnostics(
     performance: list[PerformanceTiming] | None = None,
     smallest_timesteps: list[TimestepEntry] | None = None,
     parts: list[PartDefinition] | None = None,
+    contact_definitions: list[ContactDefinition] | None = None,
 ) -> list[Finding]:
     """Aggregate and prioritize all findings from analysis modules."""
     all_findings: list[Finding] = []
@@ -1042,6 +1159,10 @@ def run_diagnostics(
     all_findings.extend(_diagnose_problematic_parts(
         smallest_timesteps or [],
         parts or [],
+    ))
+    all_findings.extend(_diagnose_keyword_compatibility(
+        parts or [],
+        contact_definitions or [],
     ))
 
     # Sort by severity: CRITICAL > WARNING > INFO
