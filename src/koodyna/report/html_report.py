@@ -4,7 +4,7 @@ import html
 from pathlib import Path
 
 from koodyna.models import Report, Severity, TerminationStatus
-from koodyna.report.svg_chart import make_energy_charts, make_rcforc_charts
+from koodyna.report.svg_chart import make_energy_charts, make_rcforc_charts, make_implicit_charts
 
 # Contact type code resolution (Korean)
 _CONTACT_TYPE_KR = {
@@ -372,6 +372,13 @@ def write_html_report(report: Report, filepath: Path):
         if energy_svg:
             _w('<h2>에너지 시계열 그래프</h2>')
             _w(energy_svg)
+
+    # === Implicit convergence charts ===
+    if report.implicit_steps and len(report.implicit_steps) >= 2:
+        implicit_svg = make_implicit_charts(report.implicit_steps)
+        if implicit_svg:
+            _w('<h2>Implicit 솔버 수렴 이력</h2>')
+            _w(implicit_svg)
 
     # === Material Hourglass (matsum) ===
     if report.matsum_hg_entries:

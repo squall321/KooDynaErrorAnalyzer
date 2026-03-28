@@ -295,6 +295,70 @@ def make_energy_charts(snapshots) -> str:
     return "\n".join(parts)
 
 
+def make_implicit_charts(implicit_steps) -> str:
+    """Generate implicit solver convergence charts from ImplicitStep list.
+
+    Returns HTML string containing SVG charts for:
+    1. Iteration count per step (bar-like via line chart)
+    2. Step size history (auto-stepping pattern)
+    """
+    if not implicit_steps or len(implicit_steps) < 2:
+        return ""
+
+    parts: list[str] = []
+
+    # Chart 1: Iterations per step
+    iters = [(float(s.step_number), float(s.iterations)) for s in implicit_steps]
+    reforms = [(float(s.step_number), float(s.reformations)) for s in implicit_steps]
+
+    has_reforms = any(r > 0 for _, r in reforms)
+    series1 = [Series("Iterations", iters, "#f7768e")]
+    if has_reforms:
+        series1.append(Series("Stiffness Reformations", reforms, "#ff9e64", dash="4,2"))
+
+    chart1 = make_line_chart(
+        series1,
+        title="Implicit Convergence: Iterations per Step",
+        x_label="Step Number",
+        y_label="Count",
+        chart_id="implicit-iterations",
+    )
+    if chart1:
+        parts.append(chart1)
+
+    # Chart 2: Step size history
+    step_sizes = [(s.time, s.step_size) for s in implicit_steps if s.step_size > 0]
+    if len(step_sizes) >= 2:
+        chart2 = make_line_chart(
+            [Series("Step Size (dt)", step_sizes, "#73daca")],
+            title="Implicit Step Size History",
+            x_label="Time (s)",
+            y_label="Step Size",
+            chart_id="implicit-step-size",
+        )
+        if chart2:
+            parts.append(chart2)
+
+    # Chart 3: Cumulative iterations (computational cost indicator)
+    cum_iters = []
+    total = 0
+    for s in implicit_steps:
+        total += s.iterations
+        cum_iters.append((s.time, float(total)))
+    if len(cum_iters) >= 2:
+        chart3 = make_line_chart(
+            [Series("Cumulative Iterations", cum_iters, "#bb9af7")],
+            title="Cumulative Newton-Raphson Iterations",
+            x_label="Time (s)",
+            y_label="Total Iterations",
+            chart_id="implicit-cumulative",
+        )
+        if chart3:
+            parts.append(chart3)
+
+    return "\n".join(parts)
+
+
 def make_rcforc_charts(interfaces: dict, max_charts: int = 10) -> str:
     """Generate contact force time-series charts from rcforc data.
 
