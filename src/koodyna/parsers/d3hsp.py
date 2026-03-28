@@ -7,7 +7,7 @@ from koodyna.models import (
     SimulationHeader, ModelSize, TerminationInfo, TerminationStatus,
     WarningEntry, TimestepEntry, PartDefinition, PerformanceTiming,
     ContactTiming, MPPProcessorTiming, EnergySnapshot, ContactDefinition,
-    DecompMetrics, MassProperty,
+    DecompMetrics, MassProperty, ImplicitStep,
 )
 
 # --- Header patterns ---
@@ -142,6 +142,16 @@ RE_START_TIME = re.compile(r'Start time\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2}
 RE_END_TIME = re.compile(r'End time\s+(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})')
 RE_ELAPSED = re.compile(r'Elapsed time\s+(\d+)\s+seconds')
 
+# --- Implicit solver convergence ---
+RE_IMPLICIT_BEGIN = re.compile(r'BEGIN implicit\s+\w+\s+step\s+(\d+)\s+t=\s*([\d.E+\-]+)')
+RE_IMPLICIT_STEP_SIZE = re.compile(r'current step size\s*=\s*([\d.E+\-]+)')
+RE_IMPLICIT_ITER = re.compile(r'Iteration:\s+(\d+)\s+\*\|du\|/\|u\|\s*=\s*([\d.E+\-]+)\s+\*Ei/E0\s*=\s*([\d.E+\-]+)')
+RE_IMPLICIT_CONVERGE_ITERS = re.compile(r'Number of iterations to converge\s+=\s+(\d+)')
+RE_IMPLICIT_REFORMATIONS = re.compile(r'Number of stiffness reformations\s+=\s+(\d+)')
+RE_IMPLICIT_RHS = re.compile(r'Number of right hand side evaluations\s+=\s+(\d+)')
+RE_IMPLICIT_NORM_VALUE = re.compile(r'Value\s*=\s*([\d.E+\-]+)\s+vs\s+Tolerance\s*=\s*([\d.E+\-]+)')
+RE_IMPLICIT_DIVERGE = re.compile(r'diverge|not converge|step rejected', re.IGNORECASE)
+
 # Material type name map
 MATERIAL_TYPE_NAMES = {
     1: "Elastic", 2: "Orthotropic", 3: "Elastic-Plastic (von Mises)",
@@ -193,6 +203,7 @@ class D3hspData:
         self.tsmin: float = 0.0
         self.decomp_metrics = DecompMetrics()
         self.mass_properties: list[MassProperty] = []
+        self.implicit_steps: list[ImplicitStep] = []
 
 
 class D3hspParser:
@@ -220,6 +231,9 @@ class D3hspParser:
         current_cycle_info: dict = {}
         last_warning_code: int | None = None
         lines_after_warning: int = 0
+        # Implicit convergence tracking
+        current_implicit_step: ImplicitStep | None = None
+        implicit_norm_index: int = 0  # tracks which norm value we're reading
 
         # 진행율 추적용
         total_bytes = self.filepath.stat().st_size if self.verbose else 1
@@ -458,6 +472,48 @@ class D3hspParser:
                             current_energy = {}
                             in_energy_block = True
                         continue
+
+                    # --- Implicit solver convergence tracking ---
+                    if "BEGIN implicit" in stripped:
+                        m = RE_IMPLICIT_BEGIN.search(stripped)
+                        if m:
+                            # Save previous step if pending
+                            if current_implicit_step:
+                                data.implicit_steps.append(current_implicit_step)
+                            current_implicit_step = ImplicitStep(
+                                step_number=_safe_int(m.group(1)),
+                                time=_safe_float(m.group(2)),
+                            )
+                        continue
+                    if current_implicit_step:
+                        if "current step size" in stripped:
+                            m = RE_IMPLICIT_STEP_SIZE.search(stripped)
+                            if m:
+                                current_implicit_step.step_size = _safe_float(m.group(1))
+                            continue
+                        m = RE_IMPLICIT_CONVERGE_ITERS.search(stripped)
+                        if m:
+                            current_implicit_step.iterations = _safe_int(m.group(1))
+                            continue
+                        m = RE_IMPLICIT_REFORMATIONS.search(stripped)
+                        if m:
+                            current_implicit_step.reformations = _safe_int(m.group(1))
+                            continue
+                        m = RE_IMPLICIT_RHS.search(stripped)
+                        if m:
+                            current_implicit_step.rhs_evaluations = _safe_int(m.group(1))
+                            # Summary block complete — save step
+                            data.implicit_steps.append(current_implicit_step)
+                            current_implicit_step = None
+                            continue
+                        if "residual" in stripped.lower() and "Value" in stripped:
+                            m = RE_IMPLICIT_NORM_VALUE.search(stripped)
+                            if m:
+                                current_implicit_step.residual_norm = _safe_float(m.group(1))
+                            continue
+                        if RE_IMPLICIT_DIVERGE.search(stripped):
+                            current_implicit_step.converged = False
+                            continue
 
                     # --- 100 smallest timesteps ---
                     if in_smallest_ts:

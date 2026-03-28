@@ -258,6 +258,21 @@ class DecompMetrics:
 
 
 @dataclass
+class ImplicitStep:
+    """Convergence data for a single implicit time step."""
+    step_number: int = 0
+    time: float = 0.0
+    step_size: float = 0.0
+    iterations: int = 0
+    reformations: int = 0
+    rhs_evaluations: int = 0
+    converged: bool = True
+    disp_norm: float = 0.0
+    energy_norm: float = 0.0
+    residual_norm: float = 0.0
+
+
+@dataclass
 class MaterialHGEntry:
     mat_id: int = 0
     name: str = ""
@@ -331,4 +346,5 @@ class Report:
     files_found: list[str] = field(default_factory=list)
     matsum_hg_entries: list[MaterialHGEntry] = field(default_factory=list)
     is_implicit: bool = False
+    implicit_steps: list[ImplicitStep] = field(default_factory=list)
     rcforc_interfaces: dict = field(default_factory=dict)  # int → RcforcInterface

@@ -1,6 +1,6 @@
 """Implicit solver specific diagnostics."""
 
-from koodyna.models import Finding, Severity, EnergySnapshot
+from koodyna.models import Finding, Severity, EnergySnapshot, ImplicitStep
 
 _IMPLICIT_KEYWORDS = {
     "CONTROL_IMPLICIT_GENERAL",
@@ -113,6 +113,7 @@ def analyze_implicit_solver(
     error_counts: dict[int, int],
     error_messages: dict[int, str],
     energy_snapshots: list[EnergySnapshot],
+    implicit_steps: list[ImplicitStep] | None = None,
 ) -> list[Finding]:
     """Detect implicit solver convergence and stability issues."""
     findings: list[Finding] = []
@@ -156,6 +157,120 @@ def analyze_implicit_solver(
                     "2. 하중 증분 감소 — 비선형이 강한 구간에서 DT를 줄여 "
                     "Newton 반복이 선형 범위에서 동작하도록 유지\n"
                     "3. LENRGT=1(에너지 norm) 수렴 기준 적용 — 에너지 보존에 민감한 판단 기준"
+                ),
+            ))
+
+    # --- Implicit step convergence history analysis ---
+    steps = implicit_steps or []
+    if steps:
+        total_steps = len(steps)
+        total_iters = sum(s.iterations for s in steps)
+        avg_iters = total_iters / total_steps if total_steps > 0 else 0
+        max_iters = max(s.iterations for s in steps)
+        max_iter_step = next(s for s in steps if s.iterations == max_iters)
+        total_reforms = sum(s.reformations for s in steps)
+        non_converged = [s for s in steps if not s.converged]
+
+        # Step size history: detect auto-cutback (step size suddenly reduced)
+        cutbacks = []
+        for i in range(1, len(steps)):
+            if steps[i].step_size > 0 and steps[i-1].step_size > 0:
+                if steps[i].step_size < steps[i-1].step_size * 0.5:
+                    cutbacks.append(steps[i])
+
+        # Summary finding
+        summary_parts = [
+            f"총 {total_steps}개 implicit 스텝, "
+            f"평균 {avg_iters:.1f}회 반복 (최대 {max_iters}회, step {max_iter_step.step_number}), "
+            f"강성 재구성 {total_reforms}회.",
+        ]
+        if cutbacks:
+            summary_parts.append(
+                f"자동 스텝 축소(cutback) {len(cutbacks)}회 발생."
+            )
+        if non_converged:
+            summary_parts.append(
+                f"비수렴 스텝 {len(non_converged)}개 감지."
+            )
+
+        findings.append(Finding(
+            severity=Severity.INFO,
+            category="implicit_solver",
+            title=f"Implicit 수렴 이력: {total_steps}스텝, 평균 {avg_iters:.1f}회 반복",
+            description=" ".join(summary_parts),
+            recommendation="",
+        ))
+
+        # High iteration count warning (> 20 iterations in any step)
+        high_iter_steps = [s for s in steps if s.iterations > 20]
+        if high_iter_steps:
+            desc_lines = [
+                f"{len(high_iter_steps)}개 스텝에서 반복 횟수가 20회를 초과했습니다:"
+            ]
+            for s in high_iter_steps[:5]:
+                desc_lines.append(
+                    f"  Step {s.step_number} (t={s.time:.4E}): {s.iterations}회 반복, "
+                    f"강성 재구성 {s.reformations}회"
+                )
+            if len(high_iter_steps) > 5:
+                desc_lines.append(f"  ... 외 {len(high_iter_steps)-5}개 스텝")
+
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="implicit_solver",
+                title=f"Implicit 수렴 지연: {len(high_iter_steps)}개 스텝 > 20회 반복",
+                description=(
+                    "\n".join(desc_lines) + "\n"
+                    "Newton-Raphson 반복이 많으면 비선형성이 강하거나 "
+                    "하중 증분이 너무 큽니다. 스텝당 비용이 반복 횟수에 비례하므로 "
+                    "계산 효율이 크게 저하됩니다."
+                ),
+                recommendation=(
+                    "1. *CONTROL_IMPLICIT_AUTO에서 ITEOPT(목표 반복 수)를 줄여 "
+                    "자동 스텝 축소를 더 공격적으로 설정\n"
+                    "2. 비선형이 강한 구간에서 *CONTROL_IMPLICIT_GENERAL DT0 감소\n"
+                    "3. 접촉 설정 검토 — 접촉 상태 변화(open/close)가 반복 증가의 주 원인\n"
+                    "4. NSOLVR=12(BFGS)로 변경 — 강성 재구성 없이 수렴 가능"
+                ),
+            ))
+
+        # Non-converged steps
+        if non_converged:
+            findings.append(Finding(
+                severity=Severity.CRITICAL,
+                category="implicit_solver",
+                title=f"Implicit 비수렴: {len(non_converged)}개 스텝 수렴 실패",
+                description=(
+                    f"{len(non_converged)}개 스텝에서 Newton-Raphson 반복이 수렴하지 못했습니다. "
+                    f"첫 비수렴: Step {non_converged[0].step_number} "
+                    f"(t={non_converged[0].time:.4E}). "
+                    f"수렴 실패 시 LS-DYNA는 스텝을 거부(reject)하고 더 작은 증분으로 재시도하거나, "
+                    f"최소 증분 이하면 해석을 종료합니다."
+                ),
+                recommendation=(
+                    "1. 비수렴 시점(t={:.4E})의 모델 상태를 d3plot에서 확인\n"
+                    "2. *CONTROL_IMPLICIT_AUTO DTMIN을 더 작게 — 재시도 증분 허용\n"
+                    "3. 해당 시점에서 접촉 상태 변화가 있는지 확인\n"
+                    "4. 재료 softening/damage가 활성화되는 시점인지 확인"
+                ).format(non_converged[0].time),
+            ))
+
+        # Auto-cutback pattern
+        if len(cutbacks) > 5:
+            findings.append(Finding(
+                severity=Severity.WARNING,
+                category="implicit_solver",
+                title=f"Implicit 스텝 축소 빈번: {len(cutbacks)}회 cutback",
+                description=(
+                    f"자동 스텝 크기 축소(cutback)가 {len(cutbacks)}회 발생했습니다. "
+                    f"잦은 cutback은 비선형성이 급격히 변하는 구간이 있음을 의미합니다. "
+                    f"스텝이 축소되면 더 많은 스텝이 필요해져 계산 시간이 증가합니다."
+                ),
+                recommendation=(
+                    "1. 비선형이 급변하는 시점을 파악하여 해당 구간에서 "
+                    "초기 스텝 크기를 작게 설정\n"
+                    "2. *CONTROL_IMPLICIT_AUTO의 ITEOPT/ITEWIN 조정\n"
+                    "3. 접촉 안정화(contact stabilization) 적용"
                 ),
             ))
 

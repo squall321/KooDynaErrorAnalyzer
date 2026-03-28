@@ -169,6 +169,7 @@ class Analyzer:
             report.contact_definitions = d3hsp_data.contact_definitions
             report.decomp_metrics = d3hsp_data.decomp_metrics
             report.mass_properties = d3hsp_data.mass_properties
+            report.implicit_steps = d3hsp_data.implicit_steps
 
         if slurm_info:
             report.slurm_info = slurm_info
@@ -398,6 +399,7 @@ class Analyzer:
                 error_counts=merged_error_counts,
                 error_messages=merged_error_messages,
                 energy_snapshots=energy_snapshots,
+                implicit_steps=report.implicit_steps,
             )
 
         # --- Phase 6: Diagnostics ---
