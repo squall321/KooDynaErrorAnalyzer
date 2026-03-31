@@ -1,6 +1,7 @@
 """CLI entry point for KooDynaDiag."""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -51,6 +52,107 @@ def _open_in_browser(html_path: Path, log):
         log(f"브라우저로 열었습니다: {file_uri}")
     else:
         log(f"브라우저 자동 열기 실패. 수동으로 열어주세요: {html_path}")
+
+
+def _analyze_single(args: tuple) -> dict:
+    """Worker function for parallel batch analysis. Runs in subprocess."""
+    folder, gen_html = args
+    from pathlib import Path
+    result = {"dir": str(folder), "status": "UNKNOWN", "findings": 0, "error": None}
+    try:
+        from koodyna.analyzer import Analyzer
+        from koodyna.report.json_report import write_json_report, report_to_dict
+        from koodyna.report.html_report import write_html_report
+
+        a = Analyzer(Path(folder))
+        r = a.run()
+        result["status"] = r.termination.status.value
+        result["findings"] = len(r.findings)
+        crits = sum(1 for f in r.findings if f.severity.value == "CRITICAL")
+        result["critical"] = crits
+
+        # Save JSON
+        json_path = Path(folder) / "koodyna_report.json"
+        write_json_report(r, json_path)
+
+        # Save HTML
+        if gen_html:
+            html_path = Path(folder) / "koodyna_report.html"
+            write_html_report(r, html_path)
+
+    except Exception as e:
+        result["status"] = "PARSE_ERROR"
+        result["error"] = str(e)
+    return result
+
+
+def _run_parallel_batch(base_dir: Path, keyword: str, np_count: int, no_html: bool):
+    """Find subdirectories matching keyword with d3hsp, analyze in parallel."""
+    import multiprocessing
+    import time
+
+    if not base_dir.is_dir():
+        print(f"Error: '{base_dir}' is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    # Find matching directories
+    targets = []
+    for root, dirs, files in os.walk(base_dir):
+        p = Path(root)
+        if keyword.lower() in p.name.lower():
+            if (p / "d3hsp").exists() or (p / "mes0000").exists():
+                targets.append(p)
+
+    if not targets:
+        print(f"No directories found matching '{keyword}' with d3hsp/mes0000 in '{base_dir}'")
+        sys.exit(0)
+
+    targets.sort()
+    gen_html = not no_html
+
+    print(f"=" * 60)
+    print(f" KooDynaDiag Parallel Batch Analysis")
+    print(f"=" * 60)
+    print(f"  Base directory : {base_dir}")
+    print(f"  Keyword filter : '{keyword}'")
+    print(f"  Matched folders: {len(targets)}")
+    print(f"  Parallel procs : {np_count}")
+    print(f"  HTML reports   : {'Yes' if gen_html else 'No'}")
+    print(f"=" * 60)
+    print()
+
+    start_time = time.time()
+
+    work_items = [(str(t), gen_html) for t in targets]
+
+    with multiprocessing.Pool(processes=np_count) as pool:
+        results = []
+        for i, result in enumerate(pool.imap_unordered(_analyze_single, work_items)):
+            i += 1
+            name = Path(result["dir"]).name
+            status = result["status"]
+            findings = result["findings"]
+            crits = result.get("critical", 0)
+            err = result.get("error", "")
+
+            if err:
+                print(f"  [{i:>4d}/{len(targets)}] ERROR     {name}: {err}")
+            else:
+                crit_mark = f" ★{crits}CRIT" if crits > 0 else ""
+                print(f"  [{i:>4d}/{len(targets)}] {status:<12s} findings={findings:>2d}{crit_mark}  {name}")
+            results.append(result)
+
+    elapsed = time.time() - start_time
+
+    # Summary
+    print()
+    print(f"=" * 60)
+    from collections import Counter
+    status_counts = Counter(r["status"] for r in results)
+    for s, c in status_counts.most_common():
+        print(f"  {s}: {c}")
+    print(f"  Total: {len(results)} cases in {elapsed:.1f}s ({elapsed/len(results):.1f}s/case)")
+    print(f"=" * 60)
 
 
 def _run_gui_mode():
@@ -282,6 +384,20 @@ def main():
         action="store_true",
         help="Skip HTML report generation in batch mode (JSON only)",
     )
+    parser.add_argument(
+        "-k", "--keyword",
+        type=str,
+        default=None,
+        metavar="KEYWORD",
+        help="Filter subdirectories containing KEYWORD (use with result_dir for parallel batch)",
+    )
+    parser.add_argument(
+        "--np",
+        type=int,
+        default=4,
+        metavar="N",
+        help="Number of parallel processes for batch analysis (default: 4)",
+    )
 
     args = parser.parse_args()
 
@@ -323,6 +439,11 @@ def main():
         from koodyna.scanner import print_index, DEFAULT_INDEX_PATH
         index_path = args.index or DEFAULT_INDEX_PATH
         print_index(index_path)
+        return
+
+    # Parallel batch mode: result_dir + keyword
+    if args.result_dir is not None and args.keyword is not None:
+        _run_parallel_batch(args.result_dir, args.keyword, args.np, args.no_html)
         return
 
     # GUI mode: no arguments provided
