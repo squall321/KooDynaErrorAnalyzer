@@ -16,15 +16,21 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install rich pyinstaller staticx patchelf
+        run: |
+          pip install rich pyinstaller
+          sudo apt-get update && sudo apt-get install -y patchelf
 
       - name: Stamp build date
         run: sed -i "s/^BUILD_DATE = .*/BUILD_DATE = \"$(date +%Y-%m-%d)\"/" src/koodyna/__init__.py
 
       - name: Build Linux executable
         run: |
+          # Find libpython and add it to PyInstaller
+          LIBPYTHON=$(python3 -c "import sysconfig; import os; lib=sysconfig.get_config_var('LIBDIR'); name=sysconfig.get_config_var('LDLIBRARY'); print(os.path.join(lib, name))")
+          echo "Including libpython: $LIBPYTHON"
           export PYTHONPATH="$(pwd)/src"
           pyinstaller --onefile \
+            --add-binary="$LIBPYTHON:." \
             --name koodyna \
             --hidden-import=koodyna \
             --hidden-import=koodyna.cli \
@@ -65,9 +71,6 @@ jobs:
             --paths=src \
             src/koodyna/__main__.py
           chmod +x dist/koodyna
-
-      - name: Make static binary (no shared lib dependencies)
-        run: staticx dist/koodyna dist/koodyna-static && mv dist/koodyna-static dist/koodyna
 
       - name: Verify build
         run: ./dist/koodyna --help || true
