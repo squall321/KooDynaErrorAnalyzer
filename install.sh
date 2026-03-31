@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "============================================"
-echo " KooDynaErrorAnalyzer 설치"
+echo " KooDynaDiag 설치"
 echo "============================================"
 echo ""
 

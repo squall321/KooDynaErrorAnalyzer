@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul 2>&1
 echo ============================================
-echo  KooDynaErrorAnalyzer Windows EXE 빌드
+echo  KooDynaDiag Windows EXE 빌드
 echo ============================================
 echo.
 

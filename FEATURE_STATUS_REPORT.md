@@ -1,14 +1,14 @@
-# KooDynaErrorAnalyzer 종합 기능 보고서
+# KooDynaDiag 종합 기능 보고서
 
 **버전:** 0.2.0
 **최종 갱신:** 2026-03-08
-**프로젝트:** KooDynaErrorAnalyzer — LS-DYNA 시뮬레이션 자동 진단 도구
+**프로젝트:** KooDynaDiag — LS-DYNA 시뮬레이션 자동 진단 도구
 
 ---
 
 ## 1. 프로젝트 개요
 
-KooDynaErrorAnalyzer는 LS-DYNA MPP(Massively Parallel Processing) 유한요소 시뮬레이션 결과를 자동 파싱·분석하여 **수치 불안정**, **성능 병목**, **실패 원인**을 한국어로 진단하는 CLI/GUI 도구입니다.
+KooDynaDiag는 LS-DYNA MPP(Massively Parallel Processing) 유한요소 시뮬레이션 결과를 자동 파싱·분석하여 **수치 불안정**, **성능 병목**, **실패 원인**을 한국어로 진단하는 CLI/GUI 도구입니다.
 
 실무 엔지니어가 수십~수백 MB 규모의 d3hsp, glstat, matsum 등 텍스트 출력을 직접 열어 보는 대신, 몇 초 만에 핵심 문제를 CRITICAL / WARNING / INFO 등급으로 분류하고 LS-DYNA 키워드 수준의 구체적 해결 방안을 제시합니다.
 
@@ -653,7 +653,7 @@ koodyna.knowledge.{warning_db, error_db}, koodyna.scanner
 
 ```
                     ┌─────────────────────────────┐
-                    │  KooDynaErrorAnalyzer v0.2.1 │
+                    │  KooDynaDiag v0.2.1          │
                     │  진단 커버리지 Dashboard      │
                     ├─────────────────────────────┤
                     │  에러 코드 DB:      68개     │

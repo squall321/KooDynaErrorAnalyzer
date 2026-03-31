@@ -1,4 +1,4 @@
-"""CLI entry point for KooDynaErrorAnalyzer."""
+"""CLI entry point for KooDynaDiag."""
 
 import argparse
 import sys
@@ -93,7 +93,7 @@ def _run_gui_mode():
 
     # 3) 진행 창 생성
     root.deiconify()
-    root.title("KooDynaErrorAnalyzer")
+    root.title("KooDynaDiag")
     root.geometry("720x500")
     root.resizable(True, True)
 
@@ -126,7 +126,7 @@ def _run_gui_mode():
             from koodyna import __version__, BUILD_DATE, EXPIRE_DAYS
             from datetime import datetime, timedelta
             expire = datetime.strptime(BUILD_DATE, "%Y-%m-%d") + timedelta(days=EXPIRE_DAYS)
-            log(f"KooDynaErrorAnalyzer v{__version__} (빌드: {BUILD_DATE})")
+            log(f"KooDynaDiag v{__version__} (빌드: {BUILD_DATE})")
             log(f"사용 만료일: {expire.strftime('%Y-%m-%d')}")
             log("")
             log(f"분석 폴더: {result_dir}")

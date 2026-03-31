@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "============================================"
-echo " KooDynaErrorAnalyzer Linux Binary 빌드"
+echo " KooDynaDiag Linux Binary 빌드"
 echo "============================================"
 echo ""
 

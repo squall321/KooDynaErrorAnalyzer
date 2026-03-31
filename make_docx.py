@@ -189,7 +189,7 @@ def build_docx():
     # ══════════════════════════════════════════════════════════════════════
     # Title
     # ══════════════════════════════════════════════════════════════════════
-    title = doc.add_heading("KooDynaErrorAnalyzer", 0)
+    title = doc.add_heading("KooDynaDiag", 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -221,7 +221,7 @@ def build_docx():
     # ══════════════════════════════════════════════════════════════════════
     add_heading(doc, "1. 프로젝트 개요", 1)
     add_para(doc, (
-        "KooDynaErrorAnalyzer는 LS-DYNA MPP(Massively Parallel Processing) 유한요소 "
+        "KooDynaDiag는 LS-DYNA MPP(Massively Parallel Processing) 유한요소 "
         "시뮬레이션 결과를 자동 파싱·분석하여 수치 불안정, 성능 병목, 실패 원인을 "
         "한국어로 진단하는 CLI/GUI 도구입니다. "
         "실무 엔지니어가 수십~수백 MB 규모의 d3hsp, glstat, matsum 등 텍스트 출력을 "

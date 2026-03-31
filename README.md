@@ -1,4 +1,4 @@
-# KooDynaErrorAnalyzer
+# KooDynaDiag
 
 LS-DYNA 해석 결과를 자동 분석하여 디버깅 리포트를 생성하는 도구.
 GUI 모드(더블클릭)와 CLI 모드 모두 지원.

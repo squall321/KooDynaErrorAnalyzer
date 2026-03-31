@@ -1,4 +1,4 @@
-# KooDynaErrorAnalyzer Windows EXE 빌드 (PowerShell)
+# KooDynaDiag Windows EXE 빌드 (PowerShell)
 # 실행법: powershell -ExecutionPolicy Bypass -File .\build_windows.ps1
 
 $ErrorActionPreference = "Stop"
@@ -6,7 +6,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $ScriptDir
 
 Write-Host "============================================"
-Write-Host "  KooDynaErrorAnalyzer Windows EXE 빌드"
+Write-Host "  KooDynaDiag Windows EXE 빌드"
 Write-Host "============================================"
 Write-Host ""
 

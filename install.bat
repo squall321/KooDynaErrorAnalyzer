@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul 2>&1
 echo ============================================
-echo  KooDynaErrorAnalyzer 설치
+echo  KooDynaDiag 설치
 echo ============================================
 echo.
 
