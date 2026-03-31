@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -16,21 +16,15 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: |
-          pip install rich pyinstaller
-          sudo apt-get update && sudo apt-get install -y patchelf
+        run: pip install rich pyinstaller
 
       - name: Stamp build date
         run: sed -i "s/^BUILD_DATE = .*/BUILD_DATE = \"$(date +%Y-%m-%d)\"/" src/koodyna/__init__.py
 
       - name: Build Linux executable
         run: |
-          # Find libpython and add it to PyInstaller
-          LIBPYTHON=$(python3 -c "import sysconfig; import os; lib=sysconfig.get_config_var('LIBDIR'); name=sysconfig.get_config_var('LDLIBRARY'); print(os.path.join(lib, name))")
-          echo "Including libpython: $LIBPYTHON"
           export PYTHONPATH="$(pwd)/src"
           pyinstaller --onefile \
-            --add-binary="$LIBPYTHON:." \
             --name koodyna \
             --hidden-import=koodyna \
             --hidden-import=koodyna.cli \
